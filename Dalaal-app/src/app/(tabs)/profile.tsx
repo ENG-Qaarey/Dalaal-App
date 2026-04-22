@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -7,7 +7,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,24 +14,39 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import { useAppTheme } from '../../context/theme-context';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 const languageOptions = ['English', 'Somali'];
 
 export default function Profile() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(colorScheme === 'dark' ? 'dark' : 'light');
+  const { scheme, isDark, toggleTheme } = useAppTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [languageIndex, setLanguageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [profileName, setProfileName] = useState('Dalaal User');
   const [profileEmail, setProfileEmail] = useState('user@dalaal.so');
   const [profileBio, setProfileBio] = useState('Find homes, cars, and land faster. Save favorites and contact sellers directly.');
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const C = Colors[themeMode];
-  const isDark = themeMode === 'dark';
+  const C = Colors[scheme];
   const currentLanguage = languageOptions[languageIndex];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 650);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['top', 'left', 'right']}>
+        <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+        <ScreenSkeleton variant="profile" />
+      </SafeAreaView>
+    );
+  }
 
   const stats = useMemo(
     () => [
@@ -73,7 +87,7 @@ export default function Profile() {
         label: 'Dark Mode',
         icon: isDark ? 'moon-outline' : 'sunny-outline',
         value: isDark ? 'On' : 'Off',
-        onPress: () => setThemeMode((current) => (current === 'dark' ? 'light' : 'dark')),
+        onPress: toggleTheme,
       },
       {
         id: 'language',
@@ -124,7 +138,7 @@ export default function Profile() {
           <View style={styles.topActions}>
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => setThemeMode((current) => (current === 'dark' ? 'light' : 'dark'))}
+              onPress={toggleTheme}
               style={[styles.topIconBtn, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
             >
               <Ionicons name={isDark ? 'sunny' : 'moon'} size={14} color={isDark ? C.brandOrange : C.brandBlue} />

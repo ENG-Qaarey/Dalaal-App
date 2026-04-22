@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   FlatList,
   Dimensions,
   Image,
-  useColorScheme,
   Keyboard,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +16,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import { useAppTheme } from '../../context/theme-context';
+import Skeleton from '../../components/ui/Skeleton';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.65) + 12;
@@ -31,19 +32,19 @@ const categories = [
 ];
 
 const featured = [
-  { id: '1', price: '$150,000', title: 'Modern Villa', location: 'Hodan', beds: 4, baths: 3, agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9' },
-  { id: '2', price: '$35,000', title: 'Toyota Land', location: 'Waberi', year: 2020, agent: 'Fatima', posterRole: 'Owner', posterVerified: false, posterRating: '4.7' },
-  { id: '3', price: '$80,000', title: 'Prime Land', location: 'Yaqshid', agent: 'Omar', posterRole: 'Broker', posterVerified: true, posterRating: '4.8' },
+  { id: '1', price: '$150,000', title: 'Modern Villa', location: 'Hodan', beds: 4, baths: 3, agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80' },
+  { id: '2', price: '$35,000', title: 'Toyota Land', location: 'Waberi', year: 2020, agent: 'Fatima', posterRole: 'Owner', posterVerified: false, posterRating: '4.7', image: 'https://images.unsplash.com/photo-1549399542-7e3f8b5b3f32?auto=format&fit=crop&w=1200&q=80' },
+  { id: '3', price: '$80,000', title: 'Prime Land', location: 'Yaqshid', agent: 'Omar', posterRole: 'Broker', posterVerified: true, posterRating: '4.8', image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80' },
 ];
 
 const nearby = [
-  { id: 'n1', title: '4BR Villa, Secure Compound', location: 'Hodan', price: '$120,000', beds: 4, baths: 3, time: '2 days ago', agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9' },
-  { id: 'n2', title: '3BR Apt, New Building', location: 'Waberi', price: '$85,000', beds: 3, baths: 2, time: '5 hours ago', agent: 'Fatima', posterRole: 'Broker', posterVerified: true, posterRating: '4.8' },
+  { id: 'n1', title: '4BR Villa, Secure Compound', location: 'Hodan', price: '$120,000', beds: 4, baths: 3, time: '2 days ago', agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'n2', title: '3BR Apt, New Building', location: 'Waberi', price: '$85,000', beds: 3, baths: 2, time: '5 hours ago', agent: 'Fatima', posterRole: 'Broker', posterVerified: true, posterRating: '4.8', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80' },
 ];
 
 const vehicles = [
-  { id: 'v1', title: 'Hilux', price: '$28K', agent: 'Ali', posterRole: 'Dealer', posterVerified: false, posterRating: '4.6' },
-  { id: 'v2', title: 'Patrol', price: '$42K', agent: 'Amina', posterRole: 'Dealer', posterVerified: true, posterRating: '4.8' },
+  { id: 'v1', title: 'Hilux', price: '$28K', agent: 'Ali', posterRole: 'Dealer', posterVerified: false, posterRating: '4.6', image: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'v2', title: 'Patrol', price: '$42K', agent: 'Amina', posterRole: 'Dealer', posterVerified: true, posterRating: '4.8', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80' },
 ];
 
 const brokers = [
@@ -55,10 +56,16 @@ const brokers = [
 export default function HomeScreen() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [query, setQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 900);
+    return () => clearTimeout(timer);
+  }, []);
 
   const q = query.trim().toLowerCase();
   const matches = (text: string) => text.toLowerCase().includes(q);
@@ -149,9 +156,43 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: 80 + insets.bottom }]}
+        contentContainerStyle={[styles.container, { paddingBottom: 84 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
+        {isLoading ? (
+          <View style={styles.skeletonWrap}>
+            <View style={styles.skeletonHeader}>
+              <Skeleton width="44%" height={22} />
+              <Skeleton width={42} height={42} borderRadius={14} />
+            </View>
+            <Skeleton height={46} borderRadius={12} style={styles.skeletonSearch} />
+            <View style={styles.skeletonCategoryGrid}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <View key={index} style={styles.skeletonCategoryItem}>
+                  <Skeleton width={48} height={48} borderRadius={14} />
+                  <Skeleton width="72%" height={10} style={styles.skeletonLabel} />
+                </View>
+              ))}
+            </View>
+            <View style={styles.skeletonSectionRow}>
+              <Skeleton width="32%" height={18} />
+              <Skeleton width={44} height={14} />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.skeletonCardRow}>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <View key={index} style={styles.skeletonCard}>
+                  <Skeleton height={118} borderRadius={10} />
+                  <Skeleton width="58%" height={14} style={styles.skeletonCardLine} />
+                  <Skeleton width="86%" height={12} style={styles.skeletonCardLine} />
+                  <Skeleton width="42%" height={12} style={styles.skeletonCardLine} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {!isLoading && (
+        <>
         <View style={[styles.searchRow, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
           <Ionicons name="search" size={15} color={C.textMuted} style={{ marginRight: 7 }} />
           <TextInput
@@ -236,7 +277,7 @@ export default function HomeScreen() {
                 },
               ]}
             >
-              <View style={[styles.cardImage, { backgroundColor: C.tableRow }]} />
+              <Image source={{ uri: f.image }} style={styles.cardImage} />
               <View style={styles.cardRow}>
                 <Text style={[styles.cardPrice, { color: C.textMain }]}>{f.price}</Text>
                 <Text style={[styles.cardMetaRight, { color: C.textMuted }]}>{f.location}</Text>
@@ -304,7 +345,7 @@ export default function HomeScreen() {
                   }
                   style={[styles.nearbyItem, { borderBottomColor: C.brandBorder }]}
                 >
-                  <View style={[styles.thumb, { backgroundColor: C.tableRow }]} />
+                  <Image source={{ uri: item.image }} style={styles.thumb} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.nearbyTitle, { color: C.textMain }]}>{item.title}</Text>
                     <Text style={[styles.nearbyMeta, { color: C.textMuted }]}>
@@ -348,7 +389,7 @@ export default function HomeScreen() {
                   }
                   style={[styles.vehicleCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}
                 >
-                  <View style={[styles.smallThumb, { backgroundColor: C.brandBorder }]} />
+                  <Image source={{ uri: v.image }} style={styles.smallThumb} />
                   <Text style={[styles.vehicleTitle, { color: C.textMain }]}>{v.title}</Text>
                   <Text style={[styles.vehiclePrice, { color: C.textMuted }]}>{v.price}</Text>
                 </TouchableOpacity>
@@ -460,7 +501,8 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-
+        </>
+      )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -473,9 +515,19 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: 'row', alignItems: 'center' },
   locationText: { marginLeft: 7, fontWeight: '700', fontSize: 13 },
   headerIcons: { flexDirection: 'row', alignItems: 'center' },
-  searchRow: { marginHorizontal: 12, marginTop: 7, marginBottom: 8, paddingVertical: 6, paddingHorizontal: 9, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
+  searchRow: { marginHorizontal: 14, marginTop: 7, marginBottom: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
   searchInput: { flex: 1, paddingVertical: 0, fontSize: 11 },
   searchGo: { height: 22, width: 22, alignItems: 'center', justifyContent: 'center' },
+  skeletonWrap: { paddingHorizontal: 14, paddingTop: 4 },
+  skeletonHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  skeletonSearch: { marginTop: 12 },
+  skeletonCategoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 12 },
+  skeletonCategoryItem: { width: '30%', alignItems: 'center', marginVertical: 8 },
+  skeletonLabel: { marginTop: 8 },
+  skeletonSectionRow: { marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  skeletonCardRow: { marginTop: 8 },
+  skeletonCard: { width: CARD_WIDTH, marginLeft: 0, marginRight: 14 },
+  skeletonCardLine: { marginTop: 8 },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 14 },
   categoryItem: { width: '30%', marginVertical: 8, alignItems: 'center' },
   categoryIcon: { width: 48, height: 48, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
@@ -492,7 +544,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     borderWidth: 1,
   },
-  cardImage: { height: 118, borderRadius: 10, marginBottom: 8 },
+  cardImage: { height: 118, borderRadius: 10, marginBottom: 8, width: '100%' },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardPrice: { fontWeight: '900', fontSize: 14 },
   cardMetaRight: { fontSize: 11 },

@@ -1,10 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  useColorScheme,
   ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -14,8 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
+import { useAppTheme } from '../../context/theme-context';
 import FadeIn from '../../components/FadeIn';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 
@@ -30,8 +31,9 @@ export default function Features() {
   const router = useRouter();
   const params = useLocalSearchParams<{ lang?: string }>();
   const { width, height } = useWindowDimensions();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Helps prevent a blank screen on some Android devices by ensuring
   // the horizontal pager children have a real height.
@@ -76,6 +78,20 @@ export default function Features() {
 
   const [index, setIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 650);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
+        <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+        <ScreenSkeleton variant="form" />
+      </SafeAreaView>
+    );
+  }
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;

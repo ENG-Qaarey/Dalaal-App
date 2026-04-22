@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/theme';
 import OnboardingBackground from '../components/OnboardingBackground';
 import { useFavorites } from '../context/favorites-context';
+import { useAppTheme } from '../context/theme-context';
+import ScreenSkeleton from '../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 
@@ -28,9 +30,10 @@ export default function ListingsDetail() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<DetailParams>();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
   const { isFavorite, toggleFavorite } = useFavorites();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const detail = useMemo(() => {
     const type = (params.type === 'vehicle' || params.type === 'property') ? params.type : undefined;
@@ -71,6 +74,20 @@ export default function ListingsDetail() {
   const badgeLabel = detail.type ? (detail.type === 'vehicle' ? 'Vehicle' : 'Property') : 'Listing';
   const badgeBg = detail.type === 'vehicle' ? C.brandOrange : C.brandBlue;
   const favorite = isFavorite(detail.id);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 650);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
+        <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+        <ScreenSkeleton variant="detail" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>

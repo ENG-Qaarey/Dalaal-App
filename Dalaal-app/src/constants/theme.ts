@@ -32,19 +32,19 @@ const light: ThemePalette = {
 };
 
 const dark: ThemePalette = {
-  brandBlue: '#4c8ff0',
-  brandBlueDark: '#2c6fda',
-  brandBlueLight: '#6aa5f5',
-  brandBlueSoft: '#1b2a44',
-  brandBorder: '#243755',
-  brandOrange: '#f4a54b',
-  brandOrangeDark: '#db8a35',
-  surface: '#101825',
-  textMain: '#e6edf7',
-  textMuted: '#a9b6cc',
-  tableRow: '#141f31',
-  tableRowHover: '#1b2a44',
-  background: '#101825',
+  brandBlue: '#5ea0ff',
+  brandBlueDark: '#3e84f0',
+  brandBlueLight: '#86bbff',
+  brandBlueSoft: '#17253a',
+  brandBorder: '#253a58',
+  brandOrange: '#f7ae56',
+  brandOrangeDark: '#e08f34',
+  surface: '#0d1522',
+  textMain: '#eff4fb',
+  textMuted: '#b0bdd1',
+  tableRow: '#0a101a',
+  tableRowHover: '#070b0f',
+  background: '#030407',
 };
 
 const Colors: { light: ThemePalette; dark: ThemePalette } = { light, dark };

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, useColorScheme, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
+import { useAppTheme } from '../../context/theme-context';
 import FadeIn from '../../components/FadeIn';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 
@@ -14,11 +16,26 @@ type Params = { lang?: string };
 export default function Login() {
 	const router = useRouter();
 	const params = useLocalSearchParams<Params>();
-	const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-	const C = Colors[colorScheme ?? 'light'];
+	const { scheme } = useAppTheme();
+	const C = Colors[scheme];
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 
 	const [phoneOrEmail, setPhoneOrEmail] = useState('');
 	const [password, setPassword] = useState('');
+
+	useEffect(() => {
+		const timer = setTimeout(() => setIsInitialLoading(false), 650);
+		return () => clearTimeout(timer);
+	}, []);
+
+	if (isInitialLoading) {
+		return (
+			<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
+				<OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+				<ScreenSkeleton variant="form" />
+			</SafeAreaView>
+		);
+	}
 
 	const canContinue = phoneOrEmail.trim().length >= 4 && password.length >= 6;
 

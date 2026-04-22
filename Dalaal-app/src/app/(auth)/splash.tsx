@@ -1,17 +1,18 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
+import { useAppTheme } from '../../context/theme-context';
 import OnboardingBackground from '../../components/OnboardingBackground';
 
 export const options = { headerShown: false };
 
 export default function Splash() {
   const router = useRouter();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
 
   useEffect(() => {
     const t = setTimeout(() => {

@@ -6,7 +6,6 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  useColorScheme,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import { useAppTheme } from '../../context/theme-context';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 type SearchItem = {
   id: string;
@@ -179,12 +180,18 @@ export default function Search() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ q?: string; category?: string }>();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [query, setQuery] = useState(params.q ?? '');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -233,6 +240,15 @@ export default function Search() {
       },
     });
   };
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
+        <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+        <ScreenSkeleton variant="list" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>

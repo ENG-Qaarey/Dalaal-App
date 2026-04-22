@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
+import { useAppTheme } from '../../context/theme-context';
 import FadeIn from '../../components/FadeIn';
 import OnboardingBackground from '../../components/OnboardingBackground';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 
@@ -13,8 +15,9 @@ type Role = 'Buyer' | 'Seller' | 'Agent';
 
 export default function RoleSelection() {
   const router = useRouter();
-  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
-  const C = Colors[colorScheme ?? 'light'];
+  const { scheme } = useAppTheme();
+  const C = Colors[scheme];
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const roles = useMemo(
     () =>
@@ -25,6 +28,20 @@ export default function RoleSelection() {
       ] satisfies Array<{ role: Role; title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }>,
     []
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 650);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
+        <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+        <ScreenSkeleton variant="form" />
+      </SafeAreaView>
+    );
+  }
 
   const choose = (role: Role) => {
     router.push({ pathname: '/phone-verification', params: { role } });
