@@ -1,19 +1,25 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   FlatList,
   Dimensions,
+  Image,
+  useColorScheme,
+  Keyboard,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Colors from '../../constants/theme';
+import OnboardingBackground from '../../components/OnboardingBackground';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = Math.round(width * 0.72) + 16;
+const CARD_WIDTH = Math.round(width * 0.65) + 12;
 
 const categories = [
   { key: 'houses', label: 'Houses', icon: 'home' },
@@ -25,136 +31,434 @@ const categories = [
 ];
 
 const featured = [
-  { id: '1', price: '$150,000', title: 'Modern Villa', location: 'Hodan', beds: 4, baths: 3, agent: 'Ahmed' },
-  { id: '2', price: '$35,000', title: 'Toyota Land', location: 'Waberi', year: 2020, agent: 'Fatima' },
-  { id: '3', price: '$80,000', title: 'Prime Land', location: 'Yaqshid', agent: 'Omar' },
+  { id: '1', price: '$150,000', title: 'Modern Villa', location: 'Hodan', beds: 4, baths: 3, agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9' },
+  { id: '2', price: '$35,000', title: 'Toyota Land', location: 'Waberi', year: 2020, agent: 'Fatima', posterRole: 'Owner', posterVerified: false, posterRating: '4.7' },
+  { id: '3', price: '$80,000', title: 'Prime Land', location: 'Yaqshid', agent: 'Omar', posterRole: 'Broker', posterVerified: true, posterRating: '4.8' },
 ];
 
 const nearby = [
-  { id: 'n1', title: '4BR Villa, Secure Compound', location: 'Hodan', price: '$120,000', beds: 4, baths: 3, time: '2 days ago' },
-  { id: 'n2', title: '3BR Apt, New Building', location: 'Waberi', price: '$85,000', beds: 3, baths: 2, time: '5 hours ago' },
+  { id: 'n1', title: '4BR Villa, Secure Compound', location: 'Hodan', price: '$120,000', beds: 4, baths: 3, time: '2 days ago', agent: 'Ahmed', posterRole: 'Broker', posterVerified: true, posterRating: '4.9' },
+  { id: 'n2', title: '3BR Apt, New Building', location: 'Waberi', price: '$85,000', beds: 3, baths: 2, time: '5 hours ago', agent: 'Fatima', posterRole: 'Broker', posterVerified: true, posterRating: '4.8' },
+];
+
+const vehicles = [
+  { id: 'v1', title: 'Hilux', price: '$28K', agent: 'Ali', posterRole: 'Dealer', posterVerified: false, posterRating: '4.6' },
+  { id: 'v2', title: 'Patrol', price: '$42K', agent: 'Amina', posterRole: 'Dealer', posterVerified: true, posterRating: '4.8' },
+];
+
+const brokers = [
+  { id: 'b1', name: 'Ahmed', role: 'Broker', stat: '4.9', reviews: '47 reviews', listings: '18 listings', avatar: 'https://i.pravatar.cc/160?img=12', accent: '#2F7CF6' },
+  { id: 'b2', name: 'Fatima', role: 'Owner', stat: '4.8', reviews: '32 reviews', listings: '11 listings', avatar: 'https://i.pravatar.cc/160?img=32', accent: '#F28C28' },
+  { id: 'b3', name: 'Omar', role: 'Dealer', stat: '4.7', reviews: '28 reviews', listings: '9 listings', avatar: 'https://i.pravatar.cc/160?img=56', accent: '#16A34A' },
 ];
 
 export default function HomeScreen() {
   const [activeIdx, setActiveIdx] = useState(0);
-  const featuredRef = useRef<ScrollView | null>(null);
+  const [query, setQuery] = useState('');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme() as 'light' | 'dark' | null;
+  const C = Colors[colorScheme ?? 'light'];
+
+  const q = query.trim().toLowerCase();
+  const matches = (text: string) => text.toLowerCase().includes(q);
+
+  const filteredCategories = useMemo(() => {
+    if (!q) return categories;
+    return categories.filter((c) => matches(`${c.label} ${c.key}`));
+  }, [q]);
+
+  const filteredFeatured = useMemo(() => {
+    if (!q) return featured;
+    return featured.filter((f) => matches(`${f.title} ${f.location} ${f.agent} ${f.price}`));
+  }, [q]);
+
+  const filteredNearby = useMemo(() => {
+    if (!q) return nearby;
+    return nearby.filter((n) => matches(`${n.title} ${n.location} ${n.price}`));
+  }, [q]);
+
+  const filteredVehicles = useMemo(() => {
+    if (!q) return vehicles;
+    return vehicles.filter((v) => matches(`${v.title} ${v.price}`));
+  }, [q]);
+
+  const filteredBrokers = useMemo(() => {
+    if (!q) return brokers;
+    return brokers.filter((b) => matches(`${b.name} ${b.stat}`));
+  }, [q]);
+
+  const clearSearch = () => {
+    setQuery('');
+    Keyboard.dismiss();
+  };
+
+  const openListingDetail = (params: {
+    id: string;
+    type: 'property' | 'vehicle';
+    title: string;
+    location?: string;
+    price?: string;
+    category?: string;
+    posterName?: string;
+    posterRole?: string;
+    posterVerified?: boolean;
+    posterRating?: string;
+    posterPhone?: string;
+    posterEmail?: string;
+  }) => {
+    router.push({
+      pathname: '/listings-detail',
+      params: {
+        id: params.id,
+        type: params.type,
+        title: params.title,
+        location: params.location ?? '',
+        price: params.price ?? '',
+        category: params.category ?? '',
+        posterName: params.posterName ?? '',
+        posterRole: params.posterRole ?? '',
+        posterVerified: params.posterVerified ? '1' : '0',
+        posterRating: params.posterRating ?? '',
+        posterPhone: params.posterPhone ?? '',
+        posterEmail: params.posterEmail ?? '',
+      },
+    });
+  };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.headerRow}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
+      <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <View style={[styles.headerRow, { paddingTop: insets.top, height: 50 + insets.top }]}>
         <View style={styles.locationRow}>
-          <Ionicons name="location-sharp" size={18} color="#FF8C00" />
-          <Text style={styles.locationText}>Mogadishu ▼</Text>
+          <Ionicons name="location-sharp" size={18} color={C.brandOrange} />
+          <Text style={[styles.locationText, { color: C.textMain }]}>Dalaal-Prime</Text>
         </View>
         <View style={styles.headerIcons}>
-          <Ionicons name="notifications-outline" size={20} color="#222" style={{ marginRight: 12 }} />
-          <Ionicons name="person-circle-outline" size={22} color="#222" />
+          <TouchableOpacity
+            onPress={() => router.push('/favorites')}
+            activeOpacity={0.8}
+            style={{ marginRight: 12 }}
+          >
+            <Ionicons name="notifications-outline" size={20} color={C.textMain} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
+            <Ionicons name="person-circle-outline" size={22} color={C.textMain} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={18} color="#888" style={{ marginRight: 8 }} />
-          <Text style={styles.searchPlaceholder}>Search properties, vehicles...</Text>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingBottom: 80 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.searchRow, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
+          <Ionicons name="search" size={15} color={C.textMuted} style={{ marginRight: 7 }} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search properties, vehicles..."
+            placeholderTextColor={C.textMuted}
+            returnKeyType="search"
+            onSubmitEditing={() => Keyboard.dismiss()}
+            style={[styles.searchInput, { color: C.textMain }]}
+          />
+          {query.length > 0 ? (
+            <TouchableOpacity onPress={clearSearch} activeOpacity={0.85} style={styles.searchGo}>
+              <Ionicons name="close" size={14} color={C.brandBlue} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.searchGo} />
+          )}
         </View>
 
-        <View style={styles.categoryGrid}>
-          {categories.map((c) => (
-            <TouchableOpacity key={c.key} style={styles.categoryItem} onPress={() => router.push(`/search?category=${c.key}`)}>
-              <View style={styles.categoryIcon}><Ionicons name={c.icon as any} size={22} color="#fff" /></View>
-              <Text style={styles.categoryLabel}>{c.label}</Text>
+        {filteredCategories.length > 0 && (
+          <View style={styles.categoryGrid}>
+          {filteredCategories.map((c) => (
+            <TouchableOpacity
+              key={c.key}
+              style={styles.categoryItem}
+              onPress={() => router.push({ pathname: '/search', params: { category: c.key } })}
+            >
+              <View style={[styles.categoryIcon, { backgroundColor: C.brandOrange }]}>
+                <Ionicons name={c.icon as any} size={18} color={C.surface} />
+              </View>
+              <Text style={[styles.categoryLabel, { color: C.textMain }]}>{c.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+          </View>
+        )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured</Text>
-          <TouchableOpacity onPress={() => router.push('/featured')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
-        </View>
+        {filteredFeatured.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: C.textMain }]}>Featured</Text>
+              <TouchableOpacity onPress={() => router.push('/listings/properties')}>
+                <Text style={[styles.seeAll, { color: C.brandBlue }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
 
-        <ScrollView
-          ref={(r) => (featuredRef.current = r)}
-          horizontal
-          pagingEnabled
-          decelerationRate="fast"
-          snapToInterval={CARD_WIDTH}
-          showsHorizontalScrollIndicator={false}
-          style={{ paddingVertical: 8 }}
-          onMomentumScrollEnd={(e) => {
-            const idx = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
-            setActiveIdx(idx);
-          }}
-        >
-          {featured.map((f) => (
-            <View key={f.id} style={styles.featuredCard}>
-              <View style={styles.cardImage} />
+            <ScrollView
+              horizontal
+              pagingEnabled
+              decelerationRate="fast"
+              snapToInterval={CARD_WIDTH}
+              showsHorizontalScrollIndicator={false}
+              style={{ paddingVertical: 4 }}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
+                setActiveIdx(idx);
+              }}
+            >
+              {filteredFeatured.map((f) => (
+            <TouchableOpacity
+              key={f.id}
+              activeOpacity={0.92}
+              onPress={() =>
+                openListingDetail({
+                  id: f.id,
+                  type: typeof f.year === 'number' ? 'vehicle' : 'property',
+                  title: f.title,
+                  location: f.location,
+                  price: f.price,
+                  posterName: f.agent,
+                  posterRole: f.posterRole,
+                  posterVerified: f.posterVerified,
+                  posterRating: f.posterRating,
+                })
+              }
+              style={[
+                styles.featuredCard,
+                {
+                  backgroundColor: C.surface,
+                  shadowColor: C.textMain,
+                  borderColor: C.brandBorder,
+                },
+              ]}
+            >
+              <View style={[styles.cardImage, { backgroundColor: C.tableRow }]} />
               <View style={styles.cardRow}>
-                <Text style={styles.cardPrice}>{f.price}</Text>
-                <Text style={styles.cardMetaRight}>{f.location}</Text>
+                <Text style={[styles.cardPrice, { color: C.textMain }]}>{f.price}</Text>
+                <Text style={[styles.cardMetaRight, { color: C.textMuted }]}>{f.location}</Text>
               </View>
-              <Text style={styles.cardTitle}>{f.title}</Text>
-              <Text style={styles.cardMeta}>{f.beds ? `${f.beds} bd • ${f.baths} ba` : f.year ?? ''}</Text>
+              <Text style={[styles.cardTitle, { color: C.textMain }]}>{f.title}</Text>
+              <Text style={[styles.cardMeta, { color: C.textMuted }]}>
+                {f.beds ? `${f.beds} bd • ${f.baths} ba` : f.year ?? ''}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.agentText}>👤 {f.agent} ✓</Text>
-                <TouchableOpacity onPress={() => router.push(`/listings/${f.id}`)}>
+                <Text style={[styles.agentText, { color: C.textMuted }]} numberOfLines={1}>
+                  👤 {f.agent} ✓
+                </Text>
+                <TouchableOpacity onPress={() => router.push('/chat')} activeOpacity={0.9}>
                   <Text style={styles.msgText}>💬</Text>
                 </TouchableOpacity>
               </View>
+            </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.dotsRow}>
+              {filteredFeatured.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: activeIdx === i ? C.brandOrange : C.brandBorder,
+                      width: activeIdx === i ? 18 : 8,
+                    },
+                  ]}
+                />
+              ))}
             </View>
-          ))}
-        </ScrollView>
-        <View style={styles.dotsRow}>
-          {featured.map((_, i) => (
-            <View key={i} style={[styles.dot, activeIdx === i && styles.dotActive]} />
-          ))}
-        </View>
+          </>
+        )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nearby Properties</Text>
-          <TouchableOpacity onPress={() => router.push('/nearby')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
-        </View>
+        {filteredNearby.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: C.textMain }]}>Nearby Properties</Text>
+              <TouchableOpacity onPress={() => router.push('/listings/properties')}>
+                <Text style={[styles.seeAll, { color: C.brandBlue }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
 
-        <FlatList
-          data={nearby}
-          keyExtractor={(i) => i.id}
-          renderItem={({ item }) => (
-            <View style={styles.nearbyItem}>
-              <View style={styles.thumb} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.nearbyTitle}>{item.title}</Text>
-                <Text style={styles.nearbyMeta}>{item.location} • {item.beds}bd • {item.time}</Text>
-                <Text style={styles.nearbyPrice}>{item.price}</Text>
-              </View>
+            <FlatList
+              data={filteredNearby}
+              keyExtractor={(i) => i.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    openListingDetail({
+                      id: item.id,
+                      type: 'property',
+                      title: item.title,
+                      location: item.location,
+                      price: item.price,
+                      category: 'houses',
+                      posterName: item.agent,
+                      posterRole: item.posterRole,
+                      posterVerified: item.posterVerified,
+                      posterRating: item.posterRating,
+                    })
+                  }
+                  style={[styles.nearbyItem, { borderBottomColor: C.brandBorder }]}
+                >
+                  <View style={[styles.thumb, { backgroundColor: C.tableRow }]} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.nearbyTitle, { color: C.textMain }]}>{item.title}</Text>
+                    <Text style={[styles.nearbyMeta, { color: C.textMuted }]}>
+                      {item.location} • {item.beds}bd • {item.time}
+                    </Text>
+                    <Text style={[styles.nearbyPrice, { color: C.textMain }]}>{item.price}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              scrollEnabled={false}
+            />
+          </>
+        )}
+
+        {filteredVehicles.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: C.textMain }]}>Popular Vehicles</Text>
+              <TouchableOpacity onPress={() => router.push('/listings/vehicles')}>
+                <Text style={[styles.seeAll, { color: C.brandBlue }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 4 }}>
+              {filteredVehicles.map((v) => (
+                <TouchableOpacity
+                  key={v.id}
+                  activeOpacity={0.92}
+                  onPress={() =>
+                    openListingDetail({
+                      id: v.id,
+                      type: 'vehicle',
+                      title: v.title,
+                      price: v.price,
+                      category: 'cars',
+                      posterName: v.agent,
+                      posterRole: v.posterRole,
+                      posterVerified: v.posterVerified,
+                      posterRating: v.posterRating,
+                    })
+                  }
+                  style={[styles.vehicleCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}
+                >
+                  <View style={[styles.smallThumb, { backgroundColor: C.brandBorder }]} />
+                  <Text style={[styles.vehicleTitle, { color: C.textMain }]}>{v.title}</Text>
+                  <Text style={[styles.vehiclePrice, { color: C.textMuted }]}>{v.price}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
+
+        {filteredBrokers.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: C.textMain }]}>Top Brokers</Text>
+              <TouchableOpacity onPress={() => router.push('/search')}>
+                <Text style={[styles.seeAll, { color: C.brandBlue }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 4 }}>
+              {filteredBrokers.map((b) => (
+                <TouchableOpacity
+                  key={b.id}
+                  activeOpacity={0.9}
+                  onPress={() => router.push({ pathname: '/search', params: { q: b.name } })}
+                  style={[
+                    styles.brokerCard,
+                    {
+                      backgroundColor: C.surface,
+                      borderColor: C.brandBorder,
+                      shadowColor: b.accent,
+                    },
+                  ]}
+                >
+                  <View style={styles.brokerTopRow}>
+                    <View style={styles.brokerAvatarWrap}>
+                      <Image source={{ uri: b.avatar }} style={styles.brokerAvatar} />
+                      <View style={[styles.brokerStatusDot, { backgroundColor: b.accent }]} />
+                    </View>
+                    <View style={[styles.brokerRankPill, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
+                      <Ionicons name="star" size={11} color={b.accent} />
+                      <Text style={[styles.brokerRankText, { color: C.textMain }]}>{b.stat}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.brokerName, { color: C.textMain }]} numberOfLines={1}>{b.name}</Text>
+                  <Text style={[styles.brokerRole, { color: C.textMuted }]} numberOfLines={1}>{b.role}</Text>
+                  <View style={styles.brokerMetaRow}>
+                    <Text style={[styles.brokerMetaText, { color: C.textMuted }]} numberOfLines={1}>
+                      {b.reviews}
+                    </Text>
+                    <Text style={[styles.brokerMetaDot, { color: C.brandBorder }]}>•</Text>
+                    <Text style={[styles.brokerMetaText, { color: C.textMuted }]} numberOfLines={1}>
+                      {b.listings}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => router.push('/chat')}
+                    style={[styles.brokerAction, { backgroundColor: b.accent }]}
+                  >
+                    <Text style={[styles.brokerActionText, { color: C.surface }]}>Contact</Text>
+                    <Ionicons name="chatbubbles" size={12} color={C.surface} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
+
+        {q.length > 0 &&
+          filteredCategories.length === 0 &&
+          filteredFeatured.length === 0 &&
+          filteredNearby.length === 0 &&
+          filteredVehicles.length === 0 &&
+          filteredBrokers.length === 0 && (
+            <View style={[styles.noResults, { borderColor: C.brandBorder, backgroundColor: C.tableRow }]}>
+              <Text style={[styles.noResultsTitle, { color: C.textMain }]}>No results on Home</Text>
+              <Text style={[styles.noResultsText, { color: C.textMuted }]}>Try another word.</Text>
             </View>
           )}
-          scrollEnabled={false}
-        />
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Popular Vehicles</Text>
-          <TouchableOpacity onPress={() => router.push('/vehicles')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
-        </View>
+        <View style={[styles.howRow, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
+          <View style={styles.howHeader}>
+            <Text style={[styles.howTitle, { color: C.textMain }]}>How it works</Text>
+            <Text style={[styles.howSubtitle, { color: C.textMuted }]}>Fast search to contact in seconds</Text>
+          </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 8 }}>
-          <View style={styles.vehicleCard}><View style={styles.smallThumb} /><Text style={styles.vehicleTitle}>Hilux</Text><Text style={styles.vehiclePrice}>$28K</Text></View>
-          <View style={styles.vehicleCard}><View style={styles.smallThumb} /><Text style={styles.vehicleTitle}>Patrol</Text><Text style={styles.vehiclePrice}>$42K</Text></View>
-        </ScrollView>
+          <View style={styles.howSteps}>
+            <View style={[styles.howStepCard, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
+              <View style={[styles.howStepIcon, { backgroundColor: C.brandBlue }]}>
+                <Ionicons name="search" size={14} color={C.surface} />
+              </View>
+              <Text style={[styles.howStepTitle, { color: C.textMain }]}>Search</Text>
+              <Text style={[styles.howStepText, { color: C.textMuted }]}>Find listings by location, type, or broker.</Text>
+            </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Brokers</Text>
-          <TouchableOpacity onPress={() => router.push('/brokers')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
-        </View>
+            <View style={[styles.howStepCard, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
+              <View style={[styles.howStepIcon, { backgroundColor: C.brandOrange }]}>
+                <Ionicons name="eye" size={14} color={C.surface} />
+              </View>
+              <Text style={[styles.howStepTitle, { color: C.textMain }]}>View</Text>
+              <Text style={[styles.howStepText, { color: C.textMuted }]}>Open details, save favorites, and compare info.</Text>
+            </View>
 
-        <View style={styles.brokersRow}>
-          <View style={styles.broker}><View style={styles.avatar} /><Text style={styles.brokerName}>Ahmed</Text><Text style={styles.brokerStat}>4.9⭐ • 47</Text></View>
-          <View style={styles.broker}><View style={styles.avatar} /><Text style={styles.brokerName}>Fatima</Text><Text style={styles.brokerStat}>4.8⭐ • 32</Text></View>
-          <View style={styles.broker}><View style={styles.avatar} /><Text style={styles.brokerName}>Omar</Text><Text style={styles.brokerStat}>4.7⭐ • 28</Text></View>
-        </View>
-
-        <View style={styles.howRow}>
-          <Text style={styles.howTitle}>How It Works</Text>
-          <View style={styles.howSteps}><Text style={styles.step}>🔍</Text><Text style={styles.chev}>──▶</Text><Text style={styles.step}>💬</Text><Text style={styles.chev}>──▶</Text><Text style={styles.step}>🤝</Text></View>
+            <View style={[styles.howStepCard, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
+              <View style={[styles.howStepIcon, { backgroundColor: C.brandBlue }]}> 
+                <Ionicons name="chatbubbles" size={14} color={C.surface} />
+              </View>
+              <Text style={[styles.howStepTitle, { color: C.textMain }]}>Contact</Text>
+              <Text style={[styles.howStepText, { color: C.textMuted }]}>Message the broker or owner instantly in chat.</Text>
+            </View>
+          </View>
         </View>
 
       </ScrollView>
@@ -163,51 +467,85 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  container: { paddingBottom: 80 },
-  headerRow: { height: 56, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  container: { paddingBottom: 0, paddingTop: 4 },
+  headerRow: { height: 50, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   locationRow: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { marginLeft: 8, fontWeight: '700' },
+  locationText: { marginLeft: 7, fontWeight: '700', fontSize: 13 },
   headerIcons: { flexDirection: 'row', alignItems: 'center' },
-  searchRow: { margin: 16, backgroundColor: '#f2f2f2', padding: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
-  searchPlaceholder: { color: '#888' },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 16 },
-  categoryItem: { width: '30%', marginVertical: 10, alignItems: 'center' },
-  categoryIcon: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#FF8C00', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  categoryLabel: { fontSize: 12, fontWeight: '600' },
-  sectionHeader: { marginTop: 8, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 18, fontWeight: '800' },
-  seeAll: { color: '#007aff', fontWeight: '600' },
-  featuredCard: { width: Math.round(width * 0.72), marginLeft: 16, backgroundColor: '#fff', borderRadius: 14, padding: 12, elevation: 4, shadowColor: '#000', shadowOpacity: 0.08 },
-  cardImage: { height: 140, backgroundColor: '#e9e9f0', borderRadius: 10, marginBottom: 10 },
+  searchRow: { marginHorizontal: 12, marginTop: 7, marginBottom: 8, paddingVertical: 6, paddingHorizontal: 9, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
+  searchInput: { flex: 1, paddingVertical: 0, fontSize: 11 },
+  searchGo: { height: 22, width: 22, alignItems: 'center', justifyContent: 'center' },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 14 },
+  categoryItem: { width: '30%', marginVertical: 8, alignItems: 'center' },
+  categoryIcon: { width: 48, height: 48, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  categoryLabel: { fontSize: 11, fontWeight: '600' },
+  sectionHeader: { marginTop: 6, paddingHorizontal: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { fontSize: 15, fontWeight: '800' },
+  seeAll: { fontWeight: '600' },
+  featuredCard: {
+    width: CARD_WIDTH,
+    marginLeft: 14,
+    borderRadius: 12,
+    padding: 10,
+    elevation: 3,
+    shadowOpacity: 0.07,
+    borderWidth: 1,
+  },
+  cardImage: { height: 118, borderRadius: 10, marginBottom: 8 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardPrice: { fontWeight: '900', fontSize: 16 },
-  cardMetaRight: { color: '#777', fontSize: 12 },
-  cardTitle: { color: '#222', fontSize: 16, fontWeight: '800', marginTop: 6 },
-  cardMeta: { color: '#888', fontSize: 12, marginTop: 4 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  agentText: { color: '#666' },
-  msgText: { fontSize: 18 },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ddd', marginHorizontal: 6 },
-  dotActive: { backgroundColor: '#FF8C00', width: 18 },
-  nearbyItem: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', alignItems: 'center' },
-  thumb: { width: 84, height: 64, backgroundColor: '#eee', borderRadius: 8, marginRight: 12 },
-  nearbyTitle: { fontWeight: '700' },
-  nearbyMeta: { color: '#777', fontSize: 12 },
-  nearbyPrice: { marginTop: 6, fontWeight: '800' },
-  vehicleCard: { width: 140, height: 120, backgroundColor: '#fff', borderRadius: 12, marginLeft: 16, padding: 8, alignItems: 'center', justifyContent: 'center' },
-  smallThumb: { width: 100, height: 60, backgroundColor: '#ddd', borderRadius: 8, marginBottom: 8 },
-  vehicleTitle: { fontWeight: '700' },
-  vehiclePrice: { color: '#777' },
-  brokersRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginTop: 8 },
-  broker: { alignItems: 'center' },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#ddd', marginBottom: 6 },
-  brokerName: { fontWeight: '700' },
-  brokerStat: { color: '#777', fontSize: 12 },
-  howRow: { padding: 16 },
-  howTitle: { fontWeight: '800', marginBottom: 8 },
-  howSteps: { flexDirection: 'row', alignItems: 'center' },
-  step: { fontSize: 22 },
-  chev: { marginHorizontal: 8, color: '#aaa' },
+  cardPrice: { fontWeight: '900', fontSize: 14 },
+  cardMetaRight: { fontSize: 11 },
+  cardTitle: { fontSize: 14, fontWeight: '800', marginTop: 5 },
+  cardMeta: { fontSize: 11, marginTop: 3 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
+  agentText: {},
+  msgText: { fontSize: 16 },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 6 },
+  dot: { height: 7, borderRadius: 4, marginHorizontal: 5 },
+  nearbyItem: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, alignItems: 'center' },
+  thumb: { width: 72, height: 56, borderRadius: 8, marginRight: 10 },
+  nearbyTitle: { fontWeight: '700', fontSize: 13 },
+  nearbyMeta: { fontSize: 11 },
+  nearbyPrice: { marginTop: 4, fontWeight: '800', fontSize: 12 },
+  vehicleCard: { width: 122, height: 104, borderRadius: 12, marginLeft: 14, padding: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  smallThumb: { width: 90, height: 52, borderRadius: 8, marginBottom: 6 },
+  vehicleTitle: { fontWeight: '700', fontSize: 12 },
+  vehiclePrice: {},
+  brokersStack: { paddingHorizontal: 12, marginTop: 4 },
+  brokerCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 11,
+    marginTop: 8,
+    marginRight: 10,
+    shadowOpacity: 0.09,
+    elevation: 3,
+    width: 154,
+  },
+  brokerTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 },
+  brokerAvatarWrap: { width: 42, height: 42, borderRadius: 13, overflow: 'hidden', position: 'relative' },
+  brokerAvatar: { width: '100%', height: '100%' },
+  brokerStatusDot: { position: 'absolute', right: 2, bottom: 2, width: 9, height: 9, borderRadius: 999, borderWidth: 2, borderColor: '#fff' },
+  brokerRankPill: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, height: 22 },
+  brokerRankText: { marginLeft: 4, fontSize: 10, fontWeight: '900' },
+  brokerName: { fontWeight: '900', fontSize: 14, marginTop: 2 },
+  brokerRole: { fontSize: 10, fontWeight: '700', marginTop: 2 },
+  brokerMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
+  brokerMetaText: { fontSize: 10, fontWeight: '600', flexShrink: 1 },
+  brokerMetaDot: { marginHorizontal: 5, fontSize: 10 },
+  brokerAction: { marginTop: 10, height: 28, borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  brokerActionText: { fontSize: 10, fontWeight: '900', marginRight: 6 },
+  howRow: { marginHorizontal: 14, marginTop: 8, padding: 12, borderRadius: 12, borderWidth: 1 },
+  howHeader: { marginBottom: 10 },
+  howTitle: { fontWeight: '900', fontSize: 14 },
+  howSubtitle: { marginTop: 3, fontSize: 11 },
+  howSteps: { flexDirection: 'row', gap: 8 },
+  howStepCard: { flex: 1, borderRadius: 12, borderWidth: 1, padding: 10, alignItems: 'flex-start' },
+  howStepIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  howStepTitle: { fontSize: 12, fontWeight: '900' },
+  howStepText: { marginTop: 4, fontSize: 10, lineHeight: 14 },
+  noResults: { marginHorizontal: 14, marginTop: 8, padding: 12, borderRadius: 12, borderWidth: 1 },
+  noResultsTitle: { fontSize: 14, fontWeight: '900' },
+  noResultsText: { marginTop: 4, fontSize: 11 },
 });

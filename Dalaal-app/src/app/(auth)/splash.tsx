@@ -27,7 +27,7 @@ export default function Splash() {
         <View style={[styles.logoBox, { backgroundColor: C.brandBlue }]}>
           <Ionicons name="home" size={42} color={C.surface} />
         </View>
-        <Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal</Text>
+        <Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
         <View style={[styles.loader, { backgroundColor: C.brandBorder }]} />
       </View>
     </SafeAreaView>
