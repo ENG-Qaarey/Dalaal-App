@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,37 +7,28 @@ import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
 import FadeIn from '../../components/FadeIn';
 import OnboardingBackground from '../../components/OnboardingBackground';
-import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 
 type Params = { lang?: string };
+
+const GOOGLE_LOGO_URI = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/40px-Google_%22G%22_logo.svg.png';
 
 export default function Login() {
 	const router = useRouter();
 	const params = useLocalSearchParams<Params>();
 	const { scheme } = useAppTheme();
 	const C = Colors[scheme];
-	const [isInitialLoading, setIsInitialLoading] = useState(true);
 
 	const [phoneOrEmail, setPhoneOrEmail] = useState('');
 	const [password, setPassword] = useState('');
-
-	useEffect(() => {
-		const timer = setTimeout(() => setIsInitialLoading(false), 650);
-		return () => clearTimeout(timer);
-	}, []);
-
-	if (isInitialLoading) {
-		return (
-			<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
-				<OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
-				<ScreenSkeleton variant="form" />
-			</SafeAreaView>
-		);
-	}
+	const [showPassword, setShowPassword] = useState(false);
 
 	const canContinue = phoneOrEmail.trim().length >= 4 && password.length >= 6;
+
+	const onGooglePress = () => {
+		Alert.alert('Google Sign-In', 'Google sign-in is not connected yet.');
+	};
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
@@ -79,19 +70,28 @@ export default function Login() {
 							/>
 
 							<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
-							<TextInput
-								value={password}
-								onChangeText={setPassword}
-								placeholder="Password"
-								placeholderTextColor={C.textMuted}
-								style={[styles.input, { borderColor: C.brandBorder, color: C.textMain, backgroundColor: C.surface }]}
-								secureTextEntry
-								autoCapitalize="none"
-								returnKeyType="done"
-								onSubmitEditing={() => {
-									if (canContinue) router.replace('/(tabs)');
-								}}
-							/>
+							<View style={[styles.passwordRow, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+								<TextInput
+									value={password}
+									onChangeText={setPassword}
+									placeholder="Password"
+									placeholderTextColor={C.textMuted}
+									style={[styles.passwordInput, { color: C.textMain }]}
+									secureTextEntry={!showPassword}
+									autoCapitalize="none"
+									returnKeyType="done"
+									onSubmitEditing={() => {
+										if (canContinue) router.replace('/(tabs)');
+									}}
+								/>
+								<TouchableOpacity
+									onPress={() => setShowPassword((current) => !current)}
+									activeOpacity={0.8}
+									style={styles.eyeBtn}
+								>
+									<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={C.textMuted} />
+								</TouchableOpacity>
+							</View>
 						</FadeIn>
 					</View>
 
@@ -99,6 +99,11 @@ export default function Login() {
 
 					<FadeIn delay={220}>
 						<View style={styles.footer}>
+							<TouchableOpacity onPress={onGooglePress} activeOpacity={0.9} style={[styles.googleBtn, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+								<Image source={{ uri: GOOGLE_LOGO_URI }} style={styles.googleIcon} resizeMode="contain" />
+								<Text style={[styles.googleText, { color: C.textMain }]}>Continue with Google</Text>
+							</TouchableOpacity>
+
 							<TouchableOpacity
 								disabled={!canContinue}
 								onPress={() => router.replace('/(tabs)')}
@@ -132,7 +137,13 @@ const styles = StyleSheet.create({
 	langNote: { marginTop: 8, fontSize: 12 },
 	label: { marginTop: 18, fontSize: 12 },
 	input: { height: 56, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, fontSize: 15, fontWeight: '700', marginTop: 10 },
+	passwordRow: { height: 56, borderRadius: 14, borderWidth: 1, marginTop: 10, paddingLeft: 14, paddingRight: 6, flexDirection: 'row', alignItems: 'center' },
+	passwordInput: { flex: 1, fontSize: 15, fontWeight: '700', paddingVertical: 0 },
+	eyeBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 	footer: { paddingHorizontal: 24, paddingBottom: 22, gap: 14, marginTop: 18 },
+	googleBtn: { height: 54, borderRadius: 14, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+	googleIcon: { width: 18, height: 18, marginRight: 10 },
+	googleText: { fontSize: 15, fontWeight: '900' },
 	primaryBtn: { height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 	primaryText: { fontSize: 16, fontWeight: '900' },
 	linkBtn: { height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'transparent' },

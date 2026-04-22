@@ -149,8 +149,11 @@ export default function HomeScreen() {
           >
             <Ionicons name="notifications-outline" size={20} color={C.textMain} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
-            <Ionicons name="person-circle-outline" size={22} color={C.textMain} />
+          <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.85} style={styles.profileBtn}>
+            <Image
+              source={{ uri: 'https://i.pravatar.cc/160?img=14' }}
+              style={[styles.profileAvatar, { borderColor: C.brandBorder }]}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -515,6 +518,8 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: 'row', alignItems: 'center' },
   locationText: { marginLeft: 7, fontWeight: '700', fontSize: 13 },
   headerIcons: { flexDirection: 'row', alignItems: 'center' },
+  profileBtn: { width: 30, height: 30, borderRadius: 999, overflow: 'hidden' },
+  profileAvatar: { width: '100%', height: '100%', borderRadius: 999, borderWidth: 1 },
   searchRow: { marginHorizontal: 14, marginTop: 7, marginBottom: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
   searchInput: { flex: 1, paddingVertical: 0, fontSize: 11 },
   searchGo: { height: 22, width: 22, alignItems: 'center', justifyContent: 'center' },
