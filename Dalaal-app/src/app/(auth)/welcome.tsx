@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,10 +9,13 @@ import OnboardingBackground from '../../components/OnboardingBackground';
 
 export const options = { headerShown: false };
 
+type Language = 'English' | 'Somali';
+
 export default function Welcome() {
   const router = useRouter();
   const colorScheme = useColorScheme() as 'light' | 'dark' | null;
   const C = Colors[colorScheme ?? 'light'];
+  const [language, setLanguage] = useState<Language>('English');
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
@@ -30,8 +33,31 @@ export default function Welcome() {
 
         <FadeIn delay={120}>
           <Text style={[styles.title, { color: C.textMain }]}>Welcome</Text>
-          <Text style={[styles.subtitle, { color: C.textMuted }]}>Your marketplace for real estate, vehicles, and services.</Text>
-          <Text style={[styles.bigInfo, { color: C.textMain }]}>Do more with confidence:</Text>
+          <Text style={[styles.subtitle, { color: C.textMuted }]}>Choose your language, then tap to continue.</Text>
+
+          <View style={styles.langRow}>
+            {(['English', 'Somali'] as const).map((l) => {
+              const selected = language === l;
+              return (
+                <TouchableOpacity
+                  key={l}
+                  onPress={() => setLanguage(l)}
+                  style={[
+                    styles.langPill,
+                    {
+                      backgroundColor: selected ? C.brandBlue : C.brandBlueSoft,
+                      borderColor: C.brandBorder,
+                    },
+                  ]}
+                  activeOpacity={0.9}
+                >
+                  <Text style={{ color: selected ? C.surface : C.textMain, fontWeight: '800' }}>{l}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={[styles.bigInfo, { color: C.textMain }]}>How Dalaal works</Text>
           <Text style={[styles.infoLine, { color: C.textMuted }]}>• Search listings and compare options quickly</Text>
           <Text style={[styles.infoLine, { color: C.textMuted }]}>• Chat with sellers, agents, and providers</Text>
           <Text style={[styles.infoLine, { color: C.textMuted }]}>• Follow guided steps for safer deals</Text>
@@ -41,7 +67,7 @@ export default function Welcome() {
       <FadeIn delay={320}>
         <View style={styles.actions}>
           <TouchableOpacity
-            onPress={() => router.push('/features')}
+            onPress={() => router.push({ pathname: '/features', params: { lang: language } })}
             style={[styles.primaryBtn, { backgroundColor: C.brandBlue }]}
           >
             <Text style={[styles.primaryText, { color: C.surface }]}>Continue</Text>
@@ -60,6 +86,8 @@ const styles = StyleSheet.create({
   brand: { fontSize: 24, fontWeight: '900' },
   title: { fontSize: 36, fontWeight: '900', marginBottom: 8 },
   subtitle: { fontSize: 15, lineHeight: 22 },
+  langRow: { flexDirection: 'row', gap: 12, marginTop: 18 },
+  langPill: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1 },
   bigInfo: { marginTop: 18, fontSize: 18, fontWeight: '900' },
   infoLine: { marginTop: 10, fontSize: 15, lineHeight: 22 },
   actions: { paddingHorizontal: 24, paddingBottom: 22 },

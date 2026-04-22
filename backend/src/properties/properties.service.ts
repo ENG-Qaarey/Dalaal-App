@@ -1,24 +1,34 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PropertiesRepository } from './properties.repository';
+import { ListingsService } from '../listings/listings.repository';
+import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 
 @Injectable()
 export class PropertiesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly propertiesRepository: PropertiesRepository,
+    private readonly listingsService: ListingsService,
+  ) {}
 
-  async create(listingId: string, data: any) {
-    return this.prisma.property.create({
-      data: { listingId, ...data },
-    });
+  async create(userId: string, listingId: string, createPropertyDto: CreatePropertyDto) {
+    const listing = await this.listingsService.findById(listingId);
+    if (listing.userId !== userId) {
+      throw new ForbiddenException('You can only add details to your own listings');
+    }
+    return this.propertiesRepository.create(listingId, createPropertyDto);
   }
 
-  async update(listingId: string, data: any) {
-    return this.prisma.property.update({
-      where: { listingId },
-      data,
-    });
+  async update(userId: string, listingId: string, updatePropertyDto: UpdatePropertyDto) {
+    const listing = await this.listingsService.findById(listingId);
+    if (listing.userId !== userId) {
+      throw new ForbiddenException('You can only update details of your own listings');
+    }
+    return this.propertiesRepository.update(listingId, updatePropertyDto);
   }
 
   async findByListingId(listingId: string) {
-    return this.prisma.property.findUnique({ where: { listingId } });
+    const property = await this.propertiesRepository.findByListingId(listingId);
+    if (!property) throw new NotFoundException('Property details not found');
+    return property;
   }
 }

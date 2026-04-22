@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import FadeIn from '../../components/FadeIn';
@@ -19,6 +19,7 @@ type Slide = {
 
 export default function Features() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ lang?: string }>();
   const colorScheme = useColorScheme() as 'light' | 'dark' | null;
   const C = Colors[colorScheme ?? 'light'];
 
@@ -44,7 +45,7 @@ export default function Features() {
     if (index < slides.length - 1) {
       scrollRef.current?.scrollTo({ x: (index + 1) * width, animated: true });
     } else {
-      router.push('/role-selection');
+      router.replace({ pathname: '/register', params: { lang: params.lang ?? 'English' } });
     }
   };
 
@@ -99,7 +100,7 @@ export default function Features() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  slide: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  slide: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   iconBox: { width: 84, height: 84, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 18 },
   title: { fontSize: 38, fontWeight: '900', marginBottom: 10 },
   subtitle: { fontSize: 15, lineHeight: 22, textAlign: 'center', maxWidth: 280 },
