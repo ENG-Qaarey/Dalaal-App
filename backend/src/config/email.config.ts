@@ -1,7 +1,10 @@
 import { registerAs } from '@nestjs/config';
 
 export const emailConfig = registerAs('email', () => ({
-  sendgridApiKey: process.env.SENDGRID_API_KEY || '',
-  fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@dalaal.com',
-  fromName: process.env.SENDGRID_FROM_NAME || 'Dalaal Prime',
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  user: process.env.SMTP_USER || '',
+  pass: process.env.SMTP_PASS || '',
+  from: process.env.SMTP_FROM || '',
+  appName: process.env.APP_NAME || 'Dalaal App',
 }));

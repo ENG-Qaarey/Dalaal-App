@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  NotImplementedException,
+} from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { UpdateProfileDto, UpdateUserDto, VerifyIdentityDto } from './dto';
 import { hashPassword } from '../common/utils/password.utils';

@@ -8,6 +8,7 @@ import { AuthRepository } from './auth.repository';
 import { JwtStrategy, LocalStrategy, GoogleStrategy } from './strategies';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,11 +18,12 @@ import { RolesGuard } from '../common/guards/roles.guard';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiresIn'),
+          expiresIn: (configService.get<string>('jwt.expiresIn') || '1d') as any,
         },
       }),
       inject: [ConfigService],
     }),
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [

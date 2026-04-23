@@ -11,6 +11,7 @@ import {
   oauthConfig,
   mapConfig,
   paymentConfig,
+  firebaseConfig,
 } from './config';
 import { PrismaModule } from './database/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -46,6 +47,7 @@ import { AppService } from './app.service';
         oauthConfig,
         mapConfig,
         paymentConfig,
+        firebaseConfig,
       ],
     }),
     PrismaModule,

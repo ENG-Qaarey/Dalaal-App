@@ -10,5 +10,5 @@ export class VerifyPhoneDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  otp: string;
+  firebaseToken: string;
 }

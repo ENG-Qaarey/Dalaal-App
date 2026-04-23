@@ -6,10 +6,17 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(configService: ConfigService) {
+    const apiPrefix = configService.get<string>('app.apiPrefix') || 'api';
+    const port = configService.get<number>('app.port') || 3000;
+    // In production, you'd use a real domain
+    const callbackURL = configService.get<string>('app.nodeEnv') === 'production'
+      ? `https://api.dalaal.com/${apiPrefix}/auth/google/callback`
+      : `http://localhost:${port}/${apiPrefix}/auth/google/callback`;
+
     super({
-      clientID: configService.get<string>('oauth.googleClientId'),
-      clientSecret: configService.get<string>('oauth.googleClientSecret'),
-      callbackURL: '/api/auth/google/callback',
+      clientID: configService.get<string>('oauth.googleClientId') || 'dummy-client-id',
+      clientSecret: configService.get<string>('oauth.googleClientSecret') || 'dummy-client-secret',
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }

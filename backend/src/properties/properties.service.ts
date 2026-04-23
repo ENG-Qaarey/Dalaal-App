@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PropertiesRepository } from './properties.repository';
-import { ListingsService } from '../listings/listings.repository';
+import { ListingsService } from '../listings/listings.service';
 import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 
 @Injectable()

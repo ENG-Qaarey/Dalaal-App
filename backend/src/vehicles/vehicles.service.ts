@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { VehiclesRepository } from './vehicles.repository';
-import { ListingsService } from '../listings/listings.repository';
+import { ListingsService } from '../listings/listings.service';
 import { CreateVehicleDto, UpdateVehicleDto } from './dto';
 
 @Injectable()

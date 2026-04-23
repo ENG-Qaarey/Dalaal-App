@@ -21,17 +21,53 @@ export class AuthRepository {
   }
 
   async create(data: Prisma.UserCreateInput) {
-    return this.prisma.user.create({ data });
+    return this.prisma.user.create({
+      data,
+      include: { profile: true },
+    });
   }
 
   async update(id: string, data: Prisma.UserUpdateInput) {
-    return this.prisma.user.update({ where: { id }, data });
+    return this.prisma.user.update({
+      where: { id },
+      data,
+      include: { profile: true },
+    });
   }
 
   async updateLastLogin(id: string) {
     return this.prisma.user.update({
       where: { id },
       data: { lastLoginAt: new Date() },
+    });
+  }
+
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date) {
+    return this.prisma.passwordResetToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+      },
+    });
+  }
+
+  async findPasswordResetToken(token: string) {
+    return this.prisma.passwordResetToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+  }
+
+  async deletePasswordResetToken(token: string) {
+    return this.prisma.passwordResetToken.delete({
+      where: { token },
+    });
+  }
+
+  async deleteUserPasswordResetTokens(userId: string) {
+    return this.prisma.passwordResetToken.deleteMany({
+      where: { userId },
     });
   }
 }

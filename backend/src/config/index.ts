@@ -8,3 +8,4 @@ export * from './redis.config';
 export * from './oauth.config';
 export * from './map.config';
 export * from './payment.config';
+export * from './firebase.config';

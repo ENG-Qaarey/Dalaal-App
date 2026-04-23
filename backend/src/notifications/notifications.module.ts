@@ -5,6 +5,7 @@ import { NotificationsRepository } from './notifications.repository';
 import { EmailService } from './email.service';
 import { SmsService } from './sms.service';
 import { PushService } from './push.service';
+import { FirebaseProvider } from '../providers/push/firebase.provider';
 
 @Module({
   controllers: [NotificationsController],
@@ -14,7 +15,8 @@ import { PushService } from './push.service';
     EmailService,
     SmsService,
     PushService,
+    FirebaseProvider,
   ],
-  exports: [NotificationsService, EmailService, SmsService, PushService],
+  exports: [NotificationsService, EmailService, SmsService, PushService, FirebaseProvider],
 })
 export class NotificationsModule {}
