@@ -55,14 +55,10 @@ export class AuthService {
         ? await hashPassword(registerDto.password) 
         : null;
 
-      // Handle fullName if provided
-      let firstName = registerDto.firstName;
-      let lastName = registerDto.lastName;
-      if (registerDto.fullName && (!firstName || !lastName)) {
-        const parts = registerDto.fullName.trim().split(/\s+/);
-        firstName = firstName || parts[0] || '';
-        lastName = lastName || parts.slice(1).join(' ') || '';
-      }
+      // Handle fullName to extract firstName and lastName
+      const nameParts = registerDto.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
       const user = await this.authRepository.create({
         email: registerDto.email,
@@ -242,7 +238,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    const user = await this.validateUser(loginDto.identifier, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

@@ -119,16 +119,16 @@ export default function VerifyEmail() {
 
 							<TouchableOpacity
 								onPress={onResendPress}
-								style={[styles.linkBtn, { borderColor: C.brandBorder }]}
+								style={[styles.resendBtn, { borderColor: C.brandBorder }]}
 							>
-								<Text style={[styles.linkText, { color: C.brandBlue }]}>Resend Code</Text>
+								<Text style={[styles.resendText, { color: C.brandBlue }]}>Resend Code</Text>
 							</TouchableOpacity>
 
 							<TouchableOpacity
 								onPress={() => router.replace('/login')}
-								style={[styles.linkBtn, { borderColor: 'transparent' }]}
+								style={[styles.backBtn, { borderColor: 'transparent' }]}
 							>
-								<Text style={[styles.linkText, { color: C.textMuted }]}>Back to Login</Text>
+								<Text style={[styles.backText, { color: C.textMuted }]}>Back to Login</Text>
 							</TouchableOpacity>
 						</View>
 					</FadeIn>
@@ -140,17 +140,19 @@ export default function VerifyEmail() {
 
 const styles = StyleSheet.create({
 	container: { flex: 1 },
-	content: { paddingHorizontal: 24 },
-	brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-	logoBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-	brand: { fontSize: 20, fontWeight: '900' },
-	title: { fontSize: 30, fontWeight: '900' },
-	subtitle: { marginTop: 8, fontSize: 14, lineHeight: 20 },
-	label: { marginTop: 18, fontSize: 12 },
-	input: { height: 56, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, fontSize: 18, fontWeight: '700', marginTop: 10, textAlign: 'center', letterSpacing: 8 },
-	footer: { paddingHorizontal: 24, paddingBottom: 22, gap: 14, marginTop: 18 },
-	primaryBtn: { height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-	primaryText: { fontSize: 16, fontWeight: '900' },
-	linkBtn: { height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'transparent' },
-	linkText: { fontSize: 14, fontWeight: '800' },
+	content: { paddingHorizontal: 20, paddingTop: 10 },
+	brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+	logoBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+	brand: { fontSize: 18, fontWeight: '900' },
+	title: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+	subtitle: { marginTop: 8, fontSize: 14, lineHeight: 20, opacity: 0.7 },
+	label: { fontSize: 13, fontWeight: '700', marginBottom: 6, marginTop: 24 },
+	input: { height: 50, borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 16, fontSize: 18, fontWeight: '700', letterSpacing: 8, textAlign: 'center' },
+	footer: { paddingHorizontal: 20, gap: 14, marginTop: 40, paddingBottom: 30 },
+	primaryBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+	primaryText: { fontSize: 16, fontWeight: '800' },
+	resendBtn: { height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+	resendText: { fontSize: 15, fontWeight: '700' },
+	backBtn: { height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+	backText: { fontSize: 14, fontWeight: '600' },
 });

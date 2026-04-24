@@ -38,7 +38,7 @@ export default function Splash() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  logoBox: { width: 88, height: 88, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  brand: { marginTop: 16, fontSize: 30, fontWeight: '900' },
-  loader: { marginTop: 18, width: 96, height: 6, borderRadius: 6, opacity: 0.55 },
+  logoBox: { width: 72, height: 72, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  brand: { marginTop: 14, fontSize: 24, fontWeight: '900' },
+  loader: { marginTop: 16, width: 80, height: 5, borderRadius: 5, opacity: 0.55 },
 });

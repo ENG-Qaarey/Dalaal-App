@@ -22,7 +22,10 @@ export default function Register() {
 	const { register, sendOtp, isLoading: authLoading } = useAuth();
 
 	const [fullName, setFullName] = useState('');
+	const [phone, setPhone] = useState('');
 	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const onRegisterPress = async () => {
@@ -30,8 +33,16 @@ export default function Register() {
 			Alert.alert('Missing Name', 'Please enter your full name.');
 			return;
 		}
+		if (!phone.trim()) {
+			Alert.alert('Missing Phone', 'Please enter your phone number.');
+			return;
+		}
 		if (!isValidEmail(email)) {
 			Alert.alert('Invalid Email', 'Please enter a valid email address.');
+			return;
+		}
+		if (password.length < 8) {
+			Alert.alert('Invalid Password', 'Password must be at least 8 characters long.');
 			return;
 		}
 
@@ -39,7 +50,9 @@ export default function Register() {
 		try {
 			await register({
 				fullName: fullName.trim(),
+				phone: phone.trim(),
 				email: normalizeEmail(email),
+				password: password,
 			});
 			// Registration successful, backend already sends a verification email
 			router.push({
@@ -54,11 +67,11 @@ export default function Register() {
 		}
 	};
 
-	const canContinue = fullName.trim().length > 2 && isValidEmail(email);
+	const canContinue = fullName.trim().length > 2 && phone.trim().length > 5 && isValidEmail(email) && password.length >= 8;
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
-			<OnboardingBackground />
+			<OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
 			<KeyboardAvoidingView
 				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 				style={{ flex: 1 }}
@@ -94,6 +107,19 @@ export default function Register() {
 							/>
 						</FadeIn>
 
+						<FadeIn delay={120}>
+							<Text style={[styles.label, { color: C.textMuted }]}>Phone Number</Text>
+							<TextInput
+								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+								placeholder="+252 61XXXXXXX"
+								placeholderTextColor={C.textMuted}
+								value={phone}
+								onChangeText={setPhone}
+								keyboardType="phone-pad"
+								returnKeyType="next"
+							/>
+						</FadeIn>
+
 						<FadeIn delay={150}>
 							<Text style={[styles.label, { color: C.textMuted }]}>Email Address</Text>
 							<TextInput
@@ -104,9 +130,34 @@ export default function Register() {
 								onChangeText={setEmail}
 								autoCapitalize="none"
 								keyboardType="email-address"
-								returnKeyType="done"
-								onSubmitEditing={onRegisterPress}
+								returnKeyType="next"
 							/>
+						</FadeIn>
+
+						<FadeIn delay={180}>
+							<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
+							<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+								<TextInput
+									style={[styles.passwordInput, { color: C.textMain }]}
+									placeholder="••••••••"
+									placeholderTextColor={C.textMuted}
+									value={password}
+									onChangeText={setPassword}
+									secureTextEntry={!showPassword}
+									returnKeyType="done"
+									onSubmitEditing={onRegisterPress}
+								/>
+								<TouchableOpacity
+									style={styles.eyeIcon}
+									onPress={() => setShowPassword(!showPassword)}
+								>
+									<Ionicons
+										name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+										size={20}
+										color={C.textMuted}
+									/>
+								</TouchableOpacity>
+							</View>
 						</FadeIn>
 					</View>
 
@@ -142,19 +193,22 @@ export default function Register() {
 
 const styles = StyleSheet.create({
 	container: { flex: 1 },
-	scrollContent: { paddingTop: 20, paddingBottom: 60, flexGrow: 1 },
-	header: { paddingHorizontal: 24, marginBottom: 40 },
-	brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-	logoBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-	brand: { fontSize: 20, fontWeight: '900' },
-	form: { paddingHorizontal: 24, gap: 28 },
-	title: { fontSize: 32, fontWeight: '900', letterSpacing: -0.5 },
-	subtitle: { marginTop: 12, fontSize: 16, lineHeight: 24, opacity: 0.7 },
-	label: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
-	input: { height: 60, borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 20, fontSize: 16, fontWeight: '600' },
-	footer: { paddingHorizontal: 24, paddingBottom: 40, gap: 18, marginTop: 40 },
-	primaryBtn: { height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-	primaryText: { fontSize: 18, fontWeight: '800' },
-	linkBtn: { height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-	linkText: { fontSize: 16, fontWeight: '700' },
+	scrollContent: { paddingTop: 10, paddingBottom: 40, flexGrow: 1 },
+	header: { paddingHorizontal: 20, marginBottom: 20 },
+	brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+	logoBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+	brand: { fontSize: 18, fontWeight: '900' },
+	form: { paddingHorizontal: 20, gap: 16 },
+	title: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+	subtitle: { marginTop: 6, fontSize: 14, lineHeight: 20, opacity: 0.7 },
+	label: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
+	input: { height: 48, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16, fontSize: 15, fontWeight: '600' },
+	passwordContainer: { height: 48, borderRadius: 12, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center' },
+	passwordInput: { flex: 1, height: '100%', paddingHorizontal: 16, fontSize: 15, fontWeight: '600' },
+	eyeIcon: { paddingHorizontal: 12, height: '100%', justifyContent: 'center' },
+	footer: { paddingHorizontal: 20, paddingBottom: 30, gap: 14, marginTop: 24 },
+	primaryBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+	primaryText: { fontSize: 16, fontWeight: '800' },
+	linkBtn: { height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+	linkText: { fontSize: 15, fontWeight: '700' },
 });
