@@ -1,0 +1,62 @@
+import { PropertiesRepository } from './properties.repository';
+import { ListingsService } from '../listings/listings.service';
+import { CreatePropertyDto, UpdatePropertyDto } from './dto';
+export declare class PropertiesService {
+    private readonly propertiesRepository;
+    private readonly listingsService;
+    constructor(propertiesRepository: PropertiesRepository, listingsService: ListingsService);
+    create(userId: string, listingId: string, createPropertyDto: CreatePropertyDto): Promise<{
+        id: string;
+        listingId: string;
+        bedrooms: number | null;
+        propertyType: import(".prisma/client").$Enums.PropertyType;
+        security: boolean;
+        bathrooms: number | null;
+        squareMeters: number | null;
+        yearBuilt: number | null;
+        furnished: boolean;
+        parking: boolean;
+        garden: boolean;
+        water: boolean;
+        electricity: boolean;
+        propertyStatus: string | null;
+        depositMonths: number | null;
+        minLeaseMonths: number | null;
+    }>;
+    update(userId: string, listingId: string, updatePropertyDto: UpdatePropertyDto): Promise<{
+        id: string;
+        listingId: string;
+        bedrooms: number | null;
+        propertyType: import(".prisma/client").$Enums.PropertyType;
+        security: boolean;
+        bathrooms: number | null;
+        squareMeters: number | null;
+        yearBuilt: number | null;
+        furnished: boolean;
+        parking: boolean;
+        garden: boolean;
+        water: boolean;
+        electricity: boolean;
+        propertyStatus: string | null;
+        depositMonths: number | null;
+        minLeaseMonths: number | null;
+    }>;
+    findByListingId(listingId: string): Promise<{
+        id: string;
+        listingId: string;
+        bedrooms: number | null;
+        propertyType: import(".prisma/client").$Enums.PropertyType;
+        security: boolean;
+        bathrooms: number | null;
+        squareMeters: number | null;
+        yearBuilt: number | null;
+        furnished: boolean;
+        parking: boolean;
+        garden: boolean;
+        water: boolean;
+        electricity: boolean;
+        propertyStatus: string | null;
+        depositMonths: number | null;
+        minLeaseMonths: number | null;
+    }>;
+}

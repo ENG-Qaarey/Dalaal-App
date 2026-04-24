@@ -1,0 +1,60 @@
+import { PaymentsRepository } from './payments.repository';
+import { CreatePaymentDto } from './dto';
+export declare class PaymentsService {
+    private readonly paymentsRepository;
+    constructor(paymentsRepository: PaymentsRepository);
+    createPayment(userId: string, dto: CreatePaymentDto): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }>;
+    getMyPayments(userId: string): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }[]>;
+    verifyPayment(paymentId: string, transactionId: string): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }>;
+}

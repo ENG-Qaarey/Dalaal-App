@@ -1,0 +1,14 @@
+export declare const APP_NAME = "Dalaal Prime";
+export declare const APP_DESCRIPTION = "Somalia Premier Marketplace";
+export declare const APP_VERSION = "1.0.0";
+export declare const DEFAULT_PAGE_SIZE = 20;
+export declare const MAX_PAGE_SIZE = 100;
+export declare const DEFAULT_CITY = "Mogadishu";
+export declare const DEFAULT_COUNTRY = "SO";
+export declare const DEFAULT_CURRENCY = "USD";
+export declare const DEFAULT_LANGUAGE = "so";
+export declare const JWT_REFRESH_EXPIRY_DAYS = 30;
+export declare const EMAIL_VERIFICATION_EXPIRY_HOURS = 24;
+export declare const PASSWORD_RESET_EXPIRY_HOURS = 1;
+export declare const PLATFORM_FEE_PERCENTAGE = 2.5;
+export declare const ESCROW_COMMISSION_PERCENTAGE = 5;

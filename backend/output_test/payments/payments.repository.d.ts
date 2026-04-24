@@ -1,0 +1,78 @@
+import { PrismaService } from '../database/prisma.service';
+import { PaymentStatus } from '../common/enums';
+export declare class PaymentsRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    create(data: any): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }>;
+    findById(id: string): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    } | null>;
+    findByUserId(userId: string): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }[]>;
+    updateStatus(id: string, status: PaymentStatus, providerRef?: string): Promise<{
+        description: string | null;
+        id: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        currency: string;
+        listingId: string | null;
+        type: import(".prisma/client").$Enums.PaymentType;
+        provider: import(".prisma/client").$Enums.PaymentProvider;
+        providerRef: string | null;
+        failureReason: string | null;
+        completedAt: Date | null;
+        escrowId: string | null;
+        recipientId: string | null;
+    }>;
+}

@@ -1,0 +1,7 @@
+export declare enum EscrowStatus {
+    PENDING_DEPOSIT = "PENDING_DEPOSIT",
+    HOLDING = "HOLDING",
+    RELEASED = "RELEASED",
+    DISPUTED = "DISPUTED",
+    REFUNDED = "REFUNDED"
+}

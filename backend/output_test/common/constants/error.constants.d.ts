@@ -1,0 +1,25 @@
+export declare const ERROR_MESSAGES: {
+    UNAUTHORIZED: string;
+    FORBIDDEN: string;
+    NOT_FOUND: string;
+    BAD_REQUEST: string;
+    VALIDATION_ERROR: string;
+    INTERNAL_ERROR: string;
+    DUPLICATE_ENTRY: string;
+    INVALID_CREDENTIALS: string;
+    EMAIL_EXISTS: string;
+    PHONE_EXISTS: string;
+    USER_NOT_FOUND: string;
+    LISTING_NOT_FOUND: string;
+    INVALID_TOKEN: string;
+    ACCOUNT_SUSPENDED: string;
+    ACCOUNT_BANNED: string;
+    EMAIL_NOT_VERIFIED: string;
+    PHONE_NOT_VERIFIED: string;
+    PAYMENT_FAILED: string;
+    INSUFFICIENT_FUNDS: string;
+    ESCROW_NOT_FOUND: string;
+    ESCROW_CANNOT_RELEASE: string;
+    INVALID_OTP: string;
+    RATE_LIMIT_EXCEEDED: string;
+};

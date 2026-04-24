@@ -1,0 +1,9 @@
+export declare enum ListingStatus {
+    DRAFT = "DRAFT",
+    PENDING_REVIEW = "PENDING_REVIEW",
+    ACTIVE = "ACTIVE",
+    FEATURED = "FEATURED",
+    EXPIRED = "EXPIRED",
+    REJECTED = "REJECTED",
+    ARCHIVED = "ARCHIVED"
+}
