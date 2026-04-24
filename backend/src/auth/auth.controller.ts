@@ -11,11 +11,19 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto, VerifyPhoneDto } from './dto';
+import { 
+  LoginDto, 
+  RegisterDto, 
+  ForgotPasswordDto, 
+  ResetPasswordDto, 
+  RefreshTokenDto, 
+  VerifyPhoneDto,
+  SendOtpDto,
+  VerifyOtpDto
+} from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 
 @ApiTags('Auth')
@@ -24,29 +32,44 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Login with Google' })
-  async googleAuth(@Req() req) {}
-
-  @Public()
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Google auth callback' })
-  async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    const result = await this.authService.googleLogin(req.user);
-    // Redirect to frontend with tokens or handle as needed
-    // For now, let's return the tokens
-    return res.status(HttpStatus.OK).json(result);
-  }
-
-  @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email with code' })
+  async verifyEmail(@Body() body: { email: string; code: string }) {
+    return this.authService.verifyEmail(body.email, body.code);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend verification email' })
+  async resendVerification(@Body() body: { email: string }) {
+    return this.authService.resendVerification(body.email);
+  }
+
+  @Public()
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send OTP to email' })
+  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtp(sendOtpDto.email);
+  }
+
+  @Public()
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP and login' })
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(verifyOtpDto.email, verifyOtpDto.code);
   }
 
   @Public()

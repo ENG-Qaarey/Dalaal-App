@@ -7,11 +7,11 @@ export class RegisterDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'password123', required: false })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(8)
-  password: string;
+  password?: string;
 
   @ApiProperty({ example: '+252612345678', required: false })
   @IsOptional()
@@ -27,4 +27,9 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   lastName?: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
 }

@@ -2,14 +2,15 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 
 type Props = {
-  primary: string;
-  secondary: string;
-  soft: string;
+  primary?: string;
+  secondary?: string;
+  soft?: string;
 };
 
 const { width, height } = Dimensions.get('window');
 
 function hexToRgb(hex: string) {
+  if (!hex) return { r: 30, g: 95, b: 184 }; // Default brandBlue
   const cleaned = hex.replace('#', '').trim();
   const full =
     cleaned.length === 3
@@ -38,7 +39,11 @@ function lcg(seed: number) {
   };
 }
 
-export default function OnboardingBackground({ primary, secondary, soft }: Props) {
+export default function OnboardingBackground({ 
+  primary = '#1e5fb8', 
+  secondary = '#f28c28', 
+  soft = '#e7f1ff' 
+}: Props) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

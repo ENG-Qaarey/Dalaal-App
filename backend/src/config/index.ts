@@ -5,7 +5,6 @@ export * from './cloudinary.config';
 export * from './email.config';
 export * from './sms.config';
 export * from './redis.config';
-export * from './oauth.config';
 export * from './map.config';
 export * from './payment.config';
 export * from './firebase.config';

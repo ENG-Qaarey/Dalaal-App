@@ -38,7 +38,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: configService.get<string>('app.frontendUrl'),
+    origin: true, // Allow all origins in development
     credentials: true,
   });
 
@@ -57,9 +57,9 @@ async function bootstrap() {
   SwaggerModule.setup(`${apiPrefix}/docs`, app, document);
 
   const port = configService.get<number>('app.port') || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   
-  logger.log(`Application is running on: http://localhost:${port}/${apiPrefix}`);
+  logger.log(`Application is running on: http://0.0.0.0:${port}/${apiPrefix}`);
   logger.log(`Swagger documentation: http://localhost:${port}/${apiPrefix}/docs`);
 }
 bootstrap();

@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
-import { JwtStrategy, LocalStrategy, GoogleStrategy } from './strategies';
+import { JwtStrategy, LocalStrategy } from './strategies';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -31,7 +31,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     AuthRepository,
     JwtStrategy,
     LocalStrategy,
-    GoogleStrategy,
     JwtAuthGuard,
     RolesGuard,
   ],

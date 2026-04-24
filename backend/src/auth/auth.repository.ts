@@ -13,6 +13,13 @@ export class AuthRepository {
     });
   }
 
+  async findByPhone(phone: string) {
+    return this.prisma.user.findUnique({
+      where: { phone },
+      include: { profile: true },
+    });
+  }
+
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -67,6 +74,37 @@ export class AuthRepository {
 
   async deleteUserPasswordResetTokens(userId: string) {
     return this.prisma.passwordResetToken.deleteMany({
+      where: { userId },
+    });
+  }
+
+  async createVerificationCode(userId: string, code: string, expiresAt: Date) {
+    return this.prisma.verificationCode.create({
+      data: {
+        userId,
+        code,
+        expiresAt,
+      },
+    });
+  }
+
+  async findVerificationCode(userId: string, code: string) {
+    return this.prisma.verificationCode.findFirst({
+      where: {
+        userId,
+        code,
+      },
+    });
+  }
+
+  async deleteVerificationCode(id: string) {
+    return this.prisma.verificationCode.delete({
+      where: { id },
+    });
+  }
+
+  async deleteUserVerificationCodes(userId: string) {
+    return this.prisma.verificationCode.deleteMany({
       where: { userId },
     });
   }
