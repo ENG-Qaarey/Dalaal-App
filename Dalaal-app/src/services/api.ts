@@ -24,11 +24,9 @@ api.interceptors.request.use(
   async (config) => {
     const token = await SecureStore.getItemAsync('accessToken');
     if (token) {
-      console.log('Sending token:', token.substring(0, 10) + '...');
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log('No token found in SecureStore');
     }
+    // Don't log "No token" — it's expected for login/register (public endpoints)
     return config;
   },
   (error) => {

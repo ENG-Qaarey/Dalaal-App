@@ -38,13 +38,16 @@ export default function Login() {
 
 		setLoading(true);
 		try {
-			await login({
+			console.log('Attempting login with:', identifier.trim().toLowerCase());
+			const result = await login({
 				identifier: identifier.trim().toLowerCase(),
 				password: password,
 			});
-			// On success, the hook updates the store and the app re-renders to the home screen
+			console.log('Login successful, navigating to tabs...');
+			// Navigate to the main app after successful login
+			router.replace('/(tabs)');
 		} catch (error: any) {
-			console.error(error);
+			console.error('Login failed:', error?.response?.status, error?.response?.data);
 			Alert.alert('Login Error', error.response?.data?.message || 'Invalid email/phone or password.');
 		} finally {
 			setLoading(false);

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,23 +13,53 @@ export default function Splash() {
   const router = useRouter();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
+  
+  const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Start progress bar animation
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 2500,
+      useNativeDriver: false,
+    }).start();
+
     const t = setTimeout(() => {
       router.replace('/welcome');
-    }, 2000);
+    }, 2800);
     return () => clearTimeout(t);
   }, [router]);
+
+  const progressWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      
       <View style={styles.center}>
-        <View style={[styles.logoBox, { backgroundColor: C.brandBlue }]}>
-          <Ionicons name="home" size={42} color={C.surface} />
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../assets/images/icon.png')} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={[styles.brand, { color: C.textMain }]}>Dalaal Prime</Text>
+          <Text style={[styles.tagline, { color: C.textMuted }]}>SOMALIA'S PREMIER MARKETPLACE</Text>
         </View>
-        <Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
-        <View style={[styles.loader, { backgroundColor: C.brandBorder }]} />
+
+        <View style={styles.bottomContainer}>
+          <View style={[styles.progressBarContainer, { backgroundColor: C.brandBorder + '40' }]}>
+            <Animated.View style={[styles.progressBar, { backgroundColor: C.brandBlue, width: progressWidth }]} />
+          </View>
+          
+          <View style={styles.securityBadge}>
+            <Ionicons name="checkmark-circle" size={16} color={C.brandBlue} />
+            <Text style={[styles.securityText, { color: C.textMuted }]}>Secured by Dalaal Encryption</Text>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -37,8 +67,18 @@ export default function Splash() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  logoBox: { width: 72, height: 72, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  brand: { marginTop: 14, fontSize: 24, fontWeight: '900' },
-  loader: { marginTop: 16, width: 80, height: 5, borderRadius: 5, opacity: 0.55 },
+  center: { flex: 1, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 100 },
+  logoContainer: { alignItems: 'center', marginTop: 100 },
+  logoImage: { 
+    width: 100, 
+    height: 100, 
+    borderRadius: 24,
+  },
+  brand: { marginTop: 24, fontSize: 32, fontWeight: '900', letterSpacing: -1 },
+  tagline: { marginTop: 8, fontSize: 12, fontWeight: '700', letterSpacing: 2, opacity: 0.6 },
+  bottomContainer: { width: '100%', alignItems: 'center', paddingHorizontal: 60, marginBottom: 20 },
+  progressBarContainer: { width: '100%', height: 4, borderRadius: 2, overflow: 'hidden', marginBottom: 20 },
+  progressBar: { height: '100%' },
+  securityBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  securityText: { fontSize: 12, fontWeight: '500' },
 });
