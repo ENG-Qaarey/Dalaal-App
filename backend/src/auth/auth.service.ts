@@ -225,14 +225,14 @@ export class AuthService {
     // Delete the code after successful verification
     await this.authRepository.deleteVerificationCode(verificationCode.id);
 
-    // Update last login
-    await this.authRepository.updateLastLogin(user.id);
+    // Update last login and return the freshest user payload to the app.
+    const updatedUser = await this.authRepository.updateLastLogin(user.id);
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
     return {
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(updatedUser),
       ...tokens,
     };
   }
@@ -251,12 +251,12 @@ export class AuthService {
       throw new UnauthorizedException('Your account has been banned');
     }
 
-    await this.authRepository.updateLastLogin(user.id);
+    const updatedUser = await this.authRepository.updateLastLogin(user.id);
 
     const tokens = await this.generateTokens(user);
 
     return {
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(updatedUser),
       ...tokens,
     };
   }

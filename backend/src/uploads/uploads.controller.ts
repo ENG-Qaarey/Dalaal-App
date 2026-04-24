@@ -1,4 +1,4 @@
-import { Controller, Post, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { UploadsService } from './uploads.service';
@@ -21,7 +21,10 @@ export class UploadsController {
     },
   })
   @ApiOperation({ summary: 'Upload an image' })
-  async uploadImage(@UploadedFile() file: any) {
-    return this.uploadsService.uploadFile(file);
+  async uploadImage(@UploadedFile() file: any, @Req() req: any) {
+    if (!file) {
+      throw new BadRequestException('No image file provided');
+    }
+    return this.uploadsService.uploadFile(file, req);
   }
 }

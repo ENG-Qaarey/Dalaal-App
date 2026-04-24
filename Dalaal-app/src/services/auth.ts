@@ -1,6 +1,13 @@
 import { api } from './api';
 import * as SecureStore from 'expo-secure-store';
 
+function unwrapResponse<T>(payload: any): T {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data as T;
+  }
+  return payload as T;
+}
+
 async function persistTokens(tokens: { accessToken?: string; refreshToken?: string }) {
   if (tokens.accessToken) {
     await SecureStore.setItemAsync('accessToken', tokens.accessToken);
@@ -18,37 +25,40 @@ export const authService = {
 
   async login(loginData: any) {
     const response = await api.post('/auth/login', loginData);
-    await persistTokens(response.data);
-    return response.data;
+    const data = unwrapResponse<any>(response.data);
+    await persistTokens(data);
+    return data;
   },
 
   async register(registerData: any) {
     const response = await api.post('/auth/register', registerData);
-    await persistTokens(response.data);
-    return response.data;
+    const data = unwrapResponse<any>(response.data);
+    await persistTokens(data);
+    return data;
   },
 
   async resendVerification(email: string) {
     const response = await api.post('/auth/resend-verification', { email });
-    return response.data;
+    return unwrapResponse<any>(response.data);
   },
 
   async sendOtp(email: string) {
     const response = await api.post('/auth/send-otp', { email });
-    return response.data;
+    return unwrapResponse<any>(response.data);
   },
 
   async verifyOtp(email: string, code: string) {
     const response = await api.post('/auth/verify-otp', { email, code });
-    if (response.data.accessToken) {
-      await persistTokens(response.data);
+    const data = unwrapResponse<any>(response.data);
+    if (data.accessToken) {
+      await persistTokens(data);
     }
-    return response.data;
+    return data;
   },
 
   async verifyPhone(phone: string, firebaseToken: string) {
     const response = await api.post('/auth/verify-phone', { phone, firebaseToken });
-    return response.data;
+    return unwrapResponse<any>(response.data);
   },
 
   async logout() {
@@ -62,17 +72,49 @@ export const authService = {
 
   async forgotPassword(email: string) {
     const response = await api.post('/auth/forgot-password', { email });
-    return response.data;
+    return unwrapResponse<any>(response.data);
   },
 
   async resetPassword(resetData: any) {
     const response = await api.post('/auth/reset-password', resetData);
-    return response.data;
+    return unwrapResponse<any>(response.data);
   },
 
   async getCurrentUser() {
     const response = await api.get('/users/profile');
-    return response.data;
+    return unwrapResponse<any>(response.data);
+  },
+
+  async updateProfile(profileData: Record<string, any>) {
+    const response = await api.put('/users/profile', profileData);
+    return unwrapResponse<any>(response.data);
+  },
+
+  async uploadProfileImage(imageUri: string) {
+    const formData = new FormData();
+    const filename = imageUri.split('/').pop() || 'profile.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const ext = match?.[1]?.toLowerCase() || 'jpg';
+    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+    formData.append('file', {
+      uri: imageUri,
+      name: filename,
+      type: mimeType,
+    } as any);
+
+    const uploadResponse = await api.post('/uploads/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const uploadResult = unwrapResponse<any>(uploadResponse.data);
+    const avatarUrl = uploadResult?.url;
+
+    if (!avatarUrl) {
+      throw new Error('Image upload failed');
+    }
+
+    const profileResponse = await api.put('/users/profile', { avatar: avatarUrl });
+    return unwrapResponse<any>(profileResponse.data);
   },
 };
 

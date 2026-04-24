@@ -46,6 +46,7 @@ export class AuthRepository {
     return this.prisma.user.update({
       where: { id },
       data: { lastLoginAt: new Date() },
+      include: { profile: true },
     });
   }
 
