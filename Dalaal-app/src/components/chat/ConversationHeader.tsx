@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 
@@ -8,14 +8,30 @@ type Props = {
   userName: string;
   userRole?: string;
   isOnline: boolean;
+  userImageUri?: string;
   onBack: () => void;
+  onAudioCall: () => void;
+  onVideoCall: () => void;
 };
 
-export default function ConversationHeader({ colors, userName, userRole, isOnline, onBack }: Props) {
+export default function ConversationHeader({
+  colors,
+  userName,
+  userRole,
+  isOnline,
+  userImageUri,
+  onBack,
+  onAudioCall,
+  onVideoCall,
+}: Props) {
   const [isCallMenuOpen, setIsCallMenuOpen] = React.useState(false);
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(userImageUri || null);
 
   React.useEffect(() => {
+    if (userImageUri) {
+      setAvatarUrl(userImageUri);
+      return;
+    }
     let mounted = true;
     const buildAvatar = async () => {
       const normalized = `${userName}@dalaal.chat`.toLowerCase();
@@ -32,7 +48,7 @@ export default function ConversationHeader({ colors, userName, userRole, isOnlin
     return () => {
       mounted = false;
     };
-  }, [userName]);
+  }, [userName, userImageUri]);
 
   return (
     <View style={[styles.header, { borderBottomColor: colors.brandBorder }]}>
@@ -77,7 +93,7 @@ export default function ConversationHeader({ colors, userName, userRole, isOnlin
               style={styles.dropdownRow}
               onPress={() => {
                 setIsCallMenuOpen(false);
-                Alert.alert('Audio Call', `Starting audio call with ${userName}...`);
+                onAudioCall();
               }}
             >
               <Ionicons name="call" size={14} color={colors.brandBlue} />
@@ -87,7 +103,7 @@ export default function ConversationHeader({ colors, userName, userRole, isOnlin
               style={styles.dropdownRow}
               onPress={() => {
                 setIsCallMenuOpen(false);
-                Alert.alert('Video Call', `Starting video call with ${userName}...`);
+                onVideoCall();
               }}
             >
               <Ionicons name="videocam" size={14} color={colors.brandBlue} />

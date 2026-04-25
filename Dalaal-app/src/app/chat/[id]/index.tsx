@@ -3,20 +3,25 @@ import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '../../../constants/theme';
 import { useAppTheme } from '../../../context/theme-context';
 import ConversationHeader from '../../../components/chat/ConversationHeader';
 import ChatWindow, { ChatMessage } from '../../../components/chat/ChatWindow';
 import ChatCameraModal from '../../../components/chat/ChatCameraModal';
+import ChatMediaPreviewModal from '../../../components/chat/ChatMediaPreviewModal';
 import ChatComposer from '../../../components/chat/ChatComposer';
+import CallSessionModal from '../../../components/chat/CallSessionModal';
+import OnboardingBackground from '../../../components/OnboardingBackground';
 
 export default function Conversation() {
   const router = useRouter();
-  const { name, role, online } = useLocalSearchParams<{
+  const { name, role, online, imageUri } = useLocalSearchParams<{
     name?: string;
     role?: string;
     online?: string;
+    imageUri?: string;
   }>();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
@@ -26,8 +31,13 @@ export default function Conversation() {
   const [recording, setRecording] = React.useState<Audio.Recording | null>(null);
   const [recordingSeconds, setRecordingSeconds] = React.useState(0);
   const [isVoiceLocked, setIsVoiceLocked] = React.useState(false);
-  const [pendingImageUri, setPendingImageUri] = React.useState<string | null>(null);
+  const [pendingImages, setPendingImages] = React.useState<string[]>([]);
+  const [pendingImageCaption, setPendingImageCaption] = React.useState('');
+  const [previewImageIndex, setPreviewImageIndex] = React.useState(0);
+  const [pendingFile, setPendingFile] = React.useState<{ uri: string; name: string } | null>(null);
   const [cameraOpen, setCameraOpen] = React.useState(false);
+  const [mediaPreviewOpen, setMediaPreviewOpen] = React.useState(false);
+  const [callMode, setCallMode] = React.useState<'audio' | 'video' | null>(null);
   const recordingTicker = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingRef = React.useRef<Audio.Recording | null>(null);
   const recordingStartedAtRef = React.useRef<number | null>(null);
@@ -35,8 +45,8 @@ export default function Conversation() {
   const pendingStopAfterStartRef = React.useRef<boolean | null>(null);
   const pendingVoiceLockRef = React.useRef(false);
   const [messages, setMessages] = React.useState<ChatMessage[]>([
-    { id: 'm1', text: `Hi, this is ${userName}.`, time: '10:21', mine: false },
-    { id: 'm2', text: 'Great, let us continue here.', time: '10:22', mine: true },
+    { id: 'm1', text: `Hi, this is ${userName}.`, time: '10:21', mine: false, status: 'read' },
+    { id: 'm2', text: 'Great, let us continue here.', time: '10:22', mine: true, status: 'read' },
   ]);
   const pushSystemMessage = React.useCallback((messageText: string) => {
     setMessages((prev) => [
@@ -65,41 +75,165 @@ export default function Conversation() {
     };
   }, []);
 
+  const runOutgoingStatusFlow = React.useCallback((ids: string[]) => {
+    setTimeout(() => {
+      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'sent' } : m)));
+    }, 350);
+    setTimeout(() => {
+      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'delivered' } : m)));
+    }, 1000);
+    setTimeout(() => {
+      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'read' } : m)));
+    }, 2200);
+  }, []);
+
+  const queueAutoReply = React.useCallback((seedText?: string) => {
+    setTimeout(() => {
+      const replyText = seedText ? `Got it: ${seedText}` : 'Received your message.';
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `r-${Date.now()}`,
+          text: replyText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          mine: false,
+          status: 'read',
+        },
+      ]);
+    }, 1500);
+  }, []);
+
   const sendMessage = () => {
     const trimmed = text.trim();
-    if (!trimmed && !pendingImageUri) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `m-${Date.now()}`,
-        text: trimmed,
-        imageUri: pendingImageUri || undefined,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        mine: true,
-      },
-    ]);
+    if (!trimmed && !pendingFile && pendingImages.length === 0) return;
+
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const outgoingIds: string[] = [];
+    setMessages((prev) => {
+      const next = [...prev];
+      if (pendingImages.length > 0) {
+        pendingImages.forEach((uri, index) => {
+          const id = `m-${Date.now()}-${index}`;
+          outgoingIds.push(id);
+          next.push({
+            id,
+            text: index === 0 ? trimmed || pendingImageCaption.trim() : '',
+            imageUri: uri,
+            time: now,
+            mine: true,
+            status: 'sending',
+          });
+        });
+      } else {
+        const id = `m-${Date.now()}`;
+        outgoingIds.push(id);
+        next.push({
+          id,
+          text: trimmed,
+          fileName: pendingFile?.name,
+          fileUri: pendingFile?.uri,
+          time: now,
+          mine: true,
+          status: 'sending',
+        });
+      }
+      return next;
+    });
+    runOutgoingStatusFlow(outgoingIds);
+    queueAutoReply(trimmed || pendingImageCaption.trim() || pendingFile?.name);
     setText('');
-    setPendingImageUri(null);
+    setPendingImages([]);
+    setPendingImageCaption('');
+    setPendingFile(null);
+  };
+
+  const sendPendingImage = () => {
+    if (pendingImages.length === 0) return;
+    sendMessage();
+    setMediaPreviewOpen(false);
   };
 
   const handleAttach = async () => {
-    try {
+    const ensureGalleryPermission = async () => {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Gallery permission', 'Please allow gallery access to pick photos.');
-        return;
+        Alert.alert('Gallery permission', 'Please allow gallery access to pick images.');
+        return false;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.85,
-      });
-      if (result.canceled) return;
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-      setPendingImageUri(asset.uri);
-    } catch {
-      Alert.alert('Gallery failed', 'Could not open photo gallery.');
-    }
+      return true;
+    };
+
+    const pickSingleImage = async () => {
+      try {
+        const allowed = await ensureGalleryPermission();
+        if (!allowed) return;
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.9,
+          allowsMultipleSelection: false,
+        });
+        if (result.canceled) return;
+        const uri = result.assets?.[0]?.uri;
+        if (!uri) return;
+        setPendingImages([uri]);
+        setPreviewImageIndex(0);
+        setPendingImageCaption('');
+        setPendingFile(null);
+      } catch {
+        Alert.alert('Attachment failed', 'Could not pick image.');
+      }
+    };
+
+    const pickMultipleImages = async () => {
+      try {
+        const allowed = await ensureGalleryPermission();
+        if (!allowed) return;
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.9,
+          allowsMultipleSelection: true,
+          selectionLimit: 10,
+        });
+        if (result.canceled) return;
+        const uris = (result.assets || []).map((asset) => asset.uri).filter(Boolean) as string[];
+        if (uris.length === 0) return;
+        setPendingImages((prev) => {
+          const next = [...prev, ...uris];
+          if (prev.length === 0) setPreviewImageIndex(0);
+          return next;
+        });
+        setPendingImageCaption('');
+        setPendingFile(null);
+      } catch {
+        Alert.alert('Attachment failed', 'Could not pick multiple images.');
+      }
+    };
+
+    const pickFile = async () => {
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          copyToCacheDirectory: true,
+          multiple: false,
+        });
+        if (result.canceled) return;
+        const asset = result.assets?.[0];
+        if (!asset?.uri) return;
+        setPendingFile({ uri: asset.uri, name: asset.name || 'Attached file' });
+        setPendingImages([]);
+        setPreviewImageIndex(0);
+        setPendingImageCaption('');
+        setMediaPreviewOpen(false);
+      } catch {
+        Alert.alert('Attachment failed', 'Could not open file picker.');
+      }
+    };
+
+    Alert.alert('Attach', 'Choose how you want to select:', [
+      { text: 'Single image', onPress: () => void pickSingleImage() },
+      { text: 'Multiple images', onPress: () => void pickMultipleImages() },
+      { text: 'File', onPress: () => void pickFile() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleCamera = async () => {
@@ -109,7 +243,7 @@ export default function Conversation() {
   const startVoiceRecording = async () => {
     try {
       if (recordingRef.current || isStartingRecordingRef.current) return;
-      if (text.trim() || pendingImageUri) return;
+      if (text.trim() || pendingFile || pendingImages.length > 0) return;
       pendingVoiceLockRef.current = false;
       pendingStopAfterStartRef.current = null;
       isStartingRecordingRef.current = true;
@@ -168,7 +302,7 @@ export default function Conversation() {
       await activeRecording.stopAndUnloadAsync();
       const status = await activeRecording.getStatusAsync();
       const uri = activeRecording.getURI();
-      const durationMs = status.isLoaded ? status.durationMillis ?? 0 : 0;
+      const durationMs = status.durationMillis ?? 0;
       const seconds = Math.max(1, Math.round(durationMs / 1000));
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -235,16 +369,72 @@ export default function Conversation() {
     setIsVoiceLocked(true);
   };
 
+  const startAudioCall = React.useCallback(async () => {
+    const permission = await Audio.requestPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Microphone permission', 'Please allow microphone access for calls.');
+      return;
+    }
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+    setCallMode('audio');
+  }, []);
+
+  const startVideoCall = React.useCallback(async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cameraPermission.granted) {
+      Alert.alert('Camera permission', 'Please allow camera access for video calls.');
+      return;
+    }
+    const micPermission = await Audio.requestPermissionsAsync();
+    if (!micPermission.granted) {
+      Alert.alert('Microphone permission', 'Please allow microphone access for video calls.');
+      return;
+    }
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+    setCallMode('video');
+  }, []);
+
+  const reactToMessage = React.useCallback((messageId: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              reaction: emoji,
+            }
+          : m
+      )
+    );
+  }, []);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]}>
-      <ConversationHeader colors={C} userName={userName} userRole={role} isOnline={isOnline} onBack={() => router.back()} />
+      <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <ConversationHeader
+        colors={C}
+        userName={userName}
+        userRole={role}
+        isOnline={isOnline}
+        userImageUri={imageUri}
+        onBack={() => router.back()}
+        onAudioCall={() => void startAudioCall()}
+        onVideoCall={() => void startVideoCall()}
+      />
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
         <View style={styles.body}>
-          <ChatWindow colors={C} messages={messages} />
+          <ChatWindow colors={C} messages={messages} onReactToMessage={reactToMessage} />
         </View>
         <ChatComposer
           colors={C}
@@ -258,16 +448,60 @@ export default function Conversation() {
           onVoiceLock={lockVoiceRecording}
           onVoiceLockedSend={() => finishVoiceRecording(false)}
           onVoiceLockedCancel={() => finishVoiceRecording(true)}
+          pendingImageUri={pendingImages[0] || null}
+          pendingImageCount={pendingImages.length}
+          pendingFileName={pendingFile?.name || null}
+          onEditPendingImage={() => {
+            if (pendingImages.length === 0) return;
+            setPreviewImageIndex(0);
+            setMediaPreviewOpen(true);
+          }}
+          onClearPendingAttachment={() => {
+            setPendingImages([]);
+            setPreviewImageIndex(0);
+            setPendingImageCaption('');
+            setPendingFile(null);
+          }}
           isRecording={!!recording}
           isVoiceLocked={isVoiceLocked}
           recordingSeconds={recordingSeconds}
-          canSend={!!text.trim() || !!pendingImageUri}
+          canSend={!!text.trim() || !!pendingFile || pendingImages.length > 0}
         />
         <ChatCameraModal
           visible={cameraOpen}
           colors={C}
           onClose={() => setCameraOpen(false)}
-          onCapture={(uri) => setPendingImageUri(uri)}
+          onCapture={(uri) => {
+            setPendingImages((prev) => {
+              const next = [...prev, uri];
+              if (prev.length === 0) setPreviewImageIndex(0);
+              return next;
+            });
+            setPendingImageCaption('');
+            setPendingFile(null);
+          }}
+        />
+        <ChatMediaPreviewModal
+          visible={mediaPreviewOpen}
+          colors={C}
+          images={pendingImages}
+          activeIndex={previewImageIndex}
+          onChangeIndex={setPreviewImageIndex}
+          caption={pendingImageCaption}
+          onCaptionChange={setPendingImageCaption}
+          onClose={() => {
+            setMediaPreviewOpen(false);
+          }}
+          onSend={sendPendingImage}
+        />
+        <CallSessionModal
+          visible={!!callMode}
+          mode={callMode}
+          userName={userName}
+          userImageUri={imageUri}
+          isOnline={isOnline}
+          colors={C}
+          onEnd={() => setCallMode(null)}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -203,6 +203,13 @@ export default function Profile() {
         onPress: () => router.push('/profile/privacy-security'),
       },
       {
+        id: 'favorites',
+        label: 'Favorites',
+        icon: 'heart-outline',
+        value: '',
+        onPress: () => router.push('/profile/favorites'),
+      },
+      {
         id: 'notifications',
         label: 'Notifications',
         icon: 'notifications-outline',
@@ -274,7 +281,7 @@ export default function Profile() {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => router.push('/favorites')}
+              onPress={() => router.push('/profile/favorites')}
               style={[styles.topIconBtn, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
             >
               <Ionicons name="heart" size={14} color={C.brandOrange} />
@@ -290,7 +297,7 @@ export default function Profile() {
                   <Text style={[styles.avatarFallbackText, { color: C.textMain }]}>
                     {(profileName || userEmail || 'DU')
                       .split(' ')
-                      .map((p) => p[0])
+                      .map((p: string) => p[0])
                       .join('')
                       .slice(0, 2)
                       .toUpperCase()}
@@ -392,7 +399,7 @@ export default function Profile() {
               <Text style={styles.viewerFallbackText}>
                 {(profileName || userEmail || 'DU')
                   .split(' ')
-                  .map((p) => p[0])
+                  .map((p: string) => p[0])
                   .join('')
                   .slice(0, 2)
                   .toUpperCase()}

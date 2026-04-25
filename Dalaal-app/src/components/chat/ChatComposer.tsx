@@ -1,5 +1,5 @@
 import React from 'react';
-import { PanResponder, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, PanResponder, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
@@ -14,6 +14,11 @@ type Props = {
   onVoiceLock: () => void;
   onVoiceLockedSend: () => void;
   onVoiceLockedCancel: () => void;
+  pendingImageUri?: string | null;
+  pendingImageCount?: number;
+  pendingFileName?: string | null;
+  onEditPendingImage: () => void;
+  onClearPendingAttachment: () => void;
   isRecording?: boolean;
   isVoiceLocked?: boolean;
   canSend?: boolean;
@@ -32,6 +37,11 @@ export default function ChatComposer({
   onVoiceLock,
   onVoiceLockedSend,
   onVoiceLockedCancel,
+  pendingImageUri = null,
+  pendingImageCount = 0,
+  pendingFileName = null,
+  onEditPendingImage,
+  onClearPendingAttachment,
   isRecording = false,
   isVoiceLocked = false,
   canSend = false,
@@ -152,6 +162,24 @@ export default function ChatComposer({
 
   return (
     <View style={[styles.wrap, { borderTopColor: colors.brandBorder, backgroundColor: colors.surface }]}>
+      {!isRecording && (pendingImageUri || pendingFileName) ? (
+        <View style={[styles.pendingBar, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}>
+          {pendingImageUri ? <Image source={{ uri: pendingImageUri }} style={styles.pendingImage} /> : <Ionicons name="document-outline" size={18} color={colors.textMain} />}
+          <Text style={[styles.pendingText, { color: colors.textMain }]} numberOfLines={1}>
+            {pendingImageUri ? `${pendingImageCount} image${pendingImageCount > 1 ? 's' : ''} attached` : pendingFileName}
+          </Text>
+          {pendingImageUri ? (
+            <TouchableOpacity onPress={onEditPendingImage}>
+              <Ionicons name="create-outline" size={19} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity onPress={onClearPendingAttachment}>
+            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <View style={styles.row}>
       {isRecording && !isVoiceLocked ? (
         <View style={[styles.lockRail, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}>
           <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
@@ -210,6 +238,7 @@ export default function ChatComposer({
           <Ionicons name="mic" size={16} color={isRecording ? '#EF476F' : colors.textMain} />
         </View>
       )}
+      </View>
     </View>
   );
 }
@@ -220,10 +249,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 6,
     paddingBottom: 4,
+    gap: 8,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  pendingBar: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pendingImage: { width: 34, height: 34, borderRadius: 7 },
+  pendingText: { flex: 1, fontSize: 12, fontWeight: '700' },
   sideBtn: {
     width: 38,
     height: 38,

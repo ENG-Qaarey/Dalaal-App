@@ -11,6 +11,7 @@ type ChatItem = {
   unread: number;
   online: boolean;
   pinned: boolean;
+  imageUri?: string;
 };
 
 type Props = {

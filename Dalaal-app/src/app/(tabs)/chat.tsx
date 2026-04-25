@@ -8,6 +8,7 @@ import { useAppTheme } from '../../context/theme-context';
 import OnboardingBackground from '../../components/OnboardingBackground';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import ChatList from '../../components/chat/ChatList';
+import { useChatStore } from '../../store/chatStore';
 
 type FilterKey = 'all' | 'unread' | 'active';
 
@@ -15,59 +16,6 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'unread', label: 'Unread' },
   { key: 'active', label: 'Active' },
-];
-
-const CHATS = [
-  {
-    id: 'c1',
-    name: 'Ahmed Ali',
-    role: 'Broker',
-    message: 'I can show you the Hodan villa today. Would 6pm work?',
-    time: '2m',
-    unread: 2,
-    online: true,
-    pinned: true,
-  },
-  {
-    id: 'c2',
-    name: 'Fatima Noor',
-    role: 'Owner',
-    message: 'Here is the updated floor plan and pricing options.',
-    time: '18m',
-    unread: 0,
-    online: true,
-    pinned: false,
-  },
-  {
-    id: 'c3',
-    name: 'Dalaal Support',
-    role: 'Support',
-    message: 'Your verification is approved. Want to list today?',
-    time: '1h',
-    unread: 1,
-    online: false,
-    pinned: false,
-  },
-  {
-    id: 'c4',
-    name: 'Omar Yusuf',
-    role: 'Dealer',
-    message: 'The Land Cruiser has a new price and warranty.',
-    time: '3h',
-    unread: 0,
-    online: false,
-    pinned: false,
-  },
-  {
-    id: 'c5',
-    name: 'Amina Salim',
-    role: 'Agent',
-    message: 'Shared 5 new listings near Waberi.',
-    time: 'Yesterday',
-    unread: 0,
-    online: true,
-    pinned: false,
-  },
 ];
 
 export default function Chat() {
@@ -78,17 +26,18 @@ export default function Chat() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+  const chats = useChatStore((s) => s.chats);
 
   const filteredChats = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return CHATS.filter((chat) => {
+    return chats.filter((chat) => {
       if (activeFilter === 'unread' && chat.unread === 0) return false;
       if (activeFilter === 'active' && !chat.online) return false;
       if (!q) return true;
       const hay = `${chat.name} ${chat.role} ${chat.message}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [activeFilter, query]);
+  }, [activeFilter, query, chats]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoading(false), 650);
@@ -117,7 +66,7 @@ export default function Chat() {
           <TouchableOpacity
             activeOpacity={0.85}
             style={[styles.headerIcon, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-            onPress={() => router.push('/chat/new-chat')}
+            onPress={() => router.push('/explore')}
           >
             <Ionicons name="create-outline" size={16} color={C.brandBlue} />
           </TouchableOpacity>
@@ -195,6 +144,7 @@ export default function Chat() {
                 name: chat.name,
                 role: chat.role,
                 online: chat.online ? '1' : '0',
+                imageUri: chat.imageUri ?? '',
               },
             })
           }

@@ -35,10 +35,16 @@ export default function Favorites() {
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
 
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View>
+      <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: C.brandBorder }]}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            style={[styles.backBtn, { backgroundColor: C.tableRow }]}
+          >
+            <Ionicons name="arrow-back" size={16} color={C.textMain} />
+          </TouchableOpacity>
           <Text style={[styles.title, { color: C.textMain }]}>Favorites</Text>
-          <Text style={[styles.subtitle, { color: C.textMuted }]}>{favorites.length} saved listings</Text>
         </View>
         {favorites.length > 0 ? (
           <TouchableOpacity
@@ -121,9 +127,10 @@ export default function Favorites() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingHorizontal: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { borderBottomWidth: 1, paddingBottom: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backBtn: { width: 32, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 16, fontWeight: '900' },
-  subtitle: { marginTop: 2, fontSize: 10 },
   clearBtn: { height: 26, paddingHorizontal: 9, borderRadius: 9, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   clearText: { fontSize: 10, fontWeight: '800' },
   content: { paddingHorizontal: 10 },

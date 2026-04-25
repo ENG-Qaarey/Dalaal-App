@@ -143,7 +143,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity
-            onPress={() => router.push('/favorites')}
+            onPress={() => router.push('/profile/favorites')}
             activeOpacity={0.8}
             style={{ marginRight: 12 }}
           >

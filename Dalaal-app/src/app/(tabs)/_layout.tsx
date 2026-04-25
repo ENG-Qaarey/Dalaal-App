@@ -51,11 +51,11 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="explore"
         options={{
-          title: 'Favorites',
+          title: 'Explore',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'star' : 'star-outline'} size={28} color={color} />
+            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={28} color={color} />
           ),
         }}
       />

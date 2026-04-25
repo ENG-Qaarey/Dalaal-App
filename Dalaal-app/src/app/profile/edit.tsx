@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/theme';
+import OnboardingBackground from '../../components/OnboardingBackground';
 import { useAppTheme } from '../../context/theme-context';
 import useAuth from '../../hooks/useAuth';
 import { authService } from '../../services/auth';
@@ -19,6 +20,7 @@ const COUNTRY_OPTIONS = [
 
 export default function EditProfile() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { scheme } = useAppTheme();
   const { user, checkAuth } = useAuth();
   const C = Colors[scheme];
@@ -60,8 +62,9 @@ export default function EditProfile() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]}>
-      <View style={[styles.header, { borderBottomColor: C.brandBorder }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
+      <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: C.brandBorder }]}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.iconBtn, { backgroundColor: C.tableRow }]}>
           <Ionicons name="arrow-back" size={16} color={C.textMain} />
         </TouchableOpacity>
@@ -139,8 +142,8 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: { height: 54, borderBottomWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 10 },
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  header: { borderBottomWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 10, paddingBottom: 10 },
   iconBtn: { width: 32, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 16, fontWeight: '900' },
   content: { padding: 12, paddingBottom: 30 },
