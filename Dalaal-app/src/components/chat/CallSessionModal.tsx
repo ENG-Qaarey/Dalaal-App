@@ -3,6 +3,7 @@ import { Image, Modal, StyleSheet, Text, TouchableOpacity, Vibration, View } fro
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { Audio } from 'expo-av';
+import OnboardingBackground from '../OnboardingBackground';
 
 const RINGTONE_ASSET = require('../../assets/audio/freesound_community-ring-tone-68676.mp3');
 
@@ -15,6 +16,35 @@ type Props = {
   colors: any;
   onEnd: () => void;
 };
+
+function hexToRgb(hex?: string) {
+  if (!hex) return null;
+  const cleaned = hex.replace('#', '').trim();
+  const full =
+    cleaned.length === 3
+      ? cleaned
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : cleaned;
+
+  if (full.length !== 6) return null;
+  const int = Number.parseInt(full, 16);
+  if (Number.isNaN(int)) return null;
+
+  return {
+    r: (int >> 16) & 255,
+    g: (int >> 8) & 255,
+    b: int & 255,
+  };
+}
+
+function isLightColor(hex?: string) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return false;
+  const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+  return brightness >= 160;
+}
 
 export default function CallSessionModal({ visible, mode, userName, userImageUri, isOnline, colors, onEnd }: Props) {
   const [seconds, setSeconds] = React.useState(0);
@@ -119,58 +149,80 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
     return `${mins}:${secs}`;
   }, [seconds]);
 
+  const isLiveVideo = mode === 'video' && phase === 'ringing' && videoEnabled;
+  const isLightTheme = isLightColor(colors?.surface);
+  const headingColor = isLightTheme ? colors?.textMain ?? '#16223a' : '#fff';
+  const subTextColor = isLightTheme ? colors?.textMuted ?? '#5b6b86' : '#D1D5DB';
+  const timerColor = isLightTheme ? colors?.brandBlueDark ?? '#144a95' : '#C7D2FE';
+  const controlBarBg = isLightTheme ? 'rgba(255,255,255,0.9)' : '#18181B';
+  const controlBarBorder = isLightTheme ? 'rgba(22,34,58,0.10)' : 'transparent';
+  const neutralControlBg = isLightTheme ? '#E8EEF8' : '#3F3F46';
+  const mutedControlBg = isLightTheme ? '#D7DFED' : '#27272A';
+  const neutralIconColor = isLightTheme ? colors?.textMain ?? '#111827' : '#fff';
+  const overlayColor = isLiveVideo
+    ? (isLightTheme ? '#00000044' : '#00000088')
+    : (isLightTheme ? '#FFFFFF22' : '#00000033');
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onEnd}>
-      <View style={[styles.root, { backgroundColor: mode === 'video' ? '#000' : colors.surface }]}>
-        {mode === 'video' && phase === 'ringing' && videoEnabled ? (
+      <View style={[styles.root, { backgroundColor: isLiveVideo ? '#000' : colors.surface }]}>
+        {!isLiveVideo ? (
+          <OnboardingBackground
+            primary={colors.brandBlue ?? '#1e5fb8'}
+            secondary={colors.brandOrange ?? '#f28c28'}
+            soft={colors.brandBlueSoft ?? '#e7f1ff'}
+          />
+        ) : null}
+
+        {isLiveVideo ? (
           <CameraView style={StyleSheet.absoluteFillObject} facing={cameraFacing} />
         ) : null}
 
-        <View style={styles.darkOverlay} />
+        <View style={[styles.darkOverlay, { backgroundColor: overlayColor }]} />
         {phase === 'ringing' ? (
           <View style={styles.overlay}>
             <View style={styles.topMeta}>
-              <Text style={styles.nameSmall}>{userName}</Text>
-              <Text style={styles.state}>{isOnline ? 'Ringing...' : 'Calling...'}</Text>
+              <Text style={[styles.nameSmall, { color: headingColor }]}>{userName}</Text>
+              <Text style={[styles.state, { color: subTextColor }]}>{isOnline ? 'Ringing...' : 'Calling...'}</Text>
             </View>
             <View style={styles.center}>
               <View style={styles.avatarCircle}>
                 {userImageUri ? (
                   <Image source={{ uri: userImageUri }} style={styles.avatarImage} />
                 ) : (
-                  <Ionicons name="person" size={62} color="#D8D4F8" />
+                  <Ionicons name="person" size={62} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
                 )}
               </View>
-              <Text style={styles.timer}>{label}</Text>
+              <Text style={[styles.timer, { color: timerColor }]}>{label}</Text>
             </View>
-            <View style={styles.controlsBar}>
+            <View style={[styles.controlsBar, { backgroundColor: controlBarBg, borderColor: controlBarBorder }]}>
               <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: mode === 'video' ? '#3F3F46' : '#27272A' }]}
+                style={[styles.controlBtn, { backgroundColor: mode === 'video' ? neutralControlBg : mutedControlBg }]}
                 disabled={mode !== 'video'}
                 onPress={() => {
                   if (mode !== 'video') return;
                   setCameraFacing((prev) => (prev === 'front' ? 'back' : 'front'));
                 }}
               >
-                <Ionicons name="camera-reverse-outline" size={20} color="#fff" />
+                <Ionicons name="camera-reverse-outline" size={20} color={neutralIconColor} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: videoEnabled ? '#3F3F46' : '#DC2626' }]}
+                style={[styles.controlBtn, { backgroundColor: videoEnabled ? neutralControlBg : '#DC2626' }]}
                 onPress={() => setVideoEnabled((v) => !v)}
               >
-                <Ionicons name={videoEnabled ? 'videocam' : 'videocam-off'} size={20} color="#fff" />
+                <Ionicons name={videoEnabled ? 'videocam' : 'videocam-off'} size={20} color={videoEnabled ? neutralIconColor : '#fff'} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: speakerOn ? '#fff' : '#3F3F46' }]}
+                style={[styles.controlBtn, { backgroundColor: speakerOn ? '#fff' : neutralControlBg }]}
                 onPress={() => setSpeakerOn((s) => !s)}
               >
-                <Ionicons name={speakerOn ? 'volume-high' : 'volume-mute'} size={20} color={speakerOn ? '#111827' : '#fff'} />
+                <Ionicons name={speakerOn ? 'volume-high' : 'volume-mute'} size={20} color={speakerOn ? '#111827' : neutralIconColor} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: isMuted ? '#DC2626' : '#3F3F46' }]}
+                style={[styles.controlBtn, { backgroundColor: isMuted ? '#DC2626' : neutralControlBg }]}
                 onPress={() => setIsMuted((m) => !m)}
               >
-                <Ionicons name={isMuted ? 'mic-off' : 'mic'} size={20} color="#fff" />
+                <Ionicons name={isMuted ? 'mic-off' : 'mic'} size={20} color={isMuted ? '#fff' : neutralIconColor} />
               </TouchableOpacity>
               <TouchableOpacity style={[styles.controlBtn, { backgroundColor: '#E11D48' }]} onPress={onEnd}>
                 <Ionicons name="call" size={20} color="#fff" />
@@ -180,22 +232,22 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
         ) : (
           <View style={styles.overlayNoAnswer}>
             <View style={styles.avatarCircleSmall}>
-              <Ionicons name="person" size={44} color="#D8D4F8" />
+              <Ionicons name="person" size={44} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
             </View>
-            <Text style={styles.nameLarge}>{userName}</Text>
-            <Text style={styles.noAnswerText}>No answer</Text>
+            <Text style={[styles.nameLarge, { color: headingColor }]}>{userName}</Text>
+            <Text style={[styles.noAnswerText, { color: subTextColor }]}>No answer</Text>
             <View style={styles.noAnswerActions}>
               <TouchableOpacity style={styles.noAnswerBtn} onPress={onEnd}>
                 <View style={[styles.noAnswerIcon, { backgroundColor: '#fff' }]}>
                   <Ionicons name="close" size={24} color="#111827" />
                 </View>
-                <Text style={styles.noAnswerLabel}>Cancel</Text>
+                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.noAnswerBtn} onPress={onEnd}>
-                <View style={[styles.noAnswerIcon, { backgroundColor: '#3F3F46' }]}>
-                  <Ionicons name="mic" size={24} color="#fff" />
+                <View style={[styles.noAnswerIcon, { backgroundColor: neutralControlBg }]}>
+                  <Ionicons name="mic" size={24} color={neutralIconColor} />
                 </View>
-                <Text style={styles.noAnswerLabel}>Record voice</Text>
+                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Record voice</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.noAnswerBtn}
@@ -207,7 +259,7 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
                 <View style={[styles.noAnswerIcon, { backgroundColor: '#22C55E' }]}>
                   <Ionicons name="call" size={24} color="#fff" />
                 </View>
-                <Text style={styles.noAnswerLabel}>Call again</Text>
+                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Call again</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -244,6 +296,7 @@ const styles = StyleSheet.create({
   timer: { marginTop: 12, fontSize: 16, color: '#C7D2FE', fontWeight: '700' },
   controlsBar: {
     backgroundColor: '#18181B',
+    borderWidth: 1,
     borderRadius: 30,
     paddingHorizontal: 14,
     paddingVertical: 10,
