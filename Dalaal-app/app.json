@@ -8,7 +8,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Dalaal to use your camera for chat photos and videos.",
+        "NSMicrophoneUsageDescription": "Allow Dalaal to record voice messages in chat."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +20,11 @@
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static"
@@ -26,7 +34,13 @@
       [
         "expo-splash-screen"
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Dalaal to use your camera for chat photos and videos."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

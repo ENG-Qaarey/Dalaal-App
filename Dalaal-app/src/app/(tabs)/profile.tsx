@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import useAuth from '../../hooks/useAuth';
 import { authService } from '../../services/auth';
+import ProfileSectionCard from '../../components/profile/ProfileSectionCard';
 
 const languageOptions = ['English', 'Somali'];
 
@@ -37,7 +37,6 @@ export default function Profile() {
   const { user, logout, checkAuth } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [languageIndex, setLanguageIndex] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [emailAvatarUrl, setEmailAvatarUrl] = useState<string | null>(null);
   const [avatarSourceIndex, setAvatarSourceIndex] = useState(0);
@@ -77,16 +76,11 @@ export default function Profile() {
     return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   })() : null;
 
-  // Editable copies
-  const [profileName, setProfileName] = useState(fullName);
-  const [profileEmail, setProfileEmail] = useState(userEmail);
-  const [profileBio, setProfileBio] = useState(userBio);
+  const profileName = fullName;
+  const profileEmail = userEmail;
+  const profileBio = userBio;
 
-  // Sync when user data changes
   useEffect(() => {
-    setProfileName(fullName);
-    setProfileEmail(userEmail);
-    setProfileBio(userBio);
     setAvatarSourceIndex(0);
   }, [fullName, userEmail, userBio]);
 
@@ -137,30 +131,6 @@ export default function Profile() {
       { label: 'Last Login', value: lastLoginAt || '—' },
     ],
     [lastLoginAt]
-  );
-
-  const accountDetails = useMemo(
-    () =>
-      [
-        { label: 'Name', value: fullName },
-        { label: 'Email', value: userEmail },
-        { label: 'Phone', value: userPhone || '—' },
-        { label: 'Role', value: userRole },
-        { label: 'Status', value: userStatus },
-        { label: 'Email Verified', value: isVerified ? 'Yes' : 'No' },
-        { label: 'City', value: user?.profile?.city || '—' },
-        { label: 'Country', value: user?.profile?.country || '—' },
-        { label: 'Language', value: user?.profile?.language || '—' },
-        { label: 'Currency', value: user?.profile?.currency || '—' },
-        { label: 'WhatsApp', value: user?.profile?.whatsappNumber || '—' },
-        { label: 'Telegram', value: user?.profile?.telegramHandle || '—' },
-        { label: 'Diaspora User', value: user?.profile?.isDiaspora ? 'Yes' : 'No' },
-        {
-          label: 'Last Login',
-          value: user?.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—',
-        },
-      ].filter((item) => item.value && item.value !== ''),
-    [fullName, isVerified, user, userEmail, userPhone, userRole, userStatus]
   );
 
   const handleLogout = async () => {
@@ -220,17 +190,17 @@ export default function Profile() {
     account: [
       {
         id: 'edit',
-        label: isEditing ? 'Close Editor' : 'Edit Profile',
+        label: 'Edit Profile',
         icon: 'create-outline',
         value: '',
-        onPress: () => setIsEditing((current) => !current),
+        onPress: () => router.push('/profile/edit'),
       },
       {
         id: 'privacy',
         label: 'Privacy & Security',
         icon: 'shield-checkmark-outline',
         value: '',
-        onPress: () => Alert.alert('Privacy & Security', 'Your account uses secure sign-in and protected data settings.'),
+        onPress: () => router.push('/profile/privacy-security'),
       },
       {
         id: 'notifications',
@@ -378,54 +348,6 @@ export default function Profile() {
 
           <Text style={[styles.bio, { color: C.textMuted }]}>{profileBio}</Text>
 
-          {isEditing ? (
-            <View style={styles.editorBox}>
-              <TextInput
-                value={profileName}
-                onChangeText={setProfileName}
-                placeholder="Full name"
-                placeholderTextColor={C.textMuted}
-                style={[styles.input, { color: C.textMain, backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-              />
-              <TextInput
-                value={profileEmail}
-                onChangeText={setProfileEmail}
-                placeholder="Email"
-                placeholderTextColor={C.textMuted}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={[styles.input, { color: C.textMain, backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-              />
-              <TextInput
-                value={profileBio}
-                onChangeText={setProfileBio}
-                placeholder="Bio"
-                placeholderTextColor={C.textMuted}
-                multiline
-                style={[styles.textArea, { color: C.textMain, backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-              />
-              <View style={styles.editorActions}>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => setIsEditing(false)}
-                  style={[styles.editorBtn, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-                >
-                  <Text style={[styles.editorBtnText, { color: C.textMain }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    setIsEditing(false);
-                    Alert.alert('Profile Saved', 'Your profile details were updated on this screen.');
-                  }}
-                  style={[styles.editorBtn, { backgroundColor: C.brandBlue }]}
-                >
-                  <Text style={[styles.editorBtnText, { color: C.surface }]}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
-
           <View style={styles.statsRow}>
             {stats.map((stat) => (
               <View key={stat.label} style={[styles.statCard, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>
@@ -436,89 +358,17 @@ export default function Profile() {
           </View>
         </View>
 
-        <View style={[styles.sectionCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
-          <Text style={[styles.sectionTitle, { color: C.textMain }]}>Account</Text>
-          {rows.account.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.9}
-              onPress={item.onPress}
-              style={[styles.rowItem, { borderBottomColor: C.brandBorder }]}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.rowIcon, { backgroundColor: C.tableRow }]}>
-                  <Ionicons name={item.icon as any} size={15} color={C.textMain} />
-                </View>
-                <Text style={[styles.rowLabel, { color: C.textMain }]}>{item.label}</Text>
-              </View>
-              <View style={styles.rowRight}>
-                {item.value ? <Text style={[styles.rowValue, { color: C.textMuted }]}>{item.value}</Text> : null}
-                <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={[styles.sectionCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
-          <Text style={[styles.sectionTitle, { color: C.textMain }]}>Preferences</Text>
-          {rows.preferences.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.9}
-              onPress={item.onPress}
-              style={[styles.rowItem, { borderBottomColor: C.brandBorder }]}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.rowIcon, { backgroundColor: C.tableRow }]}>
-                  <Ionicons name={item.icon as any} size={15} color={C.textMain} />
-                </View>
-                <Text style={[styles.rowLabel, { color: C.textMain }]}>{item.label}</Text>
-              </View>
-              <View style={styles.rowRight}>
-                <Text style={[styles.rowValue, { color: C.textMuted }]}>{item.value}</Text>
-                {item.id === 'dark-mode' ? (
-                  <View style={[styles.toggle, { backgroundColor: isDark ? C.brandBlue : C.brandBorder }]}>
-                    <View style={[styles.toggleKnob, { backgroundColor: C.surface, alignSelf: isDark ? 'flex-end' : 'flex-start' }]} />
-                  </View>
-                ) : (
-                  <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={[styles.sectionCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
-          <Text style={[styles.sectionTitle, { color: C.textMain }]}>Support</Text>
-          {rows.support.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.9}
-              onPress={item.onPress}
-              style={[styles.rowItem, { borderBottomColor: C.brandBorder }]}
-            >
-              <View style={styles.rowLeft}>
-                <View style={[styles.rowIcon, { backgroundColor: C.tableRow }]}>
-                  <Ionicons name={item.icon as any} size={15} color={C.textMain} />
-                </View>
-                <Text style={[styles.rowLabel, { color: C.textMain }]}>{item.label}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={[styles.sectionCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
-          <Text style={[styles.sectionTitle, { color: C.textMain }]}>User Data</Text>
-          {accountDetails.map((item) => (
-            <View key={item.label} style={[styles.rowItem, { borderBottomColor: C.brandBorder }]}>
-              <Text style={[styles.rowLabel, { color: C.textMain }]}>{item.label}</Text>
-              <Text style={[styles.rowValue, { color: C.textMuted, marginRight: 0, maxWidth: '58%', textAlign: 'right' }]}>
-                {String(item.value)}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <ProfileSectionCard title="Account" items={rows.account as any} colors={C} />
+        <ProfileSectionCard
+          title="Preferences"
+          items={rows.preferences.map((item) => ({
+            ...item,
+            showToggle: item.id === 'dark-mode',
+            toggleOn: item.id === 'dark-mode' ? isDark : false,
+          })) as any}
+          colors={C}
+        />
+        <ProfileSectionCard title="Support" items={rows.support as any} colors={C} />
 
         <TouchableOpacity
           activeOpacity={0.9}
@@ -594,12 +444,6 @@ const styles = StyleSheet.create({
   lastLoginRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   lastLoginText: { fontSize: 10, fontWeight: '600' },
   bio: { marginTop: 10, fontSize: 11, lineHeight: 16 },
-  editorBox: { marginTop: 10, gap: 8 },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, height: 40, fontSize: 12 },
-  textArea: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingTop: 10, minHeight: 72, fontSize: 12, textAlignVertical: 'top' },
-  editorActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  editorBtn: { flex: 1, height: 38, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  editorBtnText: { fontSize: 11, fontWeight: '900' },
   statsRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   statCard: { flex: 1, borderRadius: 12, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   statValue: { fontSize: 15, fontWeight: '900' },

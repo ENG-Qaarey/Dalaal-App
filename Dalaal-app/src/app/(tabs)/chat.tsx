@@ -7,6 +7,7 @@ import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
 import OnboardingBackground from '../../components/OnboardingBackground';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
+import ChatList from '../../components/chat/ChatList';
 
 type FilterKey = 'all' | 'unread' | 'active';
 
@@ -14,14 +15,6 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'unread', label: 'Unread' },
   { key: 'active', label: 'Active' },
-];
-
-const ACTIVE_USERS = [
-  { id: 'a1', name: 'Ahmed', role: 'Broker' },
-  { id: 'a2', name: 'Fatima', role: 'Owner' },
-  { id: 'a3', name: 'Omar', role: 'Dealer' },
-  { id: 'a4', name: 'Amina', role: 'Agent' },
-  { id: 'a5', name: 'Hassan', role: 'Broker' },
 ];
 
 const CHATS = [
@@ -76,20 +69,6 @@ const CHATS = [
     pinned: false,
   },
 ];
-
-const quickActions = [
-  { id: 'qa1', label: 'New chat', icon: 'create-outline' },
-  { id: 'qa2', label: 'Support', icon: 'help-buoy-outline' },
-  { id: 'qa3', label: 'Offers', icon: 'sparkles-outline' },
-];
-
-const initialsFor = (name: string) =>
-  name
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join('')
-    .toUpperCase();
 
 export default function Chat() {
   const router = useRouter();
@@ -201,110 +180,26 @@ export default function Chat() {
           })}
         </View>
 
-        <View style={styles.quickRow}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              activeOpacity={0.85}
-              style={[styles.quickCard, { backgroundColor: C.surface, borderColor: C.brandBorder, shadowColor: C.textMain }]}
-              onPress={() => router.push('/chat/new-chat')}
-            >
-              <View style={[styles.quickIcon, { backgroundColor: C.brandBlueSoft }]}>
-                <Ionicons name={action.icon as any} size={16} color={C.brandBlue} />
-              </View>
-              <Text style={[styles.quickLabel, { color: C.textMain }]}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: C.textMain }]}>Active now</Text>
-          <Text style={[styles.sectionHint, { color: C.textMuted }]}>5 online</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeRow}>
-          {ACTIVE_USERS.map((user, index) => (
-            <View
-              key={user.id}
-              style={[styles.activeCard, { backgroundColor: C.surface, borderColor: C.brandBorder, shadowColor: C.textMain }]}
-            >
-              <View
-                style={[
-                  styles.activeAvatar,
-                  { backgroundColor: index % 2 === 0 ? C.brandBlueSoft : C.brandBorder },
-                ]}
-              >
-                <Text style={[styles.activeInitials, { color: C.textMain }]}>{initialsFor(user.name)}</Text>
-              </View>
-              <Text style={[styles.activeName, { color: C.textMain }]} numberOfLines={1}>
-                {user.name}
-              </Text>
-              <Text style={[styles.activeRole, { color: C.textMuted }]} numberOfLines={1}>
-                {user.role}
-              </Text>
-              <View style={[styles.activeDot, { backgroundColor: C.brandOrange }]} />
-            </View>
-          ))}
-        </ScrollView>
-
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: C.textMain }]}>Recent chats</Text>
           <Text style={[styles.sectionHint, { color: C.textMuted }]}>{filteredChats.length} conversations</Text>
         </View>
-
-        <View style={styles.chatList}>
-          {filteredChats.map((chat) => (
-            <TouchableOpacity
-              key={chat.id}
-              activeOpacity={0.9}
-              onPress={() => router.push('/chat/new-chat')}
-              style={[styles.chatCard, { backgroundColor: C.surface, borderColor: C.brandBorder, shadowColor: C.textMain }]}
-            >
-              <View style={styles.chatLeft}>
-                <View style={[styles.chatAvatar, { backgroundColor: C.tableRow }]}>
-                  <Text style={[styles.chatInitials, { color: C.textMain }]}>{initialsFor(chat.name)}</Text>
-                  {chat.online ? <View style={[styles.onlineDot, { backgroundColor: C.brandOrange }]} /> : null}
-                </View>
-              </View>
-              <View style={styles.chatBody}>
-                <View style={styles.chatTopRow}>
-                  <View style={styles.chatTitleRow}>
-                    <Text style={[styles.chatName, { color: C.textMain }]} numberOfLines={1}>
-                      {chat.name}
-                    </Text>
-                    {chat.pinned ? (
-                      <Ionicons name="star" size={12} color={C.brandOrange} style={{ marginLeft: 6 }} />
-                    ) : null}
-                  </View>
-                  <Text style={[styles.chatTime, { color: C.textMuted }]}>{chat.time}</Text>
-                </View>
-                <Text style={[styles.chatRole, { color: C.textMuted }]} numberOfLines={1}>
-                  {chat.role}
-                </Text>
-                <Text style={[styles.chatMessage, { color: C.textMain }]} numberOfLines={1}>
-                  {chat.message}
-                </Text>
-              </View>
-              <View style={styles.chatMeta}>
-                {chat.unread > 0 ? (
-                  <View style={[styles.unreadBadge, { backgroundColor: C.brandBlue }]}>
-                    <Text style={[styles.unreadText, { color: C.surface }]}>{chat.unread}</Text>
-                  </View>
-                ) : (
-                  <Ionicons name="checkmark-done" size={14} color={C.textMuted} />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <ChatList
+          chats={filteredChats as any}
+          colors={C}
+          onPressChat={(chat) =>
+            router.push({
+              pathname: '/chat/[id]',
+              params: {
+                id: chat.id,
+                name: chat.name,
+                role: chat.role,
+                online: chat.online ? '1' : '0',
+              },
+            })
+          }
+        />
       </ScrollView>
-
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.fab, { backgroundColor: C.brandBlue, bottom: 22 + insets.bottom }]}
-        onPress={() => router.push('/chat/new-chat')}
-      >
-        <Ionicons name="add" size={20} color={C.surface} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -344,25 +239,6 @@ const styles = StyleSheet.create({
   filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
   filterText: { fontSize: 10, fontWeight: '800' },
-  quickRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  quickCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    shadowOpacity: 0.08,
-    elevation: 2,
-  },
-  quickIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  quickLabel: { fontSize: 10, fontWeight: '800' },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -371,75 +247,5 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 13, fontWeight: '900' },
   sectionHint: { fontSize: 10 },
-  activeRow: { paddingBottom: 4 },
-  activeCard: {
-    width: 110,
-    marginRight: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 10,
-    shadowOpacity: 0.06,
-    elevation: 2,
-  },
-  activeAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  activeInitials: { fontSize: 14, fontWeight: '900' },
-  activeName: { fontSize: 11, fontWeight: '800' },
-  activeRole: { marginTop: 2, fontSize: 9 },
-  activeDot: { position: 'absolute', right: 10, top: 10, width: 8, height: 8, borderRadius: 999 },
-  chatList: { gap: 10, marginBottom: 10 },
-  chatCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 10,
-    shadowOpacity: 0.06,
-    elevation: 2,
-  },
-  chatLeft: { marginRight: 10 },
-  chatAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chatInitials: { fontSize: 14, fontWeight: '900' },
-  onlineDot: { position: 'absolute', right: 6, top: 6, width: 8, height: 8, borderRadius: 999 },
-  chatBody: { flex: 1 },
-  chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  chatTitleRow: { flexDirection: 'row', alignItems: 'center', maxWidth: '75%' },
-  chatName: { fontSize: 12, fontWeight: '900' },
-  chatTime: { fontSize: 9 },
-  chatRole: { marginTop: 2, fontSize: 9 },
-  chatMessage: { marginTop: 4, fontSize: 10, fontWeight: '700' },
-  chatMeta: { marginLeft: 8, alignItems: 'center' },
-  unreadBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadText: { fontSize: 10, fontWeight: '900' },
-  fab: {
-    position: 'absolute',
-    right: 18,
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOpacity: 0.25,
-    elevation: 6,
-  },
 });
 
