@@ -40,6 +40,12 @@
         {
           "cameraPermission": "Allow Dalaal to use your camera for chat photos and videos."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Dalaal to use your camera for chat photos and videos."
+        }
       ]
     ],
     "experiments": {

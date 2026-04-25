@@ -8,6 +8,7 @@ import Colors from '../../../constants/theme';
 import { useAppTheme } from '../../../context/theme-context';
 import ConversationHeader from '../../../components/chat/ConversationHeader';
 import ChatWindow, { ChatMessage } from '../../../components/chat/ChatWindow';
+import ChatCameraModal from '../../../components/chat/ChatCameraModal';
 import ChatComposer from '../../../components/chat/ChatComposer';
 
 export default function Conversation() {
@@ -26,6 +27,7 @@ export default function Conversation() {
   const [recordingSeconds, setRecordingSeconds] = React.useState(0);
   const [isVoiceLocked, setIsVoiceLocked] = React.useState(false);
   const [pendingImageUri, setPendingImageUri] = React.useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = React.useState(false);
   const recordingTicker = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingRef = React.useRef<Audio.Recording | null>(null);
   const recordingStartedAtRef = React.useRef<number | null>(null);
@@ -101,23 +103,7 @@ export default function Conversation() {
   };
 
   const handleCamera = async () => {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Camera permission', 'Please allow camera access to take photos.');
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        quality: 0.85,
-      });
-      if (result.canceled) return;
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-      setPendingImageUri(asset.uri);
-    } catch {
-      Alert.alert('Camera failed', 'Could not open camera.');
-    }
+    setCameraOpen(true);
   };
 
   const startVoiceRecording = async () => {
@@ -276,6 +262,12 @@ export default function Conversation() {
           isVoiceLocked={isVoiceLocked}
           recordingSeconds={recordingSeconds}
           canSend={!!text.trim() || !!pendingImageUri}
+        />
+        <ChatCameraModal
+          visible={cameraOpen}
+          colors={C}
+          onClose={() => setCameraOpen(false)}
+          onCapture={(uri) => setPendingImageUri(uri)}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
