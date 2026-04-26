@@ -17,6 +17,7 @@ import { CreateMessageDto } from './dto';
   cors: { origin: '*' },
   namespace: 'chat',
 })
+@UseGuards(WsJwtGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ChatGateway.name);

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { chatService } from '../services/chat';
+import { socketService } from '../services/socket';
 
 export type ChatListItem = {
   id: string;
@@ -10,93 +12,93 @@ export type ChatListItem = {
   online: boolean;
   pinned: boolean;
   imageUri?: string;
+  conversationId?: string;
 };
 
 type ChatStore = {
   chats: ChatListItem[];
-  startChatWithUser: (user: { id: string; name: string; role: string; online: boolean; imageUri?: string }) => ChatListItem;
+  isLoading: boolean;
+  fetchConversations: () => Promise<void>;
+  startChatWithUser: (user: { id: string; name: string; role: string; online: boolean; imageUri?: string }) => Promise<ChatListItem>;
+  addMessage: (conversationId: string, message: any) => void;
 };
 
-const INITIAL_CHATS: ChatListItem[] = [
-  {
-    id: 'c1',
-    name: 'Ahmed Ali',
-    role: 'Broker',
-    message: 'I can show you the Hodan villa today. Would 6pm work?',
-    time: '2m',
-    unread: 2,
-    online: true,
-    pinned: true,
-  },
-  {
-    id: 'c2',
-    name: 'Fatima Noor',
-    role: 'Owner',
-    message: 'Here is the updated floor plan and pricing options.',
-    time: '18m',
-    unread: 0,
-    online: true,
-    pinned: false,
-  },
-  {
-    id: 'c3',
-    name: 'Dalaal Support',
-    role: 'Support',
-    message: 'Your verification is approved. Want to list today?',
-    time: '1h',
-    unread: 1,
-    online: false,
-    pinned: false,
-  },
-  {
-    id: 'c4',
-    name: 'Omar Yusuf',
-    role: 'Dealer',
-    message: 'The Land Cruiser has a new price and warranty.',
-    time: '3h',
-    unread: 0,
-    online: false,
-    pinned: false,
-  },
-  {
-    id: 'c5',
-    name: 'Amina Salim',
-    role: 'Agent',
-    message: 'Shared 5 new listings near Waberi.',
-    time: 'Yesterday',
-    unread: 0,
-    online: true,
-    pinned: false,
-  },
-];
-
 export const useChatStore = create<ChatStore>((set, get) => ({
-  chats: INITIAL_CHATS,
-  startChatWithUser: (user) => {
-    const existing = get().chats.find((c) => c.id === user.id);
-    if (existing) {
-      set((state) => ({
-        chats: [
-          { ...existing, online: user.online, imageUri: user.imageUri ?? existing.imageUri, time: 'now' },
-          ...state.chats.filter((c) => c.id !== user.id),
-        ],
-      }));
-      return { ...existing, online: user.online, imageUri: user.imageUri ?? existing.imageUri, time: 'now' };
-    }
+  chats: [],
+  isLoading: false,
 
-    const created: ChatListItem = {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      message: 'Tap to start chatting',
-      time: 'now',
-      unread: 0,
-      online: user.online,
-      pinned: false,
-      imageUri: user.imageUri,
-    };
-    set((state) => ({ chats: [created, ...state.chats] }));
-    return created;
+  fetchConversations: async () => {
+    set({ isLoading: true });
+    try {
+      const conversations = await chatService.getConversations();
+      const mappedChats: ChatListItem[] = conversations.map((conv: any) => {
+        // Find the other participant
+        // For simplicity, we assume there's only one other participant
+        // In a real app, you'd have the current user ID to filter
+        const otherParticipant = conv.participants[0]; // This is a placeholder logic
+        const lastMessage = conv.messages[0];
+
+        return {
+          id: conv.id,
+          conversationId: conv.id,
+          name: otherParticipant?.user?.profile?.firstName || 'User',
+          role: otherParticipant?.user?.role || 'User',
+          message: lastMessage?.content || 'No messages yet',
+          time: lastMessage ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'now',
+          unread: 0,
+          online: false,
+          pinned: false,
+          imageUri: otherParticipant?.user?.profile?.avatar,
+        };
+      });
+      set({ chats: mappedChats });
+    } catch (error) {
+      console.error('Failed to fetch conversations:', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  startChatWithUser: async (user) => {
+    // Check if conversation already exists in state
+    const existing = get().chats.find((c) => c.id === user.id || c.conversationId === user.id);
+    if (existing) return existing;
+
+    try {
+      const conv = await chatService.createConversation(user.id);
+      const newChat: ChatListItem = {
+        id: conv.id,
+        conversationId: conv.id,
+        name: user.name,
+        role: user.role,
+        message: 'Tap to start chatting',
+        time: 'now',
+        unread: 0,
+        online: user.online,
+        pinned: false,
+        imageUri: user.imageUri,
+      };
+      set((state) => ({ chats: [newChat, ...state.chats] }));
+      return newChat;
+    } catch (error) {
+      console.error('Failed to start chat:', error);
+      // Return a temporary mock chat if backend fails, but ideally handle error
+      throw error;
+    }
+  },
+
+  addMessage: (conversationId, message) => {
+    set((state) => ({
+      chats: state.chats.map((chat) => 
+        chat.conversationId === conversationId 
+          ? { 
+              ...chat, 
+              message: message.content, 
+              time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            } 
+          : chat
+      )
+    }));
   },
 }));
 

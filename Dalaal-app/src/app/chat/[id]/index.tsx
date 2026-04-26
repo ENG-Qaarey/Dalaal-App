@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,10 +14,15 @@ import ChatMediaPreviewModal from '../../../components/chat/ChatMediaPreviewModa
 import ChatComposer from '../../../components/chat/ChatComposer';
 import CallSessionModal from '../../../components/chat/CallSessionModal';
 import OnboardingBackground from '../../../components/OnboardingBackground';
+import { socketService } from '../../../services/socket';
+import { chatService } from '../../../services/chat';
+import { useAuthStore } from '../../../store/authStore';
+import { useChatStore } from '../../../store/chatStore';
 
 export default function Conversation() {
   const router = useRouter();
-  const { name, role, online, imageUri } = useLocalSearchParams<{
+  const { id: conversationId, name, role, online, imageUri } = useLocalSearchParams<{
+    id: string;
     name?: string;
     role?: string;
     online?: string;
@@ -25,30 +30,58 @@ export default function Conversation() {
   }>();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
+  const user = useAuthStore((s) => s.user);
+  const addMessageToStore = useChatStore((s) => s.addMessage);
+
   const userName = name || 'User';
   const isOnline = online === '1';
-  const [text, setText] = React.useState('');
-  const [recording, setRecording] = React.useState<Audio.Recording | null>(null);
-  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
-  const [isVoiceLocked, setIsVoiceLocked] = React.useState(false);
-  const [pendingImages, setPendingImages] = React.useState<string[]>([]);
-  const [pendingImageCaption, setPendingImageCaption] = React.useState('');
-  const [previewImageIndex, setPreviewImageIndex] = React.useState(0);
-  const [pendingFile, setPendingFile] = React.useState<{ uri: string; name: string } | null>(null);
-  const [cameraOpen, setCameraOpen] = React.useState(false);
-  const [mediaPreviewOpen, setMediaPreviewOpen] = React.useState(false);
-  const [callMode, setCallMode] = React.useState<'audio' | 'video' | null>(null);
-  const recordingTicker = React.useRef<ReturnType<typeof setInterval> | null>(null);
-  const recordingRef = React.useRef<Audio.Recording | null>(null);
-  const recordingStartedAtRef = React.useRef<number | null>(null);
-  const isStartingRecordingRef = React.useRef(false);
-  const pendingStopAfterStartRef = React.useRef<boolean | null>(null);
-  const pendingVoiceLockRef = React.useRef(false);
-  const [messages, setMessages] = React.useState<ChatMessage[]>([
-    { id: 'm1', text: `Hi, this is ${userName}.`, time: '10:21', mine: false, status: 'read' },
-    { id: 'm2', text: 'Great, let us continue here.', time: '10:22', mine: true, status: 'read' },
-  ]);
-  const pushSystemMessage = React.useCallback((messageText: string) => {
+  const [text, setText] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [isVoiceLocked, setIsVoiceLocked] = useState(false);
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [pendingImageCaption, setPendingImageCaption] = useState('');
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
+  const [pendingFile, setPendingFile] = useState<{ uri: string; name: string } | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
+  const [callMode, setCallMode] = useState<'audio' | 'video' | null>(null);
+  const recordingTicker = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const isStartingRecordingRef = useRef(false);
+  const pendingStopAfterStartRef = useRef<boolean | null>(null);
+  const pendingVoiceLockRef = useRef(false);
+
+  useEffect(() => {
+    if (conversationId) {
+      loadMessages();
+      setupSocket();
+    }
+    return () => {
+      socketService.offNewMessage();
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
+
+  useEffect(() => {
+    return () => {
+      if (recordingTicker.current) {
+        clearInterval(recordingTicker.current);
+      }
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => null);
+      }
+    };
+  }, []);
+
+  const pushSystemMessage = useCallback((messageText: string) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -60,87 +93,59 @@ export default function Conversation() {
     ]);
   }, []);
 
-  React.useEffect(() => {
-    recordingRef.current = recording;
-  }, [recording]);
+  const loadMessages = async () => {
+    try {
+      const data = await chatService.getMessages(conversationId!);
+      const mappedMessages: ChatMessage[] = data.map((msg: any) => ({
+        id: msg.id,
+        text: msg.content || '',
+        time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        mine: msg.senderId === user?.id,
+        status: 'read',
+        imageUri: msg.mediaUrl,
+      }));
+      setMessages(mappedMessages.reverse());
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  React.useEffect(() => {
-    return () => {
-      if (recordingTicker.current) {
-        clearInterval(recordingTicker.current);
-      }
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => null);
-      }
-    };
-  }, []);
-
-  const runOutgoingStatusFlow = React.useCallback((ids: string[]) => {
-    setTimeout(() => {
-      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'sent' } : m)));
-    }, 350);
-    setTimeout(() => {
-      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'delivered' } : m)));
-    }, 1000);
-    setTimeout(() => {
-      setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, status: 'read' } : m)));
-    }, 2200);
-  }, []);
-
-  const queueAutoReply = React.useCallback((seedText?: string) => {
-    setTimeout(() => {
-      const replyText = seedText ? `Got it: ${seedText}` : 'Received your message.';
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `r-${Date.now()}`,
-          text: replyText,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          mine: false,
+  const setupSocket = async () => {
+    await socketService.connect();
+    if (user?.id) {
+      socketService.join(user.id);
+    }
+    socketService.onNewMessage((message) => {
+      if (message.conversationId === conversationId) {
+        const newMessage: ChatMessage = {
+          id: message.id,
+          text: message.content || '',
+          time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          mine: message.senderId === user?.id,
           status: 'read',
-        },
-      ]);
-    }, 1500);
-  }, []);
+          imageUri: message.mediaUrl,
+        };
+        setMessages((prev) => [...prev, newMessage]);
+        addMessageToStore(conversationId!, message);
+      }
+    });
+  };
 
   const sendMessage = () => {
     const trimmed = text.trim();
     if (!trimmed && !pendingFile && pendingImages.length === 0) return;
 
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const outgoingIds: string[] = [];
-    setMessages((prev) => {
-      const next = [...prev];
-      if (pendingImages.length > 0) {
-        pendingImages.forEach((uri, index) => {
-          const id = `m-${Date.now()}-${index}`;
-          outgoingIds.push(id);
-          next.push({
-            id,
-            text: index === 0 ? trimmed || pendingImageCaption.trim() : '',
-            imageUri: uri,
-            time: now,
-            mine: true,
-            status: 'sending',
-          });
-        });
-      } else {
-        const id = `m-${Date.now()}`;
-        outgoingIds.push(id);
-        next.push({
-          id,
-          text: trimmed,
-          fileName: pendingFile?.name,
-          fileUri: pendingFile?.uri,
-          time: now,
-          mine: true,
-          status: 'sending',
-        });
-      }
-      return next;
-    });
-    runOutgoingStatusFlow(outgoingIds);
-    queueAutoReply(trimmed || pendingImageCaption.trim() || pendingFile?.name);
+    if (conversationId && user?.id) {
+      socketService.sendMessage({
+        conversationId,
+        userId: user.id,
+        content: trimmed,
+        mediaUrl: pendingImages[0], // Simplified for now
+      });
+    }
+
     setText('');
     setPendingImages([]);
     setPendingImageCaption('');

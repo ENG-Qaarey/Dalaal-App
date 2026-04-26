@@ -23,28 +23,26 @@ export default function Chat() {
   const insets = useSafeAreaInsets();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
-  const chats = useChatStore((s) => s.chats);
+  const { chats, fetchConversations, isLoading } = useChatStore();
 
   const filteredChats = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return chats.filter((chat) => {
+    return (chats || []).filter((chat) => {
       if (activeFilter === 'unread' && chat.unread === 0) return false;
       if (activeFilter === 'active' && !chat.online) return false;
       if (!q) return true;
       const hay = `${chat.name} ${chat.role} ${chat.message}`.toLowerCase();
-      return hay.includes(q);
+      return hay.includes(hay);
     });
   }, [activeFilter, query, chats]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsInitialLoading(false), 650);
-    return () => clearTimeout(timer);
+    fetchConversations();
   }, []);
 
-  if (isInitialLoading) {
+  if (isLoading && chats.length === 0) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
         <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
