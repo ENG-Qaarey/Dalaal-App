@@ -282,51 +282,54 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.authRepository.findByEmail(forgotPasswordDto.email);
     if (!user) {
-      // Don't reveal if user exists
-      return { message: 'If the email exists, a reset link has been sent' };
+      throw new NotFoundException('User with this email does not exist');
     }
 
-    // Delete existing tokens
-    await this.authRepository.deleteUserPasswordResetTokens(user.id);
+    // Delete existing verification codes for this user
+    await this.authRepository.deleteUserVerificationCodes(user.id);
 
-    // Create new token
-    const token = uuidv4();
+    // Create new 6-digit OTP code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 minutes expiry
 
-    await this.authRepository.createPasswordResetToken(user.id, token, expiresAt);
+    await this.authRepository.createVerificationCode(user.id, code, expiresAt);
 
     // Send email
     const appName = this.configService.get<string>('email.appName');
-    const resetUrl = `${this.configService.get<string>('app.frontendUrl')}/reset-password?token=${token}`;
-
     await this.emailService.sendEmail(
       user.email,
-      `Password Reset Request - ${appName}`,
+      `Password Reset Code - ${appName}`,
       `<h1>Password Reset</h1>
-       <p>You requested a password reset. Click the link below to reset your password:</p>
-       <a href="{{resetUrl}}">Reset Password</a>
-       <p>This link will expire in 1 hour.</p>`,
-      { resetUrl },
+       <p>You requested a password reset. Your 6-digit verification code is:</p>
+       <h2 style="font-size: 32px; letter-spacing: 5px;">${code}</h2>
+       <p>This code will expire in 15 minutes.</p>`,
+      { code },
     );
 
-    return { message: 'If the email exists, a reset link has been sent' };
+    return { message: 'Verification code has been sent to your email' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const resetToken = await this.authRepository.findPasswordResetToken(resetPasswordDto.token);
+    const user = await this.authRepository.findByEmail(resetPasswordDto.email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    if (!resetToken || resetToken.expiresAt < new Date()) {
-      throw new BadRequestException('Invalid or expired reset token');
+    const verificationCode = await this.authRepository.findVerificationCode(user.id, resetPasswordDto.code);
+
+    if (!verificationCode || verificationCode.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired verification code');
     }
 
     const hashedPassword = await hashPassword(resetPasswordDto.newPassword);
 
-    await this.authRepository.update(resetToken.userId, {
+    await this.authRepository.update(user.id, {
       password: hashedPassword,
     });
 
-    await this.authRepository.deletePasswordResetToken(resetPasswordDto.token);
+    // Delete the code after successful reset
+    await this.authRepository.deleteUserVerificationCodes(user.id);
 
     return { message: 'Password reset successful' };
   }

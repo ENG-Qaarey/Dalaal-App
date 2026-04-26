@@ -122,6 +122,15 @@ export default function Login() {
 								</TouchableOpacity>
 							</View>
 						</FadeIn>
+
+						<FadeIn delay={180}>
+							<TouchableOpacity
+								onPress={() => router.push('/forgot-password')}
+								style={styles.forgotBtn}
+							>
+								<Text style={[styles.forgotText, { color: C.brandBlue }]}>Forgot Password?</Text>
+							</TouchableOpacity>
+						</FadeIn>
 					</View>
 
 					<View style={{ flex: 1, minHeight: 40 }} />
@@ -169,6 +178,8 @@ const styles = StyleSheet.create({
 	passwordContainer: { height: 50, borderRadius: 14, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center' },
 	passwordInput: { flex: 1, height: '100%', paddingHorizontal: 16, fontSize: 15, fontWeight: '600' },
 	eyeIcon: { paddingHorizontal: 12, height: '100%', justifyContent: 'center' },
+	forgotBtn: { alignSelf: 'flex-end', marginTop: -8 },
+	forgotText: { fontSize: 14, fontWeight: '700' },
 	footer: { paddingHorizontal: 20, paddingBottom: 30, gap: 14, marginTop: 30 },
 	primaryBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
 	primaryText: { fontSize: 16, fontWeight: '800' },
