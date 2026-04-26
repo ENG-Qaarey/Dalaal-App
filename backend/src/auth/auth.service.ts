@@ -32,6 +32,10 @@ export class AuthService {
       user = await this.authRepository.findByPhone(identifier);
     }
 
+    if (!user) {
+      user = await this.authRepository.findByUsername(identifier);
+    }
+
     if (!user || !user.password) {
       return null;
     }
@@ -62,6 +66,7 @@ export class AuthService {
 
       const user = await this.authRepository.create({
         email: registerDto.email,
+        username: registerDto.username,
         password: hashedPassword,
         phone: registerDto.phone,
         role: UserRole.CUSTOMER,

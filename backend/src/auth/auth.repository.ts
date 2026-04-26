@@ -20,6 +20,19 @@ export class AuthRepository {
     });
   }
 
+  async findByUsername(username: string) {
+    if (!username) return null;
+    return this.prisma.user.findFirst({
+      where: { 
+        username: {
+          equals: username,
+          mode: 'insensitive',
+        },
+      },
+      include: { profile: true },
+    });
+  }
+
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },

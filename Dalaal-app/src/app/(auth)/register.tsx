@@ -22,6 +22,7 @@ export default function Register() {
 	const { register, sendOtp, isLoading: authLoading } = useAuth();
 
 	const [fullName, setFullName] = useState('');
+	const [username, setUsername] = useState('');
 	const [phone, setPhone] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -50,6 +51,7 @@ export default function Register() {
 		try {
 			await register({
 				fullName: fullName.trim(),
+				username: username.trim().toLowerCase(),
 				phone: phone.trim(),
 				email: normalizeEmail(email),
 				password: password,
@@ -67,7 +69,7 @@ export default function Register() {
 		}
 	};
 
-	const canContinue = fullName.trim().length > 2 && phone.trim().length > 5 && isValidEmail(email) && password.length >= 8;
+	const canContinue = fullName.trim().length > 2 && username.trim().length > 2 && phone.trim().length > 5 && isValidEmail(email) && password.length >= 8;
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
@@ -103,6 +105,19 @@ export default function Register() {
 								value={fullName}
 								onChangeText={setFullName}
 								autoCapitalize="words"
+								returnKeyType="next"
+							/>
+						</FadeIn>
+
+						<FadeIn delay={110}>
+							<Text style={[styles.label, { color: C.textMuted }]}>Username</Text>
+							<TextInput
+								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+								placeholder="johndoe"
+								placeholderTextColor={C.textMuted}
+								value={username}
+								onChangeText={setUsername}
+								autoCapitalize="none"
 								returnKeyType="next"
 							/>
 						</FadeIn>

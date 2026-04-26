@@ -31,6 +31,13 @@ export class UsersRepository {
     });
   }
 
+  async findByUsername(username: string) {
+    return this.prisma.user.findUnique({
+      where: { username },
+      include: { profile: true },
+    });
+  }
+
   async create(data: Prisma.UserCreateInput) {
     return this.prisma.user.create({ data });
   }

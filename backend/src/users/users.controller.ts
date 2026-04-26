@@ -27,12 +27,20 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.MODERATOR)
-  @ApiOperation({ summary: 'Get all users (admin only)' })
+  @Public()
+  @ApiOperation({ summary: 'Get all users or search users' })
+  @ApiQuery({ name: 'q', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of users' })
-  async findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
+  async findAll(
+    @Query('q') q = '',
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    if (q) {
+      return this.usersService.searchUsers(q, +page, +limit);
+    }
     return this.usersService.findAll(+page, +limit);
   }
 

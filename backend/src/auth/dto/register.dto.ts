@@ -18,6 +18,11 @@ export class RegisterDto {
   @IsString()
   phone: string;
 
+  @ApiProperty({ example: 'johndoe' })
+  @IsOptional()
+  @IsString()
+  username?: string;
+
   @ApiProperty({ example: 'John Doe' })
   @IsNotEmpty()
   @IsString()

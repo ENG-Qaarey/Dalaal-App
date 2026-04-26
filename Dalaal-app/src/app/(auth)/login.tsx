@@ -83,10 +83,10 @@ export default function Login() {
 
 					<View style={styles.form}>
 						<FadeIn delay={100}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Email or Phone</Text>
+							<Text style={[styles.label, { color: C.textMuted }]}>Username, Email or Phone</Text>
 							<TextInput
 								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="Email or +252..."
+								placeholder="johndoe or email@..."
 								placeholderTextColor={C.textMuted}
 								value={identifier}
 								onChangeText={setIdentifier}

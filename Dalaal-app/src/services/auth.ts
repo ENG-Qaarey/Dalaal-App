@@ -24,31 +24,31 @@ export const authService = {
   },
 
   async login(loginData: any) {
-    const response = await api.post('/auth/login', loginData);
+    const response = await api.post('auth/login', loginData);
     const data = unwrapResponse<any>(response.data);
     await persistTokens(data);
     return data;
   },
 
   async register(registerData: any) {
-    const response = await api.post('/auth/register', registerData);
+    const response = await api.post('auth/register', registerData);
     const data = unwrapResponse<any>(response.data);
     await persistTokens(data);
     return data;
   },
 
   async resendVerification(email: string) {
-    const response = await api.post('/auth/resend-verification', { email });
+    const response = await api.post('auth/resend-verification', { email });
     return unwrapResponse<any>(response.data);
   },
 
   async sendOtp(email: string) {
-    const response = await api.post('/auth/send-otp', { email });
+    const response = await api.post('auth/send-otp', { email });
     return unwrapResponse<any>(response.data);
   },
 
   async verifyOtp(email: string, code: string) {
-    const response = await api.post('/auth/verify-otp', { email, code });
+    const response = await api.post('auth/verify-otp', { email, code });
     const data = unwrapResponse<any>(response.data);
     if (data.accessToken) {
       await persistTokens(data);
@@ -57,13 +57,13 @@ export const authService = {
   },
 
   async verifyPhone(phone: string, firebaseToken: string) {
-    const response = await api.post('/auth/verify-phone', { phone, firebaseToken });
+    const response = await api.post('auth/verify-phone', { phone, firebaseToken });
     return unwrapResponse<any>(response.data);
   },
 
   async logout() {
     try {
-      await api.post('/auth/logout');
+      await api.post('auth/logout');
     } finally {
       await SecureStore.deleteItemAsync('accessToken');
       await SecureStore.deleteItemAsync('refreshToken');
@@ -71,22 +71,22 @@ export const authService = {
   },
 
   async forgotPassword(email: string) {
-    const response = await api.post('/auth/forgot-password', { email });
+    const response = await api.post('auth/forgot-password', { email });
     return unwrapResponse<any>(response.data);
   },
 
   async resetPassword(resetData: any) {
-    const response = await api.post('/auth/reset-password', resetData);
+    const response = await api.post('auth/reset-password', resetData);
     return unwrapResponse<any>(response.data);
   },
 
   async getCurrentUser() {
-    const response = await api.get('/users/profile');
+    const response = await api.get('users/profile');
     return unwrapResponse<any>(response.data);
   },
 
   async updateProfile(profileData: Record<string, any>) {
-    const response = await api.put('/users/profile', profileData);
+    const response = await api.put('users/profile', profileData);
     return unwrapResponse<any>(response.data);
   },
 
@@ -103,7 +103,7 @@ export const authService = {
       type: mimeType,
     } as any);
 
-    const uploadResponse = await api.post('/uploads/image', formData, {
+    const uploadResponse = await api.post('uploads/image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     const uploadResult = unwrapResponse<any>(uploadResponse.data);
@@ -113,7 +113,7 @@ export const authService = {
       throw new Error('Image upload failed');
     }
 
-    const profileResponse = await api.put('/users/profile', { avatar: avatarUrl });
+    const profileResponse = await api.put('users/profile', { avatar: avatarUrl });
     return unwrapResponse<any>(profileResponse.data);
   },
 };

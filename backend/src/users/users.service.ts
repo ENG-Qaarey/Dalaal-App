@@ -29,6 +29,45 @@ export class UsersService {
     };
   }
 
+  async searchUsers(query: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (query) {
+      where.OR = [
+        { email: { contains: query, mode: 'insensitive' } },
+        { username: { contains: query, mode: 'insensitive' } },
+        { phone: { contains: query, mode: 'insensitive' } },
+        {
+          profile: {
+            OR: [
+              { firstName: { contains: query, mode: 'insensitive' } },
+              { lastName: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      this.usersRepository.findAll({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.usersRepository.count({ where }),
+    ]);
+
+    return {
+      data: users.map((u) => this.sanitizeUser(u)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async findById(id: string) {
     const user = await this.usersRepository.findById(id);
     return this.sanitizeUser(user);

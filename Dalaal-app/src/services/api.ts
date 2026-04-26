@@ -7,7 +7,7 @@ import * as SecureStore from 'expo-secure-store';
 // 3. Update the DEV_IP constant below with that address.
 // 4. Ensure your phone and computer are on the SAME Wi-Fi/Hotspot.
 const DEV_IP = '172.20.10.2'; 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${DEV_IP}:3001/api`;
+const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${DEV_IP}:3001/api/`;
 
 console.log('Connecting to API at:', API_URL);
 
@@ -47,7 +47,7 @@ api.interceptors.response.use(
       
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
+          const response = await axios.post(`${API_URL}auth/refresh`, {
             refreshToken,
           });
           const refreshPayload =
