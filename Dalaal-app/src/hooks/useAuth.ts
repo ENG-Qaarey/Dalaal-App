@@ -50,8 +50,8 @@ export default function useAuth() {
     setLoading(true);
     try {
       const data = await authService.register(registerData);
+      // We don't setAuthenticated(true) here because we need to verify OTP first
       setUser(data.user);
-      setAuthenticated(true);
       return data;
     } finally {
       setLoading(false);

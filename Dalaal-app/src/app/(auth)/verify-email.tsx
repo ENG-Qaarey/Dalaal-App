@@ -8,6 +8,7 @@ import { useAppTheme } from '../../context/theme-context';
 import FadeIn from '../../components/FadeIn';
 import OnboardingBackground from '../../components/OnboardingBackground';
 import useAuth from '../../hooks/useAuth';
+import { useAuthStore } from '../../store/authStore';
 
 export const options = { headerShown: false };
 
@@ -18,23 +19,24 @@ export default function VerifyEmail() {
 	const params = useLocalSearchParams<Params>();
 	const { scheme } = useAppTheme();
 	const C = Colors[scheme];
-	const { verifyOtp, sendOtp, isLoading: authLoading } = useAuth();
+	const { user, verifyOtp, sendOtp, isLoading: authLoading } = useAuth();
 
 	const [code, setCode] = useState('');
 	const [loading, setLoading] = useState(false);
 
+	const email = params.email || user?.email;
 	const isLogin = params.type === 'login';
 
 	const onVerifyPress = async () => {
-		if (code.length !== 6) return;
+		if (code.length !== 6 || !email) return;
 		setLoading(true);
 		try {
 			if (isLogin) {
-				await verifyOtp(params.email, code);
+				await verifyOtp(email, code);
 				router.replace('/(tabs)');
 			} else {
 				// This was the old verify-email logic, but we can unify it to OTP login
-				await verifyOtp(params.email, code);
+				await verifyOtp(email, code);
 				Alert.alert('Success', 'Account verified! You are now logged in.', [
 					{ text: 'OK', onPress: () => router.replace('/(tabs)') }
 				]);
@@ -47,9 +49,10 @@ export default function VerifyEmail() {
 	};
 
 	const onResendPress = async () => {
+		if (!email) return;
 		setLoading(true);
 		try {
-			await sendOtp(params.email);
+			await sendOtp(email);
 			Alert.alert('Success', 'A new 6-digit code has been sent to your email.');
 		} catch (error: any) {
 			Alert.alert('Error', error.response?.data?.message || 'Failed to resend code');
@@ -81,7 +84,7 @@ export default function VerifyEmail() {
 							</View>
 							<Text style={[styles.title, { color: C.textMain }]}>{isLogin ? 'Login Code' : 'Verify Email'}</Text>
 							<Text style={[styles.subtitle, { color: C.textMuted }]}>
-								Enter the 6-digit code sent to {params.email}
+								Enter the 6-digit code sent to {email}
 							</Text>
 						</FadeIn>
 
@@ -125,7 +128,11 @@ export default function VerifyEmail() {
 							</TouchableOpacity>
 
 							<TouchableOpacity
-								onPress={() => router.replace('/login')}
+								onPress={async () => {
+									const { logout } = useAuthStore.getState();
+									await logout();
+									router.replace('/login');
+								}}
 								style={[styles.backBtn, { borderColor: 'transparent' }]}
 							>
 								<Text style={[styles.backText, { color: C.textMuted }]}>Back to Login</Text>
