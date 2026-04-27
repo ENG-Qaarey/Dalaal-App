@@ -47,8 +47,9 @@ export default function Login() {
 			// Navigate to the main app after successful login
 			router.replace('/(tabs)');
 		} catch (error: any) {
-			console.error('Login failed:', error?.response?.status, error?.response?.data);
-			Alert.alert('Login Error', error.response?.data?.message || 'Invalid email/phone or password.');
+			console.error('Login failed:', error);
+			const errorMessage = error?.response?.data?.message || error?.message || error?.data?.message || 'Invalid email/phone or password.';
+			Alert.alert('Login Error', errorMessage);
 		} finally {
 			setLoading(false);
 		}

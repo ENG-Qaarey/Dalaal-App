@@ -19,7 +19,7 @@ export default function VerifyEmail() {
 	const params = useLocalSearchParams<Params>();
 	const { scheme } = useAppTheme();
 	const C = Colors[scheme];
-	const { user, verifyOtp, sendOtp, isLoading: authLoading } = useAuth();
+	const { user, verifyEmail, sendOtp, isLoading: authLoading } = useAuth();
 
 	const [code, setCode] = useState('');
 	const [loading, setLoading] = useState(false);
@@ -31,18 +31,12 @@ export default function VerifyEmail() {
 		if (code.length !== 6 || !email) return;
 		setLoading(true);
 		try {
-			if (isLogin) {
-				await verifyOtp(email, code);
-				router.replace('/(tabs)');
-			} else {
-				// This was the old verify-email logic, but we can unify it to OTP login
-				await verifyOtp(email, code);
-				Alert.alert('Success', 'Account verified! You are now logged in.', [
-					{ text: 'OK', onPress: () => router.replace('/(tabs)') }
-				]);
-			}
+			await verifyEmail(email, code);
+			Alert.alert('Success', 'Email verified!', [
+				{ text: 'OK', onPress: () => router.replace('/(tabs)') }
+			]);
 		} catch (error: any) {
-			Alert.alert('Verification Error', error.response?.data?.message || 'Invalid code');
+			Alert.alert('Verification Error', error.message || 'Invalid code');
 		} finally {
 			setLoading(false);
 		}

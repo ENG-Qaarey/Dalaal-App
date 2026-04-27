@@ -1,32 +1,25 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// IMPORTANT: When testing on a real device (physical phone), this MUST be your computer's local IP address.
-// 1. Open a terminal and run 'ipconfig'.
-// 2. Find your IPv4 Address (e.g., 172.20.10.2 or 192.168.1.X).
-// 3. Update the DEV_IP constant below with that address.
-// 4. Ensure your phone and computer are on the SAME Wi-Fi/Hotspot.
-const DEV_IP = '172.20.10.2'; 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${DEV_IP}:3001/api/`;
+// Hardcoded for physical Android device - change IP if needed
+const API_URL = 'http://172.20.10.5:3001/api';
 
-console.log('Connecting to API at:', API_URL);
+console.log('API URL:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000, // 30 seconds timeout
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for API calls
 api.interceptors.request.use(
   async (config) => {
     const token = await SecureStore.getItemAsync('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Don't log "No token" — it's expected for login/register (public endpoints)
     return config;
   },
   (error) => {
@@ -34,13 +27,23 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for API calls
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    // Handle 401 Unauthorized errors (token expired)
+    if (!error.response) {
+      let message = 'Cannot connect to server';
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        message = 'Server is not responding';
+      } else if (error.code === 'ECONNREFUSED') {
+        message = 'Cannot connect to server. Is backend running?';
+      }
+      const networkError = new Error(message);
+      networkError.response = { data: { message } };
+      return Promise.reject(networkError);
+    }
+    
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = await SecureStore.getItemAsync('refreshToken');
@@ -57,14 +60,11 @@ api.interceptors.response.use(
           const { accessToken } = refreshPayload;
           
           await SecureStore.setItemAsync('accessToken', accessToken);
-          
-          // Update the original request header
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
           
           return api(originalRequest);
         } catch (refreshError) {
-          // Refresh token expired or invalid, logout user
           await SecureStore.deleteItemAsync('accessToken');
           await SecureStore.deleteItemAsync('refreshToken');
           return Promise.reject(refreshError);
@@ -72,10 +72,12 @@ api.interceptors.response.use(
       }
     }
     
-    // Handle generic errors or timeouts
-    if (error.response?.status === 401) {
-      console.log('401 Unauthorized error for URL:', error.config?.url);
-    }
-    return Promise.reject(error);
+    const errorMessage = error.response?.data?.message || 
+                       error.response?.data?.error || 
+                       error.message || 
+                       'An error occurred';
+    const enhancedError = new Error(errorMessage);
+    enhancedError.response = error.response;
+    return Promise.reject(enhancedError);
   }
 );

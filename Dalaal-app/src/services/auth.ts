@@ -24,10 +24,25 @@ export const authService = {
   },
 
   async login(loginData: any) {
-    const response = await api.post('auth/login', loginData);
-    const data = unwrapResponse<any>(response.data);
-    await persistTokens(data);
-    return data;
+    try {
+      const response = await api.post('auth/login', loginData);
+      const data = unwrapResponse<any>(response.data);
+      await persistTokens(data);
+      return data;
+    } catch (error: any) {
+      console.error('Auth service login error:', error);
+      let message = 'Login failed';
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      const err = new Error(message);
+      err.response = error.response;
+      throw err;
+    }
   },
 
   async register(registerData: any) {
@@ -47,13 +62,9 @@ export const authService = {
     return unwrapResponse<any>(response.data);
   },
 
-  async verifyOtp(email: string, code: string) {
-    const response = await api.post('auth/verify-otp', { email, code });
-    const data = unwrapResponse<any>(response.data);
-    if (data.accessToken) {
-      await persistTokens(data);
-    }
-    return data;
+  async verifyEmail(email: string, code: string) {
+    const response = await api.post('auth/verify-email', { email, code });
+    return unwrapResponse<any>(response.data);
   },
 
   async verifyPhone(phone: string, firebaseToken: string) {
@@ -118,7 +129,6 @@ export const authService = {
   },
 };
 
-// Backwards compatibility for the existing empty export if needed
 export async function login(loginData: any) {
   return authService.login(loginData);
 }

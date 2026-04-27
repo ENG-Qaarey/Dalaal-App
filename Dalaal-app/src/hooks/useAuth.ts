@@ -41,6 +41,10 @@ export default function useAuth() {
       setUser(data.user);
       setAuthenticated(true);
       return data;
+    } catch (error: any) {
+      console.error('Login error in useAuth:', error);
+      const message = error?.response?.data?.message || error?.message || 'Login failed';
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -62,6 +66,15 @@ export default function useAuth() {
     setLoading(true);
     try {
       return await authService.sendOtp(email);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyEmail = async (email: string, code: string) => {
+    setLoading(true);
+    try {
+      return await authService.verifyEmail(email, code);
     } finally {
       setLoading(false);
     }
@@ -109,6 +122,7 @@ export default function useAuth() {
     login,
     register,
     sendOtp,
+    verifyEmail,
     verifyOtp,
     verifyPhone,
     logout,

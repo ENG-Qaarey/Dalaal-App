@@ -34,10 +34,6 @@ export default function Register() {
 			Alert.alert('Missing Name', 'Please enter your full name.');
 			return;
 		}
-		if (!phone.trim()) {
-			Alert.alert('Missing Phone', 'Please enter your phone number.');
-			return;
-		}
 		if (!isValidEmail(email)) {
 			Alert.alert('Invalid Email', 'Please enter a valid email address.');
 			return;
@@ -51,25 +47,25 @@ export default function Register() {
 		try {
 			await register({
 				fullName: fullName.trim(),
-				username: username.trim().toLowerCase(),
-				phone: phone.trim(),
+				username: username.trim().toLowerCase() || undefined,
+				phone: phone.trim() || undefined,
 				email: normalizeEmail(email),
 				password: password,
 			});
-			// Registration successful, backend already sends a verification email
+			// Go directly to verification page
 			router.push({
 				pathname: '/verify-email',
 				params: { email: normalizeEmail(email), type: 'register' }
 			});
 		} catch (error: any) {
 			console.error(error);
-			Alert.alert('Registration Error', error.response?.data?.message || 'Failed to create account.');
+			Alert.alert('Registration Error', error.message || 'Failed to create account.');
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const canContinue = fullName.trim().length > 2 && username.trim().length > 2 && phone.trim().length > 5 && isValidEmail(email) && password.length >= 8;
+	const canContinue = fullName.trim().length > 2 && isValidEmail(email) && password.length >= 8;
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>

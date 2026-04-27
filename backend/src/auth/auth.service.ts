@@ -82,6 +82,7 @@ export class AuthService {
       // Send verification email
       await this.sendVerificationEmail(user);
 
+      // Generate tokens
       const tokens = await this.generateTokens(user);
 
       return {
@@ -100,20 +101,33 @@ export class AuthService {
   async sendVerificationEmail(user: any) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     await this.authRepository.deleteUserVerificationCodes(user.id);
     await this.authRepository.createVerificationCode(user.id, code, expiresAt);
 
-    const appName = this.configService.get<string>('email.appName');
-    await this.emailService.sendEmail(
-      user.email,
-      `Verify your email - ${appName}`,
-      `<h1>Welcome to ${appName}</h1>
-       <p>Your verification code is: <strong>{{code}}</strong></p>
-       <p>This code will expire in 10 minutes.</p>`,
-      { code },
-    );
+    // Log code to console for development
+    console.log('\n========================================');
+    console.log('📧 VERIFICATION CODE');
+    console.log('Email:', user.email);
+    console.log('Code:', code);
+    console.log('========================================\n');
+
+    // Send email to user
+    try {
+      const appName = this.configService.get<string>('email.appName');
+      await this.emailService.sendEmail(
+        user.email,
+        `Verify your email - ${appName}`,
+        `<h1>Welcome to ${appName}</h1>
+         <p>Your verification code is: <strong>${code}</strong></p>
+         <p>This code will expire in 10 minutes.</p>`,
+        { code },
+      );
+      console.log('✅ Verification email sent to:', user.email);
+    } catch (emailError) {
+      console.log('⚠️ Failed to send email:', emailError.message);
+    }
   }
 
   async verifyEmail(email: string, code: string) {
