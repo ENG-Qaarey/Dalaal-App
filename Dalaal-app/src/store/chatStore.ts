@@ -53,7 +53,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       });
       set({ chats: mappedChats });
     } catch (error) {
-      console.error('Failed to fetch conversations:', error);
+      // Handle error silently
     } finally {
       set({ isLoading: false });
     }
@@ -81,7 +81,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       set((state) => ({ chats: [newChat, ...state.chats] }));
       return newChat;
     } catch (error) {
-      console.error('Failed to start chat:', error);
       // Return a temporary mock chat if backend fails, but ideally handle error
       throw error;
     }

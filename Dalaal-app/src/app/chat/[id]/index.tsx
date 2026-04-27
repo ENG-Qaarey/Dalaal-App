@@ -106,7 +106,7 @@ export default function Conversation() {
       }));
       setMessages(mappedMessages.reverse());
     } catch (error) {
-      console.error('Failed to load messages:', error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -119,11 +119,14 @@ export default function Conversation() {
     }
     socketService.onNewMessage((message) => {
       if (message.conversationId === conversationId) {
+        // Skip if message is from current user (already added via optimistic update)
+        if (message.senderId === user?.id) return;
+        
         const newMessage: ChatMessage = {
           id: message.id,
           text: message.content || '',
           time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          mine: message.senderId === user?.id,
+          mine: false,
           status: 'read',
           imageUri: message.mediaUrl,
         };
@@ -137,12 +140,25 @@ export default function Conversation() {
     const trimmed = text.trim();
     if (!trimmed && !pendingFile && pendingImages.length === 0) return;
 
+    const tempId = `temp_${Date.now()}`;
+    const myMessage: ChatMessage = {
+      id: tempId,
+      text: trimmed,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      mine: true,
+      status: 'sending',
+      imageUri: pendingImages[0],
+    };
+    
+    // Show message immediately (optimistic update)
+    setMessages((prev) => [...prev, myMessage]);
+
     if (conversationId && user?.id) {
       socketService.sendMessage({
         conversationId,
         userId: user.id,
         content: trimmed,
-        mediaUrl: pendingImages[0], // Simplified for now
+        mediaUrl: pendingImages[0],
       });
     }
 

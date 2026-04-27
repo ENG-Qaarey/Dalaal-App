@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
 import { CreateConversationDto, CreateMessageDto } from './dto';
 
@@ -7,6 +7,10 @@ export class ChatService {
   constructor(private readonly chatRepository: ChatRepository) {}
 
   async createConversation(userId: string, dto: CreateConversationDto) {
+    // Prevent user from chatting with themselves
+    if (userId === dto.participantId) {
+      throw new BadRequestException('Cannot start a chat with yourself');
+    }
     return this.chatRepository.createConversation(userId, dto.participantId, dto.listingId, dto.title);
   }
 

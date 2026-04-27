@@ -58,7 +58,6 @@ export default function Register() {
 				params: { email: normalizeEmail(email), type: 'register' }
 			});
 		} catch (error: any) {
-			console.error(error);
 			Alert.alert('Registration Error', error.message || 'Failed to create account.');
 		} finally {
 			setLoading(false);

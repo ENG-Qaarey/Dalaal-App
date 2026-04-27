@@ -30,7 +30,6 @@ export const authService = {
       await persistTokens(data);
       return data;
     } catch (error: any) {
-      console.error('Auth service login error:', error);
       let message = 'Login failed';
       if (error.response?.data?.message) {
         message = error.response.data.message;

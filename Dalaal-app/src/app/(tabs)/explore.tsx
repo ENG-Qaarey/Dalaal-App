@@ -45,7 +45,7 @@ export default function ExploreTab() {
       // or the whole response if it was already unwrapped.
       setUsers(Array.isArray(response) ? response : (response.data || []));
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      // Handle error silently
     } finally {
       setLoading(false);
     }

@@ -128,6 +128,7 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
+        <View style={styles.messageList}>
         {messages.map((msg) => (
           <View key={msg.id} style={[styles.row, msg.mine ? styles.rowMine : styles.rowOther]}>
             <View
@@ -156,7 +157,9 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
               ) : null}
             {msg.text ? (
               <View style={styles.inlineTextMetaRow}>
-                <Text style={[styles.messageText, { color: msg.mine ? colors.surface : colors.textMain }]}>{msg.text}</Text>
+                <View style={styles.textWrapper}>
+                  <Text style={[styles.messageText, { color: msg.mine ? colors.surface : colors.textMain }]}>{msg.text}</Text>
+                </View>
                 <View style={styles.inlineMeta}>
                   {msg.time ? (
                     <Text style={[styles.timeText, { color: msg.mine ? colors.surface + 'CC' : colors.textMuted }]}>{msg.time}</Text>
@@ -237,6 +240,7 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
             </View>
           </View>
         ))}
+        </View>
       </ScrollView>
 
       <Modal visible={!!selectedMessage} transparent animationType="fade" onRequestClose={() => setReactionTargetId(null)}>
@@ -342,19 +346,23 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 12, paddingBottom: 8 },
-  row: { marginBottom: 8, flexDirection: 'row' },
+  content: { padding: 12, paddingBottom: 8, minWidth: '100%' },
+  messageList: { flexDirection: 'column', width: '100%', minWidth: 0 },
+  row: { marginBottom: 8, flexDirection: 'row', flexShrink: 0, width: '100%', minWidth: 0 },
   rowMine: { justifyContent: 'flex-end' },
   rowOther: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '82%', borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 },
+  bubble: { maxWidth: '80%', minWidth: 0, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8, flexShrink: 1, flexWrap: 'wrap', overflow: 'hidden' },
   photo: { width: 180, height: 180, borderRadius: 10, marginBottom: 6 },
-  messageText: { fontSize: 13, fontWeight: '700' },
+  messageText: { fontSize: 13, fontWeight: '700', flexWrap: 'wrap', flexShrink: 1, includeFontPadding: false },
+  textWrapper: { flexShrink: 1, maxWidth: '100%', minWidth: 0 },
   inlineTextMetaRow: {
     marginTop: 2,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
     gap: 6,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   inlineMeta: {
     flexDirection: 'row',

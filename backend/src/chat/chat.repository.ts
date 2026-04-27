@@ -6,6 +6,25 @@ export class ChatRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async createConversation(userId: string, participantId: string, listingId?: string, title?: string) {
+    // Check if conversation already exists between these users
+    const existing = await this.prisma.conversation.findFirst({
+      where: {
+        participants: {
+          some: { userId },
+        },
+        listingId: listingId || null,
+      },
+      include: {
+        participants: {
+          where: { userId: participantId },
+        },
+      },
+    });
+
+    if (existing && existing.participants.length > 0) {
+      return existing;
+    }
+
     return this.prisma.conversation.create({
       data: {
         listingId,

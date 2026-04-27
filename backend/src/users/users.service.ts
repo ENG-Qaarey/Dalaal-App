@@ -13,11 +13,18 @@ import { UserRole, UserStatus } from '../common/enums';
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, limit = 20, currentUserId?: string) {
     const skip = (page - 1) * limit;
+    const whereClause: any = {};
+    
+    // Exclude current user from results
+    if (currentUserId) {
+      whereClause.id = { not: currentUserId };
+    }
+    
     const [users, total] = await Promise.all([
-      this.usersRepository.findAll({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.usersRepository.count(),
+      this.usersRepository.findAll({ skip, take: limit, orderBy: { createdAt: 'desc' }, where: whereClause }),
+      this.usersRepository.count({ where: whereClause }),
     ]);
 
     return {
@@ -29,12 +36,17 @@ export class UsersService {
     };
   }
 
-  async searchUsers(query: string, page = 1, limit = 20) {
+  async searchUsers(query: string, page = 1, limit = 20, currentUserId?: string) {
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const whereClause: any = {};
 
+    // Exclude current user from results
+    if (currentUserId) {
+      whereClause.id = { not: currentUserId };
+    }
+    
     if (query) {
-      where.OR = [
+      whereClause.OR = [
         { email: { contains: query, mode: 'insensitive' } },
         { username: { contains: query, mode: 'insensitive' } },
         { phone: { contains: query, mode: 'insensitive' } },
@@ -51,12 +63,12 @@ export class UsersService {
 
     const [users, total] = await Promise.all([
       this.usersRepository.findAll({
-        where,
+        where: whereClause,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.usersRepository.count({ where }),
+      this.usersRepository.count({ where: whereClause }),
     ]);
 
     return {

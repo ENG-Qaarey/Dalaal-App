@@ -27,7 +27,6 @@ export default function useAuth() {
         setAuthenticated(true);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
       await storeLogout();
     } finally {
       setLoading(false);
@@ -42,7 +41,6 @@ export default function useAuth() {
       setAuthenticated(true);
       return data;
     } catch (error: any) {
-      console.error('Login error in useAuth:', error);
       const message = error?.response?.data?.message || error?.message || 'Login failed';
       throw new Error(message);
     } finally {

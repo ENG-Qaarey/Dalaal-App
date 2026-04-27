@@ -38,16 +38,13 @@ export default function Login() {
 
 		setLoading(true);
 		try {
-			console.log('Attempting login with:', identifier.trim().toLowerCase());
 			const result = await login({
 				identifier: identifier.trim().toLowerCase(),
 				password: password,
 			});
-			console.log('Login successful, navigating to tabs...');
 			// Navigate to the main app after successful login
 			router.replace('/(tabs)');
 		} catch (error: any) {
-			console.error('Login failed:', error);
 			const errorMessage = error?.response?.data?.message || error?.message || error?.data?.message || 'Invalid email/phone or password.';
 			Alert.alert('Login Error', errorMessage);
 		} finally {

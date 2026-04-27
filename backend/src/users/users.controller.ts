@@ -27,7 +27,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users or search users' })
   @ApiQuery({ name: 'q', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -37,11 +38,12 @@ export class UsersController {
     @Query('q') q = '',
     @Query('page') page = 1,
     @Query('limit') limit = 20,
+    @CurrentUser() currentUser: any,
   ) {
     if (q) {
-      return this.usersService.searchUsers(q, +page, +limit);
+      return this.usersService.searchUsers(q, +page, +limit, currentUser?.id);
     }
-    return this.usersService.findAll(+page, +limit);
+    return this.usersService.findAll(+page, +limit, currentUser?.id);
   }
 
   @Get('profile')

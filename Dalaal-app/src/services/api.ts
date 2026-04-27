@@ -1,10 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Hardcoded for physical Android device - change IP if needed
 const API_URL = 'http://172.20.10.5:3001/api';
-
-console.log('API URL:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -22,9 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
@@ -37,7 +32,7 @@ api.interceptors.response.use(
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         message = 'Server is not responding';
       } else if (error.code === 'ECONNREFUSED') {
-        message = 'Cannot connect to server. Is backend running?';
+        message = 'Cannot connect to server';
       }
       const networkError = new Error(message);
       networkError.response = { data: { message } };
@@ -50,13 +45,8 @@ api.interceptors.response.use(
       
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_URL}auth/refresh`, {
-            refreshToken,
-          });
-          const refreshPayload =
-            response.data && typeof response.data === 'object' && 'data' in response.data
-              ? response.data.data
-              : response.data;
+          const response = await axios.post(`${API_URL}auth/refresh`, { refreshToken });
+          const refreshPayload = response.data?.data || response.data;
           const { accessToken } = refreshPayload;
           
           await SecureStore.setItemAsync('accessToken', accessToken);

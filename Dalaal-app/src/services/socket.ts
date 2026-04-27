@@ -2,9 +2,8 @@ import io from 'socket.io-client/dist/socket.io.js';
 import type { Socket } from 'socket.io-client';
 import * as SecureStore from 'expo-secure-store';
 
-// We use the same IP as the API
-const DEV_IP = '172.20.10.2'; 
-const SOCKET_URL = `http://${DEV_IP}:3001/chat`;
+// Use the same IP as the API
+const SOCKET_URL = 'http://172.20.10.5:3001/chat';
 
 class SocketService {
   private socket: Socket | null = null;
