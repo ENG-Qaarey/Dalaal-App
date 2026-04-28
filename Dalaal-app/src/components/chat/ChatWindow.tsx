@@ -25,14 +25,18 @@ type Props = {
   colors: any;
   messages: ChatMessage[];
   onReactToMessage?: (messageId: string, emoji: string) => void;
+  onEndReached?: () => void;
+  loadingMore?: boolean;
+  autoScrollToBottom?: boolean;
 };
 
-export default function ChatWindow({ colors, messages, onReactToMessage }: Props) {
+export default function ChatWindow({ colors, messages, onReactToMessage, onEndReached, loadingMore, autoScrollToBottom = true }: Props) {
   const windowWidth = Dimensions.get('window').width;
   const [playingMessageId, setPlayingMessageId] = React.useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewerIndex, setViewerIndex] = React.useState(0);
   const [reactionTargetId, setReactionTargetId] = React.useState<string | null>(null);
+  const scrollViewRef = React.useRef<ScrollView | null>(null);
   const soundRef = React.useRef<Audio.Sound | null>(null);
   const galleryScrollRef = React.useRef<ScrollView | null>(null);
   const reactionChoices = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
@@ -40,6 +44,14 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
     () => messages.find((message) => message.id === reactionTargetId) || null,
     [messages, reactionTargetId]
   );
+
+  React.useEffect(() => {
+    if (autoScrollToBottom && scrollViewRef.current && messages.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length, autoScrollToBottom]);
 
   const mediaItems = React.useMemo(
     () =>
@@ -123,10 +135,16 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
   return (
     <>
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
+        onMomentumScrollEnd={(e) => {
+          if (e.nativeEvent.contentOffset.y <= 10 && onEndReached && !loadingMore) {
+            onEndReached();
+          }
+        }}
       >
         <View style={styles.messageList}>
         {messages.map((msg) => (
@@ -241,6 +259,11 @@ export default function ChatWindow({ colors, messages, onReactToMessage }: Props
           </View>
         ))}
         </View>
+        {loadingMore && (
+          <View style={styles.loadingMore}>
+            <Text style={styles.loadingMoreText}>Loading...</Text>
+          </View>
+        )}
       </ScrollView>
 
       <Modal visible={!!selectedMessage} transparent animationType="fade" onRequestClose={() => setReactionTargetId(null)}>
@@ -492,5 +515,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
+  },
+  loadingMore: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 12,
+    color: '#888',
   },
 });

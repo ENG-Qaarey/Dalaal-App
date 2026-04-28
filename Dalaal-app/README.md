@@ -7,20 +7,21 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 If you are testing on a **real device** (physical phone), follow these steps to ensure the app can connect to your backend:
 
 ### 1. Update your IP Address
-The app needs to know where your backend is running. 
+
+The app needs to know where your backend is running.
+
 1. Open a terminal and run `ipconfig`.
 2. Find your **IPv4 Address** (e.g., `172.20.10.2` or `192.168.1.X`).
-3. Open `src/services/api.ts` and update the `DEV_IP` constant:
-   ```typescript
-   const DEV_IP = 'YOUR_IP_HERE';
-   ```
+3. Set `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SOCKET_URL` in `.env` to use that IP with port `3002`.
 
 ### 2. Common Issues (Timeouts)
+
 If you get an **Axios Timeout** or `Network Error`:
+
 - **Same Wi-Fi**: Ensure both your phone and computer are on the **exact same Wi-Fi network**.
-- **Windows Firewall**: Windows might block the connection. Run this in PowerShell (Admin) to allow port 3001:
+- **Windows Firewall**: Windows might block the connection. Run this in PowerShell (Admin) to allow port 3002:
   ```powershell
-  New-NetFirewallRule -DisplayName "Dalaal Backend" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "Dalaal Backend" -Direction Inbound -LocalPort 3002 -Protocol TCP -Action Allow
   ```
 - **Backend Running**: Make sure the backend is actually running (`npm run start:dev` in the `/backend` folder).
 

@@ -18,24 +18,27 @@ export type ChatListItem = {
 type ChatStore = {
   chats: ChatListItem[];
   isLoading: boolean;
+  activeConversationId: string | null;
   fetchConversations: () => Promise<void>;
   startChatWithUser: (user: { id: string; name: string; role: string; online: boolean; imageUri?: string }) => Promise<ChatListItem>;
   addMessage: (conversationId: string, message: any) => void;
+  setActiveConversation: (conversationId: string | null) => void;
+  clearActiveConversation: () => void;
+  isActiveConversation: (conversationId: string) => boolean;
+  incrementUnread: (conversationId: string) => void;
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   chats: [],
   isLoading: false,
+  activeConversationId: null,
 
   fetchConversations: async () => {
     set({ isLoading: true });
     try {
       const conversations = await chatService.getConversations();
       const mappedChats: ChatListItem[] = conversations.map((conv: any) => {
-        // Find the other participant
-        // For simplicity, we assume there's only one other participant
-        // In a real app, you'd have the current user ID to filter
-        const otherParticipant = conv.participants[0]; // This is a placeholder logic
+        const otherParticipant = conv.participants[0];
         const lastMessage = conv.messages[0];
 
         return {
@@ -60,7 +63,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   startChatWithUser: async (user) => {
-    // Check if conversation already exists in state
     const existing = get().chats.find((c) => c.id === user.id || c.conversationId === user.id);
     if (existing) return existing;
 
@@ -81,7 +83,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       set((state) => ({ chats: [newChat, ...state.chats] }));
       return newChat;
     } catch (error) {
-      // Return a temporary mock chat if backend fails, but ideally handle error
       throw error;
     }
   },
@@ -95,6 +96,28 @@ export const useChatStore = create<ChatStore>((set, get) => ({
               message: message.content, 
               time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
             } 
+          : chat
+      )
+    }));
+  },
+
+  setActiveConversation: (conversationId) => {
+    set({ activeConversationId: conversationId });
+  },
+
+  clearActiveConversation: () => {
+    set({ activeConversationId: null });
+  },
+
+  isActiveConversation: (conversationId) => {
+    return get().activeConversationId === conversationId;
+  },
+
+  incrementUnread: (conversationId) => {
+    set((state) => ({
+      chats: state.chats.map((chat) =>
+        chat.conversationId === conversationId
+          ? { ...chat, unread: (chat.unread || 0) + 1 }
           : chat
       )
     }));

@@ -32,13 +32,17 @@ export default function Conversation() {
   const C = Colors[scheme];
   const user = useAuthStore((s) => s.user);
   const addMessageToStore = useChatStore((s) => s.addMessage);
+  const setActiveConversation = useChatStore((s) => s.setActiveConversation);
+  const clearActiveConversation = useChatStore((s) => s.clearActiveConversation);
 
   const userName = name || 'User';
   const isOnline = online === '1';
   const [text, setText] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isVoiceLocked, setIsVoiceLocked] = useState(false);
@@ -49,24 +53,53 @@ export default function Conversation() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
   const [callMode, setCallMode] = useState<'audio' | 'video' | null>(null);
+  const loadingMoreRef = useRef(false);
+  loadingMoreRef.current = loadingMore;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const recordingTicker = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingStartedAtRef = useRef<number | null>(null);
   const isStartingRecordingRef = useRef(false);
-  const pendingStopAfterStartRef = useRef<boolean | null>(null);
   const pendingVoiceLockRef = useRef(false);
 
-  useEffect(() => {
-    if (conversationId) {
-      loadMessages();
-      setupSocket();
+  const loadMessages = useCallback(async (loadMore: boolean = false) => {
+    const currentPage = loadMore ? page + 1 : 1;
+    
+    if (loadMore) {
+      if (loadingMoreRef.current) return;
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
     }
-    return () => {
-      socketService.offNewMessage();
-    };
-  }, [conversationId]);
+    
+    try {
+      const data = await chatService.getMessages(conversationId!, currentPage, 30);
+      const mappedMessages: ChatMessage[] = data.map((msg: any) => ({
+        id: msg.id,
+        text: msg.content || '',
+        time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        mine: msg.senderId === user?.id,
+        status: 'read',
+        imageUri: msg.mediaUrl,
+      }));
+      
+      const newMessages = loadMore 
+        ? [...mappedMessages.reverse(), ...messagesRef.current]
+        : mappedMessages.reverse();
+      
+      setMessages(newMessages);
+      setHasMore(data.length === 30);
+      setPage(currentPage);
+    } catch (error) {
+      // Handle error silently
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+}, [conversationId, user?.id, page]);
 
-  useEffect(() => {
+useEffect(() => {
     recordingRef.current = recording;
   }, [recording]);
 
@@ -81,6 +114,83 @@ export default function Conversation() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+
+    setActiveConversation(conversationId);
+
+    const handleNewMessage = (message: any) => {
+      if (message.conversationId === conversationId) {
+        if (message.senderId === user.id) {
+          // Replace temp message with real one (deduplication)
+          setMessages((prev) => {
+            const exists = prev.some(m => m.id === message.id);
+            if (exists) return prev;
+            
+            return prev.map(m => 
+              m.id.toString().startsWith('temp_') && m.text === message.content
+                ? { ...m, id: message.id, status: 'sent' as const }
+                : m
+            );
+          });
+        } else {
+          const newMessage: ChatMessage = {
+            id: message.id,
+            text: message.content || '',
+            time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            mine: false,
+            status: 'read',
+            imageUri: message.mediaUrl,
+          };
+          setMessages((prev) => {
+            if (prev.some(m => m.id === message.id)) return prev;
+            return [...prev, newMessage];
+          });
+          addMessageToStore(conversationId!, message);
+          
+          // Mark as read
+          socketService.markRead(conversationId, user.id, message.id);
+        }
+      } else {
+        useChatStore.getState().incrementUnread(message.conversationId);
+      }
+    };
+
+    const handleMessageDelivered = (data: { messageId: string; conversationId: string }) => {
+      if (data.conversationId === conversationId) {
+        setMessages((prev) => 
+          prev.map(m => m.id === data.messageId ? { ...m, status: 'delivered' as const } : m)
+        );
+      }
+    };
+
+    const handleMessageRead = (data: { conversationId: string; userId: string; messageId?: string }) => {
+      if (data.conversationId === conversationId && data.userId === user.id) {
+        setMessages((prev) => 
+          prev.map(m => m.status !== 'sending' ? { ...m, status: 'read' as const } : m)
+        );
+      }
+    };
+
+    const setup = async () => {
+      await socketService.connect();
+      socketService.join(user.id);
+      
+      socketService.onNewMessage(handleNewMessage);
+      socketService.onMessageStatus(handleMessageDelivered);
+      socketService.onMessageRead(handleMessageRead);
+    };
+
+    setup();
+
+    return () => {
+      socketService.offNewMessage(handleNewMessage);
+      socketService.offMessageStatus(handleMessageDelivered);
+      socketService.offMessageRead(handleMessageRead);
+      clearActiveConversation();
+    };
+  }, [conversationId, user?.id]);
+
   const pushSystemMessage = useCallback((messageText: string) => {
     setMessages((prev) => [
       ...prev,
@@ -92,49 +202,6 @@ export default function Conversation() {
       },
     ]);
   }, []);
-
-  const loadMessages = async () => {
-    try {
-      const data = await chatService.getMessages(conversationId!);
-      const mappedMessages: ChatMessage[] = data.map((msg: any) => ({
-        id: msg.id,
-        text: msg.content || '',
-        time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        mine: msg.senderId === user?.id,
-        status: 'read',
-        imageUri: msg.mediaUrl,
-      }));
-      setMessages(mappedMessages.reverse());
-    } catch (error) {
-      // Handle error silently
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const setupSocket = async () => {
-    await socketService.connect();
-    if (user?.id) {
-      socketService.join(user.id);
-    }
-    socketService.onNewMessage((message) => {
-      if (message.conversationId === conversationId) {
-        // Skip if message is from current user (already added via optimistic update)
-        if (message.senderId === user?.id) return;
-        
-        const newMessage: ChatMessage = {
-          id: message.id,
-          text: message.content || '',
-          time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          mine: false,
-          status: 'read',
-          imageUri: message.mediaUrl,
-        };
-        setMessages((prev) => [...prev, newMessage]);
-        addMessageToStore(conversationId!, message);
-      }
-    });
-  };
 
   const sendMessage = () => {
     const trimmed = text.trim();
@@ -150,7 +217,6 @@ export default function Conversation() {
       imageUri: pendingImages[0],
     };
     
-    // Show message immediately (optimistic update)
     setMessages((prev) => [...prev, myMessage]);
 
     if (conversationId && user?.id) {
@@ -159,6 +225,7 @@ export default function Conversation() {
         userId: user.id,
         content: trimmed,
         mediaUrl: pendingImages[0],
+        tempId,
       });
     }
 
@@ -455,7 +522,14 @@ export default function Conversation() {
         keyboardVerticalOffset={0}
       >
         <View style={styles.body}>
-          <ChatWindow colors={C} messages={messages} onReactToMessage={reactToMessage} />
+          <ChatWindow 
+            colors={C} 
+            messages={messages} 
+            onReactToMessage={reactToMessage}
+            onEndReached={() => hasMore && !loadingMore && loadMessages(true)}
+            loadingMore={loadingMore}
+            autoScrollToBottom={true}
+          />
         </View>
         <ChatComposer
           colors={C}

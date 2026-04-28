@@ -7,7 +7,6 @@ export class ChatService {
   constructor(private readonly chatRepository: ChatRepository) {}
 
   async createConversation(userId: string, dto: CreateConversationDto) {
-    // Prevent user from chatting with themselves
     if (userId === dto.participantId) {
       throw new BadRequestException('Cannot start a chat with yourself');
     }
@@ -37,5 +36,9 @@ export class ChatService {
     if (!isParticipant) throw new ForbiddenException('Not a participant in this conversation');
 
     return this.chatRepository.createMessage(conversationId, userId, dto.content, dto.mediaUrl);
+  }
+
+  async markMessagesAsRead(conversationId: string, userId: string, messageId?: string) {
+    return this.chatRepository.markAsRead(conversationId, userId, messageId);
   }
 }

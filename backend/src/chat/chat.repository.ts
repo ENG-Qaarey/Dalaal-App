@@ -87,9 +87,42 @@ export class ChatRepository {
     return this.prisma.message.findMany({
       where: { conversationId },
       include: { sender: { include: { profile: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
       skip,
       take
+    });
+  }
+
+  async markAsRead(conversationId: string, userId: string, messageId?: string) {
+    const participant = await this.prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId },
+    });
+    
+    if (!participant) return;
+
+    if (messageId) {
+      await this.prisma.message.updateMany({
+        where: { 
+          conversationId,
+          id: messageId,
+          senderId: { not: userId },
+        },
+        data: { readAt: new Date() },
+      });
+    } else {
+      await this.prisma.message.updateMany({
+        where: { 
+          conversationId,
+          senderId: { not: userId },
+          readAt: null,
+        },
+        data: { readAt: new Date() },
+      });
+    }
+
+    await this.prisma.conversationParticipant.update({
+      where: { id: participant.id },
+      data: { unreadCount: 0, lastReadAt: new Date() },
     });
   }
 }

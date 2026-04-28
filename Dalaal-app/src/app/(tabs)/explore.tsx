@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,25 +31,49 @@ export default function ExploreTab() {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
+  loadingMoreRef.current = loadingMore;
+  const usersRef = useRef(users);
+  usersRef.current = users;
   const startChatWithUser = useChatStore((s) => s.startChatWithUser);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [query]);
-
-  const fetchUsers = async () => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (loadMore: boolean = false) => {
+    const currentPage = loadMore ? page + 1 : 1;
+    
+    if (loadMore) {
+      if (loadingMoreRef.current || !hasMore) return;
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
-      const response = await userService.searchUsers(query);
-      // The service returns the unwrapped data array if it exists, 
-      // or the whole response if it was already unwrapped.
-      setUsers(Array.isArray(response) ? response : (response.data || []));
+      const response = await userService.searchUsers(query, currentPage, 20);
+      const newUsers = Array.isArray(response) ? response : (response.data || []);
+      
+      const finalUsers = loadMore
+        ? [...usersRef.current, ...newUsers]
+        : newUsers;
+      
+      setUsers(finalUsers);
+      setHasMore(newUsers.length === 20);
+      setPage(currentPage);
     } catch (error) {
       // Handle error silently
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [query, page, hasMore]);
+
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    fetchUsers(false);
+  }, [query]);
 
   const getDisplayName = (user: User) => {
     if (user.username) return `@${user.username}`;
@@ -84,6 +108,9 @@ export default function ExploreTab() {
         data={users}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 100 + insets.bottom, gap: 8 }}
+        onEndReached={() => hasMore && !loadingMore && fetchUsers(true)}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: 10 }} /> : null}
         ListEmptyComponent={
           !loading ? (
             <View style={[styles.emptyBox, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}>

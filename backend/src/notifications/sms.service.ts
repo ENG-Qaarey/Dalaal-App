@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { DecodedIdToken } from 'firebase-admin/auth';
 import { FirebaseProvider } from '../providers/push/firebase.provider';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class SmsService {
     // on the client side, or Cloud Functions with a triggered SMS service.
   }
 
-  async verifyFirebaseToken(idToken: string) {
+  async verifyFirebaseToken(idToken: string): Promise<DecodedIdToken> {
     try {
       const decodedToken = await this.firebaseProvider.getAdminApp().auth().verifyIdToken(idToken);
       this.logger.log(`Firebase token verified for user: ${decodedToken.uid}`);
