@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import OnboardingBackground from '../../components/OnboardingBackground';
 import { useAppTheme } from '../../context/theme-context';
 import { useChatStore } from '../../store/chatStore';
 import { userService } from '../../services/users';
+import { useAuthStore } from '../../store/authStore';
 
 type User = {
   id: string;
@@ -39,6 +40,7 @@ export default function ExploreTab() {
   const usersRef = useRef(users);
   usersRef.current = users;
   const startChatWithUser = useChatStore((s) => s.startChatWithUser);
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   const fetchUsers = useCallback(async (loadMore: boolean = false) => {
     const currentPage = loadMore ? page + 1 : 1;
@@ -53,10 +55,13 @@ export default function ExploreTab() {
     try {
       const response = await userService.searchUsers(query, currentPage, 20);
       const newUsers = Array.isArray(response) ? response : (response.data || []);
+      const filteredUsers = currentUserId
+        ? newUsers.filter((item: User) => item.id !== currentUserId)
+        : newUsers;
       
       const finalUsers = loadMore
-        ? [...usersRef.current, ...newUsers]
-        : newUsers;
+        ? [...usersRef.current, ...filteredUsers]
+        : filteredUsers;
       
       setUsers(finalUsers);
       setHasMore(newUsers.length === 20);
@@ -67,7 +72,7 @@ export default function ExploreTab() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [query, page, hasMore]);
+  }, [query, page, hasMore, currentUserId]);
 
   useEffect(() => {
     setPage(1);
@@ -138,7 +143,7 @@ export default function ExploreTab() {
               </View>
               <TouchableOpacity
                 style={[styles.chatBtn, { backgroundColor: C.brandBlue }]}
-                onPress={() => {
+                onPress={async () => {
                   const chatUser = {
                     id: item.id,
                     name: name,
@@ -146,17 +151,21 @@ export default function ExploreTab() {
                     online: isOnline,
                     imageUri: item.profile?.avatar,
                   };
-                  const chat = startChatWithUser(chatUser);
-                  router.push({
-                    pathname: '/chat/[id]',
-                    params: {
-                      id: chat.id,
-                      name: chat.name,
-                      role: chat.role,
-                      online: chat.online ? '1' : '0',
-                      imageUri: chat.imageUri ?? '',
-                    },
-                  });
+                  try {
+                    const chat = await startChatWithUser(chatUser);
+                    router.push({
+                      pathname: '/chat/[id]',
+                      params: {
+                        id: chat.id,
+                        name: chat.name,
+                        role: chat.role,
+                        online: chat.online ? '1' : '0',
+                        imageUri: chat.imageUri ?? '',
+                      },
+                    });
+                  } catch (error: any) {
+                    Alert.alert('Chat error', error?.message || 'Unable to start chat.');
+                  }
                 }}
               >
                 <Ionicons name="chatbubble-ellipses-outline" size={14} color={C.surface} />

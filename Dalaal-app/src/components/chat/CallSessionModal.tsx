@@ -10,10 +10,15 @@ const RINGTONE_ASSET = require('../../assets/audio/freesound_community-ring-tone
 type Props = {
   visible: boolean;
   mode: 'audio' | 'video' | null;
+  direction: 'incoming' | 'outgoing';
+  status: 'ringing' | 'ongoing';
+  durationSeconds?: number;
   userName: string;
   userImageUri?: string;
   isOnline: boolean;
   colors: any;
+  onAccept?: () => void;
+  onDecline?: () => void;
   onEnd: () => void;
 };
 
@@ -46,36 +51,49 @@ function isLightColor(hex?: string) {
   return brightness >= 160;
 }
 
-export default function CallSessionModal({ visible, mode, userName, userImageUri, isOnline, colors, onEnd }: Props) {
-  const [seconds, setSeconds] = React.useState(0);
-  const [phase, setPhase] = React.useState<'ringing' | 'no_answer'>('ringing');
+const formatDuration = (seconds: number) => {
+  const total = Math.max(0, seconds);
+  const mins = Math.floor(total / 60)
+    .toString()
+    .padStart(2, '0');
+  const secs = (total % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+};
+
+export default function CallSessionModal({
+  visible,
+  mode,
+  direction,
+  status,
+  durationSeconds = 0,
+  userName,
+  userImageUri,
+  isOnline,
+  colors,
+  onAccept,
+  onDecline,
+  onEnd,
+}: Props) {
   const [isMuted, setIsMuted] = React.useState(false);
   const [speakerOn, setSpeakerOn] = React.useState(true);
   const [videoEnabled, setVideoEnabled] = React.useState(true);
   const [cameraFacing, setCameraFacing] = React.useState<'front' | 'back'>('front');
   const ringtoneRef = React.useRef<Audio.Sound | null>(null);
   const vibrationLoopRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMutedRef = React.useRef(isMuted);
+
+  React.useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   React.useEffect(() => {
     if (!visible) {
-      setSeconds(0);
-      setPhase('ringing');
       setIsMuted(false);
       setSpeakerOn(true);
       setVideoEnabled(true);
       setCameraFacing('front');
-      return;
     }
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(id);
   }, [visible]);
-
-  React.useEffect(() => {
-    if (!visible) return;
-    if (seconds >= 60 && phase === 'ringing') {
-      setPhase('no_answer');
-    }
-  }, [seconds, phase, visible]);
 
   React.useEffect(() => {
     if (!visible) return;
@@ -109,7 +127,7 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
       }
     };
 
-    if (!visible || phase !== 'ringing') {
+    if (!visible || status !== 'ringing') {
       void cleanupRing();
       return;
     }
@@ -120,7 +138,7 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound } = await Audio.Sound.createAsync(
           RINGTONE_ASSET,
-          { shouldPlay: true, isLooping: true, volume: isMuted ? 0 : 1 }
+          { shouldPlay: true, isLooping: true, volume: isMutedRef.current ? 0 : 1 }
         );
         if (cancelled) {
           await sound.unloadAsync();
@@ -139,17 +157,10 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
       cancelled = true;
       void cleanupRing();
     };
-  }, [visible, phase, isMuted]);
+  }, [visible, status]);
 
-  const label = React.useMemo(() => {
-    const mins = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
-  }, [seconds]);
-
-  const isLiveVideo = mode === 'video' && phase === 'ringing' && videoEnabled;
+  const label = React.useMemo(() => formatDuration(durationSeconds), [durationSeconds]);
+  const isLiveVideo = mode === 'video' && status === 'ongoing' && videoEnabled;
   const isLightTheme = isLightColor(colors?.surface);
   const headingColor = isLightTheme ? colors?.textMain ?? '#16223a' : '#fff';
   const subTextColor = isLightTheme ? colors?.textMuted ?? '#5b6b86' : '#D1D5DB';
@@ -174,27 +185,49 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
           />
         ) : null}
 
-        {isLiveVideo ? (
-          <CameraView style={StyleSheet.absoluteFillObject} facing={cameraFacing} />
-        ) : null}
+        {isLiveVideo ? <CameraView style={StyleSheet.absoluteFillObject} facing={cameraFacing} /> : null}
 
         <View style={[styles.darkOverlay, { backgroundColor: overlayColor }]} />
-        {phase === 'ringing' ? (
-          <View style={styles.overlay}>
-            <View style={styles.topMeta}>
-              <Text style={[styles.nameSmall, { color: headingColor }]}>{userName}</Text>
-              <Text style={[styles.state, { color: subTextColor }]}>{isOnline ? 'Ringing...' : 'Calling...'}</Text>
+
+        <View style={styles.overlay}>
+          <View style={styles.topMeta}>
+            <Text style={[styles.nameSmall, { color: headingColor }]}>{userName}</Text>
+            <Text style={[styles.state, { color: subTextColor }]}>
+              {status === 'ringing'
+                ? direction === 'incoming'
+                  ? 'Incoming call...'
+                  : isOnline
+                  ? 'Ringing...'
+                  : 'Calling...'
+                : 'On call'}
+            </Text>
+          </View>
+
+          <View style={styles.center}>
+            <View style={styles.avatarCircle}>
+              {userImageUri ? (
+                <Image source={{ uri: userImageUri }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person" size={62} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
+              )}
             </View>
-            <View style={styles.center}>
-              <View style={styles.avatarCircle}>
-                {userImageUri ? (
-                  <Image source={{ uri: userImageUri }} style={styles.avatarImage} />
-                ) : (
-                  <Ionicons name="person" size={62} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
-                )}
-              </View>
+            {status === 'ongoing' ? (
               <Text style={[styles.timer, { color: timerColor }]}>{label}</Text>
+            ) : null}
+          </View>
+
+          {status === 'ringing' && direction === 'incoming' ? (
+            <View style={styles.incomingActions}>
+              <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
+                <Ionicons name="call" size={18} color="#fff" />
+                <Text style={styles.acceptText}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.declineBtn} onPress={onDecline}>
+                <Ionicons name="call" size={18} color="#fff" />
+                <Text style={styles.declineText}>Decline</Text>
+              </TouchableOpacity>
             </View>
+          ) : (
             <View style={[styles.controlsBar, { backgroundColor: controlBarBg, borderColor: controlBarBorder }]}>
               <TouchableOpacity
                 style={[styles.controlBtn, { backgroundColor: mode === 'video' ? neutralControlBg : mutedControlBg }]}
@@ -228,42 +261,8 @@ export default function CallSessionModal({ visible, mode, userName, userImageUri
                 <Ionicons name="call" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
-          </View>
-        ) : (
-          <View style={styles.overlayNoAnswer}>
-            <View style={styles.avatarCircleSmall}>
-              <Ionicons name="person" size={44} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
-            </View>
-            <Text style={[styles.nameLarge, { color: headingColor }]}>{userName}</Text>
-            <Text style={[styles.noAnswerText, { color: subTextColor }]}>No answer</Text>
-            <View style={styles.noAnswerActions}>
-              <TouchableOpacity style={styles.noAnswerBtn} onPress={onEnd}>
-                <View style={[styles.noAnswerIcon, { backgroundColor: '#fff' }]}>
-                  <Ionicons name="close" size={24} color="#111827" />
-                </View>
-                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.noAnswerBtn} onPress={onEnd}>
-                <View style={[styles.noAnswerIcon, { backgroundColor: neutralControlBg }]}>
-                  <Ionicons name="mic" size={24} color={neutralIconColor} />
-                </View>
-                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Record voice</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.noAnswerBtn}
-                onPress={() => {
-                  setSeconds(0);
-                  setPhase('ringing');
-                }}
-              >
-                <View style={[styles.noAnswerIcon, { backgroundColor: '#22C55E' }]}>
-                  <Ionicons name="call" size={24} color="#fff" />
-                </View>
-                <Text style={[styles.noAnswerLabel, { color: headingColor }]}>Call again</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
     </Modal>
   );
@@ -311,38 +310,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  overlayNoAnswer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 120,
-  },
-  avatarCircleSmall: {
-    width: 124,
-    height: 124,
-    borderRadius: 62,
-    backgroundColor: '#4C3F9A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameLarge: { marginTop: 24, fontSize: 48, fontWeight: '900', color: '#fff' },
-  noAnswerText: { marginTop: 6, fontSize: 22, fontWeight: '700', color: '#D1D5DB' },
-  noAnswerActions: {
-    marginTop: 'auto',
-    width: '100%',
-    paddingHorizontal: 20,
-    paddingBottom: 44,
+  incomingActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 18,
   },
-  noAnswerBtn: { alignItems: 'center', width: '31%' },
-  noAnswerIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+  acceptBtn: {
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 18,
+    height: 48,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  noAnswerLabel: { marginTop: 10, fontSize: 19, color: '#E5E7EB', fontWeight: '600', textAlign: 'center' },
+  acceptText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  declineBtn: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 18,
+    height: 48,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  declineText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 });

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { MessageType } from '../common/enums/message-type.enum';
 
 @Injectable()
 export class ChatRepository {
@@ -49,9 +50,22 @@ export class ChatRepository {
       },
       include: {
         participants: { include: { user: { include: { profile: true } } } },
-        messages: { take: 1, orderBy: { createdAt: 'desc' } }
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          where: { deletions: { none: { userId } } },
+        }
       },
       orderBy: { lastMessageAt: 'desc' }
+    });
+  }
+
+  async findMessageById(id: string) {
+    return this.prisma.message.findUnique({
+      where: { id },
+      include: {
+        conversation: { include: { participants: true } },
+      },
     });
   }
 
@@ -64,10 +78,28 @@ export class ChatRepository {
     });
   }
 
-  async createMessage(conversationId: string, senderId: string, content: string, mediaUrl?: string) {
+  async createMessage(
+    conversationId: string,
+    senderId: string,
+    content?: string,
+    mediaUrl?: string,
+    type: MessageType = MessageType.TEXT,
+  ) {
+    const normalizedContent = typeof content === 'string' ? content.trim() : '';
+    const normalizedMediaUrl = typeof mediaUrl === 'string' ? mediaUrl.trim() : '';
+    if (!normalizedContent && !normalizedMediaUrl) {
+      throw new BadRequestException('Message content or media is required');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const message = await tx.message.create({
-        data: { conversationId, senderId, content, mediaUrl },
+        data: {
+          conversationId,
+          senderId,
+          content: normalizedContent || undefined,
+          mediaUrl: normalizedMediaUrl || undefined,
+          type,
+        },
         include: { sender: { include: { profile: true } } }
       });
 
@@ -87,9 +119,60 @@ export class ChatRepository {
     return this.prisma.message.findMany({
       where: { conversationId },
       include: { sender: { include: { profile: true } } },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       skip,
       take
+    });
+  }
+
+  async findMessagesForUser(conversationId: string, userId: string, skip = 0, take = 50) {
+    return this.prisma.message.findMany({
+      where: {
+        conversationId,
+        deletions: { none: { userId } },
+      },
+      include: { sender: { include: { profile: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+  }
+
+  async addDeletion(messageId: string, userId: string) {
+    return this.prisma.messageDeletion.upsert({
+      where: { messageId_userId: { messageId, userId } },
+      update: {},
+      create: { messageId, userId },
+    });
+  }
+
+  async deleteMessageForAll(messageId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.message.findUnique({ where: { id: messageId } });
+      if (!message) return null;
+
+      await tx.message.delete({ where: { id: messageId } });
+
+      const latest = await tx.message.findFirst({
+        where: { conversationId: message.conversationId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const conversation = await tx.conversation.findUnique({
+        where: { id: message.conversationId },
+        select: { messageCount: true },
+      });
+      const nextMessageCount = Math.max(0, (conversation?.messageCount || 0) - 1);
+
+      await tx.conversation.update({
+        where: { id: message.conversationId },
+        data: {
+          lastMessageAt: latest?.createdAt ?? null,
+          messageCount: nextMessageCount,
+        },
+      });
+
+      return { message, latest };
     });
   }
 

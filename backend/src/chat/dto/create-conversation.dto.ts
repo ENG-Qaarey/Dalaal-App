@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateIf, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MessageType } from '../../common/enums/message-type.enum';
 
 export class CreateConversationDto {
   @ApiProperty()
@@ -19,13 +20,27 @@ export class CreateConversationDto {
 }
 
 export class CreateMessageDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
+  @ValidateIf((o) => !o.mediaUrl)
   @IsNotEmpty()
-  content: string;
+  content?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @ValidateIf((o) => !o.content)
+  @IsNotEmpty()
+  mediaUrl?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  mediaUrl?: string;
+  tempId?: string;
+
+  @ApiProperty({ required: false, enum: MessageType })
+  @IsOptional()
+  @IsEnum(MessageType)
+  type?: MessageType;
 }

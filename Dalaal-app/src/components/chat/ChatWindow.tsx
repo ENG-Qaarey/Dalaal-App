@@ -11,6 +11,8 @@ export type ChatMessage = {
   text: string;
   mine?: boolean;
   time?: string;
+  createdAt?: string;
+  type?: string;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
   reaction?: string;
   imageUri?: string;
@@ -25,12 +27,23 @@ type Props = {
   colors: any;
   messages: ChatMessage[];
   onReactToMessage?: (messageId: string, emoji: string) => void;
+  onDeleteMessage?: (messageId: string) => void;
+  onDeleteMessageForEveryone?: (messageId: string) => void;
   onEndReached?: () => void;
   loadingMore?: boolean;
   autoScrollToBottom?: boolean;
 };
 
-export default function ChatWindow({ colors, messages, onReactToMessage, onEndReached, loadingMore, autoScrollToBottom = true }: Props) {
+export default function ChatWindow({
+  colors,
+  messages,
+  onReactToMessage,
+  onDeleteMessage,
+  onDeleteMessageForEveryone,
+  onEndReached,
+  loadingMore,
+  autoScrollToBottom = true,
+}: Props) {
   const windowWidth = Dimensions.get('window').width;
   const [playingMessageId, setPlayingMessageId] = React.useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = React.useState(false);
@@ -95,6 +108,15 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
     return `${mins}:${secs}`;
   }, []);
 
+  const parseCallLog = React.useCallback((message: ChatMessage) => {
+    if (message.type !== 'SYSTEM' || !message.text?.startsWith('CALL|')) return null;
+    const parts = message.text.split('|');
+    const status = parts[1] || 'missed';
+    const mode = parts[2] || 'audio';
+    const durationSeconds = Number.parseInt(parts[3] || '0', 10) || 0;
+    return { status, mode, durationSeconds };
+  }, []);
+
   const togglePlayAudio = React.useCallback(
     async (message: ChatMessage) => {
       if (!message.audioUri) return;
@@ -147,9 +169,34 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
         }}
       >
         <View style={styles.messageList}>
-        {messages.map((msg) => (
+        {messages.map((msg) => {
+          const callLog = parseCallLog(msg);
+          if (callLog) {
+            const durationLabel = callLog.durationSeconds > 0 ? formatSeconds(callLog.durationSeconds) : '';
+            const label =
+              callLog.status === 'answered'
+                ? `Call ended${durationLabel ? ` • ${durationLabel}` : ''}`
+                : callLog.status === 'declined'
+                ? 'Call declined'
+                : `Missed ${callLog.mode} call`;
+            return (
+              <View key={msg.id} style={styles.systemRow}>
+                <View style={[styles.callLog, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}
+                >
+                  <Ionicons name="call" size={14} color={colors.textMain} />
+                  <Text style={[styles.callLogText, { color: colors.textMain }]}>{label}</Text>
+                </View>
+                {msg.time ? <Text style={[styles.callLogTime, { color: colors.textMuted }]}>{msg.time}</Text> : null}
+              </View>
+            );
+          }
+
+          return (
           <View key={msg.id} style={[styles.row, msg.mine ? styles.rowMine : styles.rowOther]}>
-            <View
+            <View style={[styles.messageColumn, msg.mine ? styles.messageColumnMine : styles.messageColumnOther]}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onLongPress={() => setReactionTargetId(msg.id)}
               style={[
                 styles.bubble,
                 {
@@ -225,8 +272,7 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
               </TouchableOpacity>
             ) : null}
             {!msg.text ? (
-              <TouchableOpacity activeOpacity={0.8} onLongPress={() => setReactionTargetId(msg.id)}>
-                <View style={styles.metaRow}>
+              <View style={styles.metaRow}>
                   {msg.time ? (
                     <Text style={[styles.timeText, { color: msg.mine ? colors.surface + 'CC' : colors.textMuted }]}>{msg.time}</Text>
                   ) : null}
@@ -237,9 +283,9 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
                       color={msg.status === 'read' ? '#7DD3FC' : colors.surface + 'CC'}
                     />
                   ) : null}
-                </View>
-              </TouchableOpacity>
+              </View>
             ) : null}
+            </TouchableOpacity>
             {msg.reaction ? (
               <View
                 style={[
@@ -257,7 +303,8 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
             ) : null}
             </View>
           </View>
-        ))}
+        );
+        })}
         </View>
         {loadingMore && (
           <View style={styles.loadingMore}>
@@ -313,10 +360,30 @@ export default function ChatWindow({ colors, messages, onReactToMessage, onEndRe
                 <Text style={[styles.actionText, { color: colors.textMain }]}>Star</Text>
                 <Ionicons name="star-outline" size={17} color={colors.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionRow} onPress={() => setReactionTargetId(null)}>
-                <Text style={[styles.actionText, { color: '#E11D48' }]}>Delete</Text>
+              <TouchableOpacity
+                style={styles.actionRow}
+                onPress={() => {
+                  if (!selectedMessage) return;
+                  onDeleteMessage?.(selectedMessage.id);
+                  setReactionTargetId(null);
+                }}
+              >
+                <Text style={[styles.actionText, { color: '#E11D48' }]}>Delete for me</Text>
                 <Ionicons name="trash-outline" size={17} color="#E11D48" />
               </TouchableOpacity>
+              {selectedMessage?.mine ? (
+                <TouchableOpacity
+                  style={styles.actionRow}
+                  onPress={() => {
+                    if (!selectedMessage) return;
+                    onDeleteMessageForEveryone?.(selectedMessage.id);
+                    setReactionTargetId(null);
+                  }}
+                >
+                  <Text style={[styles.actionText, { color: '#DC2626' }]}>Delete for everyone</Text>
+                  <Ionicons name="trash" size={17} color="#DC2626" />
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -374,7 +441,22 @@ const styles = StyleSheet.create({
   row: { marginBottom: 8, flexDirection: 'row', flexShrink: 0, width: '100%', minWidth: 0 },
   rowMine: { justifyContent: 'flex-end' },
   rowOther: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '80%', minWidth: 0, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8, flexShrink: 1, flexWrap: 'wrap', overflow: 'hidden' },
+  messageColumn: { maxWidth: '80%', minWidth: 0, position: 'relative', paddingTop: 10 },
+  messageColumnMine: { alignItems: 'flex-end' },
+  messageColumnOther: { alignItems: 'flex-start' },
+  systemRow: { alignItems: 'center', marginVertical: 6 },
+  callLog: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  callLogText: { fontSize: 12, fontWeight: '700' },
+  callLogTime: { marginTop: 4, fontSize: 10, fontWeight: '600' },
+  bubble: { width: '100%', minWidth: 0, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8, flexShrink: 1, flexWrap: 'wrap', overflow: 'hidden' },
   photo: { width: 180, height: 180, borderRadius: 10, marginBottom: 6 },
   messageText: { fontSize: 13, fontWeight: '700', flexWrap: 'wrap', flexShrink: 1, includeFontPadding: false },
   textWrapper: { flexShrink: 1, maxWidth: '100%', minWidth: 0 },
@@ -437,7 +519,7 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 10, marginRight: 3, lineHeight: 12 },
   reactionBubble: {
     position: 'absolute',
-    bottom: -13,
+    top: 0,
     minWidth: 26,
     height: 22,
     borderWidth: 1,

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -31,7 +32,6 @@ export default function Conversation() {
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
   const user = useAuthStore((s) => s.user);
-  const addMessageToStore = useChatStore((s) => s.addMessage);
   const setActiveConversation = useChatStore((s) => s.setActiveConversation);
   const clearActiveConversation = useChatStore((s) => s.clearActiveConversation);
 
@@ -52,7 +52,18 @@ export default function Conversation() {
   const [pendingFile, setPendingFile] = useState<{ uri: string; name: string } | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [mediaPreviewOpen, setMediaPreviewOpen] = useState(false);
-  const [callMode, setCallMode] = useState<'audio' | 'video' | null>(null);
+  const [callSession, setCallSession] = useState<{
+    callId: string;
+    mode: 'audio' | 'video';
+    status: 'ringing' | 'ongoing';
+    direction: 'incoming' | 'outgoing';
+    startedAt: number;
+    acceptedAt?: number;
+  } | null>(null);
+  const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const callSessionRef = useRef<typeof callSession>(null);
   const loadingMoreRef = useRef(false);
   loadingMoreRef.current = loadingMore;
   const messagesRef = useRef(messages);
@@ -62,6 +73,44 @@ export default function Conversation() {
   const recordingStartedAtRef = useRef<number | null>(null);
   const isStartingRecordingRef = useRef(false);
   const pendingVoiceLockRef = useRef(false);
+  const pendingStopAfterStartRef = useRef<boolean | null>(null);
+
+  const formatTime = useCallback(
+    (value?: string | Date) => new Date(value || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    []
+  );
+
+  const buildMessage = useCallback(
+    (message: any, mine: boolean): ChatMessage => ({
+      id: message.id,
+      text: message.content || '',
+      time: formatTime(message.createdAt),
+      createdAt: message.createdAt,
+      type: message.type,
+      mine,
+      status: mine ? 'sent' : 'read',
+      imageUri: message.mediaUrl,
+    }),
+    [formatTime]
+  );
+
+  const sortMessages = useCallback((items: ChatMessage[]) => {
+    return [...items].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+  }, []);
+
+  const syncPreviewAfterDelete = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      const latest = await chatService.getMessages(conversationId, 1, 1);
+      useChatStore.getState().updateConversationPreview(conversationId, latest?.[0]);
+    } catch {
+      // ignore preview refresh errors
+    }
+  }, [conversationId]);
 
   const loadMessages = useCallback(async (loadMore: boolean = false) => {
     const currentPage = loadMore ? page + 1 : 1;
@@ -78,7 +127,9 @@ export default function Conversation() {
       const mappedMessages: ChatMessage[] = data.map((msg: any) => ({
         id: msg.id,
         text: msg.content || '',
-        time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: formatTime(msg.createdAt),
+        createdAt: msg.createdAt,
+        type: msg.type,
         mine: msg.senderId === user?.id,
         status: 'read',
         imageUri: msg.mediaUrl,
@@ -88,7 +139,7 @@ export default function Conversation() {
         ? [...mappedMessages.reverse(), ...messagesRef.current]
         : mappedMessages.reverse();
       
-      setMessages(newMessages);
+      setMessages(sortMessages(newMessages));
       setHasMore(data.length === 30);
       setPage(currentPage);
     } catch (error) {
@@ -97,11 +148,15 @@ export default function Conversation() {
       setLoading(false);
       setLoadingMore(false);
     }
-}, [conversationId, user?.id, page]);
+}, [conversationId, user?.id, page, formatTime, sortMessages]);
 
 useEffect(() => {
     recordingRef.current = recording;
   }, [recording]);
+
+  useEffect(() => {
+    callSessionRef.current = callSession;
+  }, [callSession]);
 
   useEffect(() => {
     return () => {
@@ -115,9 +170,74 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    if (!callSession || callSession.status !== 'ongoing') {
+      setCallDurationSeconds(0);
+      return;
+    }
+
+    const initialAcceptedAt = callSession.acceptedAt ?? Date.now();
+    callTimerRef.current = setInterval(() => {
+      const seconds = Math.max(0, Math.floor((Date.now() - initialAcceptedAt) / 1000));
+      setCallDurationSeconds(seconds);
+    }, 1000);
+
+    return () => {
+      if (callTimerRef.current) {
+        clearInterval(callTimerRef.current);
+        callTimerRef.current = null;
+      }
+    };
+  }, [callSession]);
+
+  useEffect(() => {
+    if (callTimeoutRef.current) {
+      clearTimeout(callTimeoutRef.current);
+      callTimeoutRef.current = null;
+    }
+    if (!callSession || callSession.status !== 'ringing' || callSession.direction !== 'outgoing') {
+      return;
+    }
+
+    callTimeoutRef.current = setTimeout(() => {
+      if (!callSessionRef.current || callSessionRef.current.callId !== callSession.callId) return;
+      if (conversationId && user?.id) {
+        socketService.endCall({
+          callId: callSession.callId,
+          conversationId,
+          userId: user.id,
+          reason: 'timeout',
+        });
+      }
+      setCallSession(null);
+      setCallDurationSeconds(0);
+    }, 45000);
+
+    return () => {
+      if (callTimeoutRef.current) {
+        clearTimeout(callTimeoutRef.current);
+        callTimeoutRef.current = null;
+      }
+    };
+  }, [callSession, conversationId, user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!conversationId || !user?.id) return () => undefined;
+      void loadMessages(false);
+      useChatStore.getState().markConversationRead(conversationId);
+      return () => undefined;
+    }, [conversationId, user?.id, loadMessages])
+  );
+
+  useEffect(() => {
     if (!conversationId || !user?.id) return;
 
     setActiveConversation(conversationId);
+    useChatStore.getState().markConversationRead(conversationId);
 
     const handleNewMessage = (message: any) => {
       if (message.conversationId === conversationId) {
@@ -126,33 +246,27 @@ useEffect(() => {
           setMessages((prev) => {
             const exists = prev.some(m => m.id === message.id);
             if (exists) return prev;
-            
-            return prev.map(m => 
-              m.id.toString().startsWith('temp_') && m.text === message.content
-                ? { ...m, id: message.id, status: 'sent' as const }
-                : m
-            );
+            if (message.tempId) {
+              const replaced = prev.map(m =>
+                m.id === message.tempId
+                  ? { ...m, id: message.id, status: 'sent' as const, time: formatTime(message.createdAt), createdAt: message.createdAt }
+                  : m
+              );
+              return sortMessages(replaced);
+            }
+
+            return sortMessages([...prev, buildMessage(message, true)]);
           });
         } else {
-          const newMessage: ChatMessage = {
-            id: message.id,
-            text: message.content || '',
-            time: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            mine: false,
-            status: 'read',
-            imageUri: message.mediaUrl,
-          };
+          const newMessage = buildMessage(message, false);
           setMessages((prev) => {
             if (prev.some(m => m.id === message.id)) return prev;
-            return [...prev, newMessage];
+            return sortMessages([...prev, newMessage]);
           });
-          addMessageToStore(conversationId!, message);
           
           // Mark as read
           socketService.markRead(conversationId, user.id, message.id);
         }
-      } else {
-        useChatStore.getState().incrementUnread(message.conversationId);
       }
     };
 
@@ -172,13 +286,66 @@ useEffect(() => {
       }
     };
 
+    const handleIncomingCall = (data: { callId: string; conversationId: string; callerId: string; mode: 'audio' | 'video'; startedAt: number }) => {
+      if (data.conversationId !== conversationId) return;
+      const existing = callSessionRef.current;
+      if (existing && existing.status === 'ongoing') {
+        socketService.declineCall({ callId: data.callId, conversationId: data.conversationId, userId: user.id });
+        return;
+      }
+      setCallSession({
+        callId: data.callId,
+        mode: data.mode,
+        status: 'ringing',
+        direction: 'incoming',
+        startedAt: data.startedAt || Date.now(),
+      });
+    };
+
+    const handleCallAccepted = (data: { callId: string; conversationId: string; userId: string; acceptedAt?: number }) => {
+      if (data.conversationId !== conversationId) return;
+      const current = callSessionRef.current;
+      if (!current || current.callId !== data.callId) return;
+      setCallSession({
+        ...current,
+        status: 'ongoing',
+        acceptedAt: data.acceptedAt || Date.now(),
+      });
+    };
+
+    const handleCallDeclined = (data: { callId: string; conversationId: string; userId: string }) => {
+      if (data.conversationId !== conversationId) return;
+      const current = callSessionRef.current;
+      if (!current || current.callId !== data.callId) return;
+      setCallSession(null);
+      setCallDurationSeconds(0);
+    };
+
+    const handleCallEnded = (data: { callId: string; conversationId: string; userId: string }) => {
+      if (data.conversationId !== conversationId) return;
+      const current = callSessionRef.current;
+      if (!current || current.callId !== data.callId) return;
+      setCallSession(null);
+      setCallDurationSeconds(0);
+    };
+
+    const handleMessageDeleted = (data: { messageId: string; conversationId: string }) => {
+      if (data.conversationId !== conversationId) return;
+      setMessages((prev) => prev.filter((msg) => msg.id !== data.messageId));
+      void syncPreviewAfterDelete();
+    };
+
     const setup = async () => {
-      await socketService.connect();
-      socketService.join(user.id);
+      await socketService.connect(user.id);
       
       socketService.onNewMessage(handleNewMessage);
       socketService.onMessageStatus(handleMessageDelivered);
       socketService.onMessageRead(handleMessageRead);
+      socketService.onMessageDeleted(handleMessageDeleted);
+      socketService.onIncomingCall(handleIncomingCall);
+      socketService.onCallAccepted(handleCallAccepted);
+      socketService.onCallDeclined(handleCallDeclined);
+      socketService.onCallEnded(handleCallEnded);
     };
 
     setup();
@@ -187,9 +354,14 @@ useEffect(() => {
       socketService.offNewMessage(handleNewMessage);
       socketService.offMessageStatus(handleMessageDelivered);
       socketService.offMessageRead(handleMessageRead);
+      socketService.offMessageDeleted(handleMessageDeleted);
+      socketService.offIncomingCall(handleIncomingCall);
+      socketService.offCallAccepted(handleCallAccepted);
+      socketService.offCallDeclined(handleCallDeclined);
+      socketService.offCallEnded(handleCallEnded);
       clearActiveConversation();
     };
-  }, [conversationId, user?.id]);
+  }, [conversationId, user?.id, syncPreviewAfterDelete]);
 
   const pushSystemMessage = useCallback((messageText: string) => {
     setMessages((prev) => [
@@ -203,15 +375,56 @@ useEffect(() => {
     ]);
   }, []);
 
-  const sendMessage = () => {
+  const performDelete = useCallback(
+    async (messageId: string, scope: 'self' | 'all') => {
+      let removedMessage: ChatMessage | null = null;
+      setMessages((prev) => {
+        const toRemove = prev.find((msg) => msg.id === messageId) || null;
+        removedMessage = toRemove;
+        return prev.filter((msg) => msg.id !== messageId);
+      });
+      try {
+        await chatService.deleteMessage(messageId, scope);
+      } catch (error: any) {
+        if (removedMessage) {
+          setMessages((prev) => {
+            if (prev.some((msg) => msg.id === removedMessage?.id)) return prev;
+            return sortMessages([...prev, removedMessage as ChatMessage]);
+          });
+        }
+        Alert.alert('Delete failed', error?.message || 'Could not delete message.');
+      } finally {
+        await syncPreviewAfterDelete();
+      }
+    },
+    [sortMessages, syncPreviewAfterDelete]
+  );
+
+  const deleteMessageForMe = useCallback((messageId: string) => {
+    Alert.alert('Delete message', 'Delete this message for you only?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => void performDelete(messageId, 'self') },
+    ]);
+  }, [performDelete]);
+
+  const deleteMessageForEveryone = useCallback((messageId: string) => {
+    Alert.alert('Delete for everyone', 'This will remove the message for all participants.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => void performDelete(messageId, 'all') },
+    ]);
+  }, [performDelete]);
+
+  const sendMessage = async () => {
     const trimmed = text.trim();
     if (!trimmed && !pendingFile && pendingImages.length === 0) return;
 
     const tempId = `temp_${Date.now()}`;
+    const nowIso = new Date().toISOString();
     const myMessage: ChatMessage = {
       id: tempId,
       text: trimmed,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: formatTime(nowIso),
+      createdAt: nowIso,
       mine: true,
       status: 'sending',
       imageUri: pendingImages[0],
@@ -220,13 +433,41 @@ useEffect(() => {
     setMessages((prev) => [...prev, myMessage]);
 
     if (conversationId && user?.id) {
-      socketService.sendMessage({
+      useChatStore.getState().applyIncomingMessage({
+        id: tempId,
         conversationId,
-        userId: user.id,
+        senderId: user.id,
         content: trimmed,
         mediaUrl: pendingImages[0],
-        tempId,
+        createdAt: nowIso,
       });
+      if (socketService.isConnected()) {
+        socketService.sendMessage({
+          conversationId,
+          userId: user.id,
+          content: trimmed,
+          mediaUrl: pendingImages[0],
+          tempId,
+        });
+      } else {
+        try {
+          const saved = await chatService.sendMessage(conversationId, {
+            content: trimmed,
+            mediaUrl: pendingImages[0],
+            tempId,
+          });
+          setMessages((prev) => {
+            const replaced = prev.map((msg) =>
+              msg.id === tempId
+                ? { ...msg, id: saved.id, status: 'sent' as const, time: formatTime(saved.createdAt), createdAt: saved.createdAt }
+                : msg
+            );
+            return sortMessages(replaced);
+          });
+        } catch (error: any) {
+          Alert.alert('Message failed', error?.message || 'Could not send message.');
+        }
+      }
     }
 
     setText('');
@@ -457,6 +698,64 @@ useEffect(() => {
     setIsVoiceLocked(true);
   };
 
+  const beginCall = useCallback(
+    (mode: 'audio' | 'video') => {
+      if (!conversationId || !user?.id) return;
+      const callId = `call_${Date.now()}`;
+      setCallSession({
+        callId,
+        mode,
+        status: 'ringing',
+        direction: 'outgoing',
+        startedAt: Date.now(),
+      });
+      socketService.startCall({
+        callId,
+        conversationId,
+        userId: user.id,
+        mode,
+      });
+    },
+    [conversationId, user?.id]
+  );
+
+  const acceptCall = useCallback(() => {
+    if (!callSession || !conversationId || !user?.id) return;
+    socketService.acceptCall({
+      callId: callSession.callId,
+      conversationId,
+      userId: user.id,
+    });
+    setCallSession({
+      ...callSession,
+      status: 'ongoing',
+      acceptedAt: Date.now(),
+    });
+  }, [callSession, conversationId, user?.id]);
+
+  const declineCall = useCallback(() => {
+    if (!callSession || !conversationId || !user?.id) return;
+    socketService.declineCall({
+      callId: callSession.callId,
+      conversationId,
+      userId: user.id,
+    });
+    setCallSession(null);
+    setCallDurationSeconds(0);
+  }, [callSession, conversationId, user?.id]);
+
+  const endCall = useCallback(() => {
+    if (!callSession || !conversationId || !user?.id) return;
+    socketService.endCall({
+      callId: callSession.callId,
+      conversationId,
+      userId: user.id,
+      reason: 'ended',
+    });
+    setCallSession(null);
+    setCallDurationSeconds(0);
+  }, [callSession, conversationId, user?.id]);
+
   const startAudioCall = React.useCallback(async () => {
     const permission = await Audio.requestPermissionsAsync();
     if (!permission.granted) {
@@ -468,8 +767,8 @@ useEffect(() => {
       playsInSilentModeIOS: true,
       staysActiveInBackground: false,
     });
-    setCallMode('audio');
-  }, []);
+    beginCall('audio');
+  }, [beginCall]);
 
   const startVideoCall = React.useCallback(async () => {
     const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
@@ -487,8 +786,8 @@ useEffect(() => {
       playsInSilentModeIOS: true,
       staysActiveInBackground: false,
     });
-    setCallMode('video');
-  }, []);
+    beginCall('video');
+  }, [beginCall]);
 
   const reactToMessage = React.useCallback((messageId: string, emoji: string) => {
     setMessages((prev) =>
@@ -526,6 +825,8 @@ useEffect(() => {
             colors={C} 
             messages={messages} 
             onReactToMessage={reactToMessage}
+            onDeleteMessage={deleteMessageForMe}
+            onDeleteMessageForEveryone={deleteMessageForEveryone}
             onEndReached={() => hasMore && !loadingMore && loadMessages(true)}
             loadingMore={loadingMore}
             autoScrollToBottom={true}
@@ -590,13 +891,18 @@ useEffect(() => {
           onSend={sendPendingImage}
         />
         <CallSessionModal
-          visible={!!callMode}
-          mode={callMode}
+          visible={!!callSession}
+          mode={callSession?.mode || null}
+          direction={callSession?.direction || 'outgoing'}
+          status={callSession?.status || 'ringing'}
+          durationSeconds={callDurationSeconds}
           userName={userName}
           userImageUri={imageUri}
           isOnline={isOnline}
           colors={C}
-          onEnd={() => setCallMode(null)}
+          onAccept={acceptCall}
+          onDecline={declineCall}
+          onEnd={endCall}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
