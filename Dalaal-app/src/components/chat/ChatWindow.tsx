@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Audio, ResizeMode, Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -32,6 +32,7 @@ type Props = {
   onEndReached?: () => void;
   loadingMore?: boolean;
   autoScrollToBottom?: boolean;
+  scrollToBottomSignal?: number;
 };
 
 export default function ChatWindow({
@@ -43,6 +44,7 @@ export default function ChatWindow({
   onEndReached,
   loadingMore,
   autoScrollToBottom = true,
+  scrollToBottomSignal = 0,
 }: Props) {
   const windowWidth = Dimensions.get('window').width;
   const [playingMessageId, setPlayingMessageId] = React.useState<string | null>(null);
@@ -53,6 +55,26 @@ export default function ChatWindow({
   const soundRef = React.useRef<Audio.Sound | null>(null);
   const galleryScrollRef = React.useRef<ScrollView | null>(null);
   const reactionChoices = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+  const [showScrollToBottom, setShowScrollToBottom] = React.useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const shakeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (showScrollToBottom) {
+      const shake = Animated.loop(
+        Animated.sequence([
+          Animated.timing(shakeAnim, { toValue: -6, duration: 300, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 6, duration: 300, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -6, duration: 300, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay(4800),
+        ])
+      );
+      shake.start();
+      return () => shake.stop();
+    }
+  }, [showScrollToBottom]);
+
   const selectedMessage = React.useMemo(
     () => messages.find((message) => message.id === reactionTargetId) || null,
     [messages, reactionTargetId]
@@ -65,6 +87,26 @@ export default function ChatWindow({
       }, 100);
     }
   }, [messages.length, autoScrollToBottom]);
+
+  React.useEffect(() => {
+    if (!scrollViewRef.current) return;
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  }, [scrollToBottomSignal]);
+
+  const dateLabelFor = React.useCallback((value?: string) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMessageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.floor((startOfToday.getTime() - startOfMessageDay.getTime()) / (24 * 60 * 60 * 1000));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  }, []);
 
   const mediaItems = React.useMemo(
     () =>
@@ -166,10 +208,28 @@ export default function ChatWindow({
           if (e.nativeEvent.contentOffset.y <= 10 && onEndReached && !loadingMore) {
             onEndReached();
           }
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          const isAtBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 50;
+          setShowScrollToBottom(!isAtBottom);
+          Animated.timing(fadeAnim, {
+            toValue: !isAtBottom ? 1 : 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
         }}
+        onScroll={(e) => {
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          const isAtBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 50;
+          setShowScrollToBottom(!isAtBottom);
+        }}
+        scrollEventThrottle={16}
       >
         <View style={styles.messageList}>
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
+          const previous = index > 0 ? messages[index - 1] : null;
+          const currentDate = dateLabelFor(msg.createdAt);
+          const previousDate = previous ? dateLabelFor(previous.createdAt) : '';
+          const showDateSeparator = !!currentDate && currentDate !== previousDate;
           const callLog = parseCallLog(msg);
           if (callLog) {
             const durationLabel = callLog.durationSeconds > 0 ? formatSeconds(callLog.durationSeconds) : '';
@@ -180,20 +240,37 @@ export default function ChatWindow({
                 ? 'Call declined'
                 : `Missed ${callLog.mode} call`;
             return (
-              <View key={msg.id} style={styles.systemRow}>
-                <View style={[styles.callLog, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}
-                >
-                  <Ionicons name="call" size={14} color={colors.textMain} />
-                  <Text style={[styles.callLogText, { color: colors.textMain }]}>{label}</Text>
+              <View key={msg.id}>
+                {showDateSeparator ? (
+                  <View style={styles.dateRow}>
+                    <View style={[styles.dateBadge, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}>
+                      <Text style={[styles.dateText, { color: colors.textMuted }]}>{currentDate}</Text>
+                    </View>
+                  </View>
+                ) : null}
+                <View style={styles.systemRow}>
+                  <View style={[styles.callLog, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}
+                  >
+                    <Ionicons name="call" size={14} color={colors.textMain} />
+                    <Text style={[styles.callLogText, { color: colors.textMain }]}>{label}</Text>
+                  </View>
+                  {msg.time ? <Text style={[styles.callLogTime, { color: colors.textMuted }]}>{msg.time}</Text> : null}
                 </View>
-                {msg.time ? <Text style={[styles.callLogTime, { color: colors.textMuted }]}>{msg.time}</Text> : null}
               </View>
             );
           }
 
           return (
-          <View key={msg.id} style={[styles.row, msg.mine ? styles.rowMine : styles.rowOther]}>
-            <View style={[styles.messageColumn, msg.mine ? styles.messageColumnMine : styles.messageColumnOther]}>
+          <View key={msg.id}>
+            {showDateSeparator ? (
+              <View style={styles.dateRow}>
+                <View style={[styles.dateBadge, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}>
+                  <Text style={[styles.dateText, { color: colors.textMuted }]}>{currentDate}</Text>
+                </View>
+              </View>
+            ) : null}
+            <View style={[styles.row, msg.mine ? styles.rowMine : styles.rowOther]}>
+              <View style={[styles.messageColumn, msg.mine ? styles.messageColumnMine : styles.messageColumnOther]}>
             <TouchableOpacity
               activeOpacity={1}
               onLongPress={() => setReactionTargetId(msg.id)}
@@ -291,10 +368,10 @@ export default function ChatWindow({
                 style={[
                   styles.reactionBubble,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.brandBorder,
-                    right: msg.mine ? 8 : undefined,
-                    left: msg.mine ? undefined : 8,
+                    backgroundColor: '#111827', // Dark background as requested
+                    borderColor: '#374151',
+                    right: 4,
+                    bottom: -8,
                   },
                 ]}
               >
@@ -302,6 +379,7 @@ export default function ChatWindow({
               </View>
             ) : null}
             </View>
+          </View>
           </View>
         );
         })}
@@ -312,6 +390,34 @@ export default function ChatWindow({
           </View>
         )}
       </ScrollView>
+
+      {showScrollToBottom && (
+        <Animated.View
+          style={[
+            styles.scrollToBottomContainer,
+            {
+              opacity: fadeAnim,
+              transform: [
+                {
+                  scale: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.5, 1],
+                  }),
+                },
+                { translateY: shakeAnim },
+              ],
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.scrollToBottomBtn, { backgroundColor: colors.brandBlue }]}
+            onPress={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-down" size={18} color={colors.surface} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <Modal visible={!!selectedMessage} transparent animationType="fade" onRequestClose={() => setReactionTargetId(null)}>
         <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setReactionTargetId(null)}>
@@ -445,6 +551,9 @@ const styles = StyleSheet.create({
   messageColumnMine: { alignItems: 'flex-end' },
   messageColumnOther: { alignItems: 'flex-start' },
   systemRow: { alignItems: 'center', marginVertical: 6 },
+  dateRow: { alignItems: 'center', marginVertical: 6 },
+  dateBadge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  dateText: { fontSize: 10, fontWeight: '700' },
   callLog: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -519,16 +628,21 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 10, marginRight: 3, lineHeight: 12 },
   reactionBubble: {
     position: 'absolute',
-    top: 0,
-    minWidth: 26,
-    height: 22,
-    borderWidth: 1,
-    borderRadius: 11,
-    paddingHorizontal: 6,
+    minWidth: 28,
+    height: 24,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
   },
-  reactionBubbleText: { fontSize: 14 },
+  reactionBubbleText: { fontSize: 13 },
   menuOverlay: {
     flex: 1,
     backgroundColor: '#00000045',
@@ -605,5 +719,22 @@ const styles = StyleSheet.create({
   loadingMoreText: {
     fontSize: 12,
     color: '#888',
+  },
+  scrollToBottomContainer: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+  },
+  scrollToBottomBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 6,
   },
 });

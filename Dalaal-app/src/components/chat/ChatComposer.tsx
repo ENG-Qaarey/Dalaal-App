@@ -23,6 +23,7 @@ type Props = {
   isVoiceLocked?: boolean;
   canSend?: boolean;
   recordingSeconds?: number;
+  onInputFocus?: () => void;
 };
 
 export default function ChatComposer({
@@ -46,6 +47,7 @@ export default function ChatComposer({
   isVoiceLocked = false,
   canSend = false,
   recordingSeconds = 0,
+  onInputFocus,
 }: Props) {
   const HOLD_TO_RECORD_MS = 180;
   const LOCK_THRESHOLD = 38;
@@ -210,6 +212,7 @@ export default function ChatComposer({
             <TextInput
               value={value}
               onChangeText={onChangeText}
+              onFocus={onInputFocus}
               placeholder="Type a message"
               placeholderTextColor={colors.textMuted}
               style={[styles.input, { color: colors.textMain }]}

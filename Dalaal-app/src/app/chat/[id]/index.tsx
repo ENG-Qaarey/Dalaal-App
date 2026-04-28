@@ -62,6 +62,7 @@ export default function Conversation() {
   } | null>(null);
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
   const [isPeerTyping, setIsPeerTyping] = useState(false);
+  const [composerFocusTick, setComposerFocusTick] = useState(0);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callSessionRef = useRef<typeof callSession>(null);
@@ -887,6 +888,7 @@ useEffect(() => {
             onEndReached={() => hasMore && !loadingMore && loadMessages(true)}
             loadingMore={loadingMore}
             autoScrollToBottom={true}
+            scrollToBottomSignal={composerFocusTick}
           />
         </View>
         <ChatComposer
@@ -919,6 +921,7 @@ useEffect(() => {
           isVoiceLocked={isVoiceLocked}
           recordingSeconds={recordingSeconds}
           canSend={!!text.trim() || !!pendingFile || pendingImages.length > 0}
+          onInputFocus={() => setComposerFocusTick((value) => value + 1)}
         />
         <ChatCameraModal
           visible={cameraOpen}
