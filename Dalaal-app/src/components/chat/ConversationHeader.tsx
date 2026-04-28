@@ -8,6 +8,7 @@ type Props = {
   userName: string;
   userRole?: string;
   isOnline: boolean;
+  typingText?: string | null;
   userImageUri?: string;
   onBack: () => void;
   onAudioCall: () => void;
@@ -19,6 +20,7 @@ export default function ConversationHeader({
   userName,
   userRole,
   isOnline,
+  typingText,
   userImageUri,
   onBack,
   onAudioCall,
@@ -72,8 +74,7 @@ export default function ConversationHeader({
             {userName}
           </Text>
           <Text style={[styles.userMeta, { color: colors.textMuted }]} numberOfLines={1}>
-            {isOnline ? 'Online' : 'Offline'}
-            {userRole ? ` • ${userRole}` : ''}
+            {typingText || `${isOnline ? 'Online' : 'Offline'}${userRole ? ` • ${userRole}` : ''}`}
           </Text>
         </View>
       </View>

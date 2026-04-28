@@ -29,7 +29,7 @@ type CallSession = {
 })
 @UseGuards(WsJwtGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server: Server;
+  @WebSocketServer() server!: Server;
   private readonly logger = new Logger(ChatGateway.name);
   private connectedUsers = new Map<string, string>();
   private userSockets = new Map<string, Set<string>>();
@@ -50,7 +50,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (this.redisInitialized) return this.redisClient;
     this.redisInitialized = true;
     try {
-      const redisModule = await import('redis');
+      // Resolve redis dynamically so the app can still run with in-memory fallback when redis package is unavailable.
+      const redisModule = require('redis');
       const client = redisModule.createClient({
         socket: {
           host: this.configService.get<string>('redis.host'),
@@ -171,13 +172,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.chatService.markMessagesAsRead(data.conversationId, data.userId, data.messageId);
     
     const conversation = await this.chatService.getConversations(data.userId);
-    const currentConv = conversation.find(c => c.id === data.conversationId);
+    const currentConv = (conversation as any[]).find((c: any) => c.id === data.conversationId);
     
     if (currentConv) {
-      currentConv.participants.forEach(p => {
+      currentConv.participants.forEach((p: any) => {
         const socketIds = this.userSockets.get(p.userId);
         if (socketIds) {
-          socketIds.forEach(socketId => {
+          socketIds.forEach((socketId) => {
             this.server.to(socketId).emit('messageRead', {
               conversationId: data.conversationId,
               userId: data.userId,
@@ -246,29 +247,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { callId: string; conversationId: string; userId: string },
   ) {
-    const session = await this.getCallSession(data.callId);
-    if (!session) return { success: false, error: 'Call not found' };
-    if (session.conversationId !== data.conversationId) return { success: false, error: 'Invalid conversation' };
+    try {
+      const session = await this.getCallSession(data.callId);
+      if (!session) return { success: false, error: 'Call not found' };
+      if (session.conversationId !== data.conversationId) return { success: false, error: 'Invalid conversation' };
 
-    const conversation = await this.chatService.getConversationById(session.conversationId, data.userId);
-    if (!conversation) return { success: false, error: 'Conversation not found' };
-    const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
-    if (!isParticipant || data.userId === session.callerId) {
-      return { success: false, error: 'Not authorized' };
-    }
+      const conversation = await this.chatService.getConversationById(session.conversationId, data.userId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
+      if (!isParticipant || data.userId === session.callerId) {
+        return { success: false, error: 'Not authorized' };
+      }
 
-    const updatedSession = await this.setCallAcceptedAt(data.callId, Date.now());
-    if (!updatedSession) return { success: false, error: 'Call not found' };
-    if (conversation) {
+      const updatedSession = await this.setCallAcceptedAt(data.callId, Date.now());
+      if (!updatedSession) return { success: false, error: 'Call not found' };
       this.emitCallEvent(conversation, 'call:accepted', {
         callId: updatedSession.callId,
         conversationId: updatedSession.conversationId,
         userId: data.userId,
         acceptedAt: updatedSession.acceptedAt,
       });
-    }
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to accept call:', error);
+      return { success: false, error: 'Failed to accept call' };
+    }
   }
 
   @SubscribeMessage('call:decline')
@@ -276,25 +280,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { callId: string; conversationId: string; userId: string },
   ) {
-    const session = await this.getCallSession(data.callId);
-    if (!session) return { success: false, error: 'Call not found' };
-    const conversation = await this.chatService.getConversationById(session.conversationId);
-    if (!conversation) return { success: false, error: 'Conversation not found' };
-    const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
-    if (!isParticipant) {
-      return { success: false, error: 'Not authorized' };
-    }
+    try {
+      const session = await this.getCallSession(data.callId);
+      if (!session) return { success: false, error: 'Call not found' };
+      const conversation = await this.chatService.getConversationById(session.conversationId, data.userId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
+      if (!isParticipant) {
+        return { success: false, error: 'Not authorized' };
+      }
 
-    await this.finalizeCall(session, 'declined');
-    if (conversation) {
+      await this.finalizeCall(session, 'declined');
       this.emitCallEvent(conversation, 'call:declined', {
         callId: session.callId,
         conversationId: session.conversationId,
         userId: data.userId,
       });
-    }
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to decline call:', error);
+      return { success: false, error: 'Failed to decline call' };
+    }
   }
 
   @SubscribeMessage('call:end')
@@ -302,25 +309,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { callId: string; conversationId: string; userId: string; reason?: 'ended' | 'timeout' | 'cancelled' },
   ) {
-    const session = await this.getCallSession(data.callId);
-    if (!session) return { success: false, error: 'Call not found' };
-    const conversation = await this.chatService.getConversationById(session.conversationId);
-    if (!conversation) return { success: false, error: 'Conversation not found' };
-    const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
-    if (!isParticipant) {
-      return { success: false, error: 'Not authorized' };
-    }
+    try {
+      const session = await this.getCallSession(data.callId);
+      if (!session) return { success: false, error: 'Call not found' };
+      const conversation = await this.chatService.getConversationById(session.conversationId, data.userId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
+      if (!isParticipant) {
+        return { success: false, error: 'Not authorized' };
+      }
 
-    await this.finalizeCall(session, data.reason || 'ended');
-    if (conversation) {
+      await this.finalizeCall(session, data.reason || 'ended');
       this.emitCallEvent(conversation, 'call:ended', {
         callId: session.callId,
         conversationId: session.conversationId,
         userId: data.userId,
       });
-    }
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to end call:', error);
+      return { success: false, error: 'Failed to end call' };
+    }
   }
 
   private emitCallEvent(
@@ -413,19 +423,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('typing')
-  handleTyping(
+  async handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string; userId: string; isTyping: boolean },
   ) {
-    const socketIds = this.userSockets.get(data.userId);
-    if (socketIds) {
-      socketIds.forEach(socketId => {
-        this.server.to(socketId).emit('userTyping', {
-          conversationId: data.conversationId,
-          userId: data.userId,
-          isTyping: data.isTyping,
+    try {
+      const conversation = await this.chatService.getConversationById(data.conversationId, data.userId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const isParticipant = conversation.participants.some((p) => p.userId === data.userId);
+      if (!isParticipant) return { success: false, error: 'Not authorized' };
+
+      conversation.participants.forEach((participant) => {
+        if (participant.userId === data.userId) return;
+        const socketIds = this.userSockets.get(participant.userId);
+        if (!socketIds) return;
+        socketIds.forEach((socketId) => {
+          this.server.to(socketId).emit('userTyping', {
+            conversationId: data.conversationId,
+            userId: data.userId,
+            isTyping: data.isTyping,
+          });
         });
       });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to handle typing:', error);
+      return { success: false, error: 'Failed to update typing state' };
     }
   }
 }

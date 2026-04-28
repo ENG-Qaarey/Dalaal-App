@@ -29,6 +29,7 @@ type NewMessageCallback = (message: any) => void;
 type StatusCallback = (data: { messageId: string; status: MessageStatus; conversationId: string }) => void;
 type ReadCallback = (data: { conversationId: string; userId: string; messageId?: string }) => void;
 type MessageDeletedCallback = (data: { messageId: string; conversationId: string }) => void;
+type TypingCallback = (data: { conversationId: string; userId: string; isTyping: boolean }) => void;
 type IncomingCallCallback = (data: { callId: string; conversationId: string; callerId: string; mode: CallMode; startedAt: number }) => void;
 type CallAcceptedCallback = (data: { callId: string; conversationId: string; userId: string; acceptedAt?: number }) => void;
 type CallDeclinedCallback = (data: { callId: string; conversationId: string; userId: string }) => void;
@@ -40,6 +41,7 @@ class SocketService {
   private statusCallbacks: StatusCallback[] = [];
   private readCallbacks: ReadCallback[] = [];
   private messageDeletedCallbacks: MessageDeletedCallback[] = [];
+  private typingCallbacks: TypingCallback[] = [];
   private incomingCallCallbacks: IncomingCallCallback[] = [];
   private callAcceptedCallbacks: CallAcceptedCallback[] = [];
   private callDeclinedCallbacks: CallDeclinedCallback[] = [];
@@ -111,6 +113,10 @@ class SocketService {
         this.messageDeletedCallbacks.forEach(cb => cb(data));
       });
 
+      this.socket.on('userTyping', (data) => {
+        this.typingCallbacks.forEach(cb => cb(data));
+      });
+
       this.socket.on('call:incoming', (data) => {
         this.incomingCallCallbacks.forEach(cb => cb(data));
       });
@@ -173,6 +179,10 @@ class SocketService {
     this.socket?.emit('call:end', data);
   }
 
+  sendTyping(data: { conversationId: string; userId: string; isTyping: boolean }) {
+    this.socket?.emit('typing', data);
+  }
+
   onNewMessage(callback: NewMessageCallback) {
     this.newMessageCallbacks.push(callback);
   }
@@ -222,6 +232,19 @@ class SocketService {
       if (index > -1) this.messageDeletedCallbacks.splice(index, 1);
     } else {
       this.messageDeletedCallbacks = [];
+    }
+  }
+
+  onUserTyping(callback: TypingCallback) {
+    this.typingCallbacks.push(callback);
+  }
+
+  offUserTyping(callback?: TypingCallback) {
+    if (callback) {
+      const index = this.typingCallbacks.indexOf(callback);
+      if (index > -1) this.typingCallbacks.splice(index, 1);
+    } else {
+      this.typingCallbacks = [];
     }
   }
 

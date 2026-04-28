@@ -61,6 +61,7 @@ export default function Conversation() {
     acceptedAt?: number;
   } | null>(null);
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+  const [isPeerTyping, setIsPeerTyping] = useState(false);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callSessionRef = useRef<typeof callSession>(null);
@@ -74,6 +75,7 @@ export default function Conversation() {
   const isStartingRecordingRef = useRef(false);
   const pendingVoiceLockRef = useRef(false);
   const pendingStopAfterStartRef = useRef<boolean | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const formatTime = useCallback(
     (value?: string | Date) => new Date(value || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -335,6 +337,22 @@ useEffect(() => {
       void syncPreviewAfterDelete();
     };
 
+    const handleUserTyping = (data: { conversationId: string; userId: string; isTyping: boolean }) => {
+      if (data.conversationId !== conversationId) return;
+      if (data.userId === user.id) return;
+      setIsPeerTyping(data.isTyping);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      if (data.isTyping) {
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsPeerTyping(false);
+          typingTimeoutRef.current = null;
+        }, 2200);
+      }
+    };
+
     const setup = async () => {
       await socketService.connect(user.id);
       
@@ -346,6 +364,7 @@ useEffect(() => {
       socketService.onCallAccepted(handleCallAccepted);
       socketService.onCallDeclined(handleCallDeclined);
       socketService.onCallEnded(handleCallEnded);
+      socketService.onUserTyping(handleUserTyping);
     };
 
     setup();
@@ -359,6 +378,12 @@ useEffect(() => {
       socketService.offCallAccepted(handleCallAccepted);
       socketService.offCallDeclined(handleCallDeclined);
       socketService.offCallEnded(handleCallEnded);
+      socketService.offUserTyping(handleUserTyping);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      setIsPeerTyping(false);
       clearActiveConversation();
     };
   }, [conversationId, user?.id, syncPreviewAfterDelete]);
@@ -433,6 +458,7 @@ useEffect(() => {
     setMessages((prev) => [...prev, myMessage]);
 
     if (conversationId && user?.id) {
+      socketService.sendTyping({ conversationId, userId: user.id, isTyping: false });
       useChatStore.getState().applyIncomingMessage({
         id: tempId,
         conversationId,
@@ -719,8 +745,25 @@ useEffect(() => {
     [conversationId, user?.id]
   );
 
-  const acceptCall = useCallback(() => {
+  const acceptCall = useCallback(async () => {
     if (!callSession || !conversationId || !user?.id) return;
+    if (callSession.mode === 'video') {
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!cameraPermission.granted) {
+        Alert.alert('Camera permission', 'Please allow camera access to accept video calls.');
+        return;
+      }
+    }
+    const micPermission = await Audio.requestPermissionsAsync();
+    if (!micPermission.granted) {
+      Alert.alert('Microphone permission', 'Please allow microphone access to accept calls.');
+      return;
+    }
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
     socketService.acceptCall({
       callId: callSession.callId,
       conversationId,
@@ -802,6 +845,19 @@ useEffect(() => {
     );
   }, []);
 
+  const handleComposerChange = useCallback(
+    (value: string) => {
+      setText(value);
+      if (!conversationId || !user?.id) return;
+      socketService.sendTyping({
+        conversationId,
+        userId: user.id,
+        isTyping: value.trim().length > 0,
+      });
+    },
+    [conversationId, user?.id]
+  );
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
@@ -810,6 +866,7 @@ useEffect(() => {
         userName={userName}
         userRole={role}
         isOnline={isOnline}
+        typingText={isPeerTyping ? 'Typing...' : null}
         userImageUri={imageUri}
         onBack={() => router.back()}
         onAudioCall={() => void startAudioCall()}
@@ -835,7 +892,7 @@ useEffect(() => {
         <ChatComposer
           colors={C}
           value={text}
-          onChangeText={setText}
+          onChangeText={handleComposerChange}
           onSend={sendMessage}
           onAttach={handleAttach}
           onCamera={handleCamera}

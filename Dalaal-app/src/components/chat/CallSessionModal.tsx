@@ -160,6 +160,7 @@ export default function CallSessionModal({
   }, [visible, status]);
 
   const label = React.useMemo(() => formatDuration(durationSeconds), [durationSeconds]);
+  const canUseVideoControls = mode === 'video' && status === 'ongoing';
   const isLiveVideo = mode === 'video' && status === 'ongoing' && videoEnabled;
   const isLightTheme = isLightColor(colors?.surface);
   const headingColor = isLightTheme ? colors?.textMain ?? '#16223a' : '#fff';
@@ -240,10 +241,18 @@ export default function CallSessionModal({
                 <Ionicons name="camera-reverse-outline" size={20} color={neutralIconColor} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: videoEnabled ? neutralControlBg : '#DC2626' }]}
-                onPress={() => setVideoEnabled((v) => !v)}
+                style={[styles.controlBtn, { backgroundColor: canUseVideoControls && videoEnabled ? neutralControlBg : '#DC2626' }]}
+                disabled={!canUseVideoControls}
+                onPress={() => {
+                  if (!canUseVideoControls) return;
+                  setVideoEnabled((v) => !v);
+                }}
               >
-                <Ionicons name={videoEnabled ? 'videocam' : 'videocam-off'} size={20} color={videoEnabled ? neutralIconColor : '#fff'} />
+                <Ionicons
+                  name={canUseVideoControls && videoEnabled ? 'videocam' : 'videocam-off'}
+                  size={20}
+                  color={canUseVideoControls && videoEnabled ? neutralIconColor : '#fff'}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.controlBtn, { backgroundColor: speakerOn ? '#fff' : neutralControlBg }]}

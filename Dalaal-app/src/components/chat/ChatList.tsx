@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 type ChatItem = {
@@ -40,7 +40,11 @@ export default function ChatList({ chats, colors, onPressChat }: Props) {
         >
           <View style={styles.chatLeft}>
             <View style={[styles.chatAvatar, { backgroundColor: colors.tableRow }]}>
-              <Text style={[styles.chatInitials, { color: colors.textMain }]}>{initialsFor(chat.name)}</Text>
+              {chat.imageUri ? (
+                <Image source={{ uri: chat.imageUri }} style={styles.chatAvatarImage} />
+              ) : (
+                <Text style={[styles.chatInitials, { color: colors.textMain }]}>{initialsFor(chat.name)}</Text>
+              )}
               {chat.online ? <View style={[styles.onlineDot, { backgroundColor: colors.brandOrange }]} /> : null}
             </View>
           </View>
@@ -95,6 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chatAvatarImage: { width: '100%', height: '100%' },
   chatInitials: { fontSize: 14, fontWeight: '900' },
   onlineDot: { position: 'absolute', right: 6, top: 6, width: 8, height: 8, borderRadius: 999 },
   chatBody: { flex: 1 },

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,6 +27,8 @@ export default function Chat() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const { chats, fetchConversations, isLoading } = useChatStore();
 
+  const topUnreadChat = useMemo(() => chats.find((chat) => (chat.unread || 0) > 0) || null, [chats]);
+
   const filteredChats = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (chats || []).filter((chat) => {
@@ -34,7 +36,7 @@ export default function Chat() {
       if (activeFilter === 'active' && !chat.online) return false;
       if (!q) return true;
       const hay = `${chat.name} ${chat.role} ${chat.message}`.toLowerCase();
-      return hay.includes(hay);
+      return hay.includes(q);
     });
   }, [activeFilter, query, chats]);
 
@@ -131,6 +133,45 @@ export default function Chat() {
           <Text style={[styles.sectionTitle, { color: C.textMain }]}>Recent chats</Text>
           <Text style={[styles.sectionHint, { color: C.textMuted }]}>{filteredChats.length} conversations</Text>
         </View>
+        {topUnreadChat ? (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[styles.notificationCard, { backgroundColor: C.surface, borderColor: C.brandBorder }]}
+            onPress={() =>
+              router.push({
+                pathname: '/chat/[id]',
+                params: {
+                  id: topUnreadChat.id,
+                  name: topUnreadChat.name,
+                  role: topUnreadChat.role,
+                  online: topUnreadChat.online ? '1' : '0',
+                  imageUri: topUnreadChat.imageUri ?? '',
+                },
+              })
+            }
+          >
+            {topUnreadChat.imageUri ? (
+              <Image source={{ uri: topUnreadChat.imageUri }} style={styles.notificationAvatar} />
+            ) : (
+              <View style={[styles.notificationAvatar, { backgroundColor: C.tableRow }]}>
+                <Text style={[styles.notificationAvatarText, { color: C.textMain }]}>
+                  {topUnreadChat.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.notificationBody}>
+              <View style={styles.notificationTopRow}>
+                <Text style={[styles.notificationName, { color: C.textMain }]} numberOfLines={1}>
+                  {topUnreadChat.name}
+                </Text>
+                <Text style={[styles.notificationTime, { color: C.textMuted }]}>now</Text>
+              </View>
+              <Text style={[styles.notificationMessage, { color: C.textMuted }]} numberOfLines={1}>
+                {topUnreadChat.message}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
         <ChatList
           chats={filteredChats as any}
           colors={C}
@@ -195,5 +236,22 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 13, fontWeight: '900' },
   sectionHint: { fontSize: 10 },
+  notificationCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  notificationAvatar: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  notificationAvatarText: { fontSize: 14, fontWeight: '900' },
+  notificationBody: { flex: 1 },
+  notificationTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  notificationName: { fontSize: 20, fontWeight: '900', maxWidth: '80%' },
+  notificationTime: { fontSize: 12, fontWeight: '700' },
+  notificationMessage: { marginTop: 2, fontSize: 14, fontWeight: '600' },
 });
 
