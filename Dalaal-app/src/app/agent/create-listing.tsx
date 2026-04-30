@@ -23,6 +23,7 @@ export default function CreateListing() {
   const [type, setType] = useState('Property');
   const [images, setImages] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const handleAddImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -33,8 +34,6 @@ export default function CreateListing() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.8,
       selectionLimit: 5,
       allowsMultipleSelection: true,
@@ -55,6 +54,11 @@ export default function CreateListing() {
   const handlePublish = () => {
     if (!title || !price || !location) {
       Alert.alert('Missing Fields', 'Please fill in all required fields.');
+      return;
+    }
+    
+    if (!agreed) {
+      Alert.alert('Agreement Required', 'Please agree to the terms and conditions to publish the listing.');
       return;
     }
     
@@ -109,7 +113,7 @@ export default function CreateListing() {
                   <Text style={[styles.typeBtnText, { color: type === t ? '#fff' : C.textMain }]}>{t}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
+</View>
           </View>
 
           <View style={[styles.section, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
@@ -169,6 +173,19 @@ export default function CreateListing() {
             />
           </View>
 
+          <View style={[styles.section, { backgroundColor: C.surface, borderColor: C.brandBorder }]}>
+            <Text style={[styles.label, { color: C.textMain }]}>Agreement</Text>
+            <Text style={[styles.signatureHint, { color: C.textMuted }]}>By checking the box below, I confirm that the information provided is accurate and I agree to the terms and conditions.</Text>
+            
+            <TouchableOpacity 
+              onPress={() => setAgreed(!agreed)} 
+              style={[styles.agreementCheck, { backgroundColor: agreed ? C.brandBlue : C.tableRow, borderColor: C.brandBorder }]}
+            >
+              <Ionicons name={agreed ? 'checkmark' : 'square-outline'} size={20} color={agreed ? '#fff' : C.textMuted} />
+              <Text style={[styles.agreementTextCheck, { color: agreed ? '#fff' : C.textMain }]}>I agree to the terms and conditions</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={handlePublish}
@@ -215,4 +232,7 @@ const styles = StyleSheet.create({
   textArea: { height: 80, paddingTop: 10, textAlignVertical: 'top' },
   publishBtn: { height: 46, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   publishBtnText: { fontSize: 14, fontWeight: '900' },
+  signatureHint: { fontSize: 11, marginBottom: 10 },
+  agreementCheck: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, marginTop: 8 },
+  agreementTextCheck: { fontSize: 12, fontWeight: '700', marginLeft: 10 },
 });

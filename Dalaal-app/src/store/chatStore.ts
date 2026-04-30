@@ -1,6 +1,23 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
 import { chatService } from '../services/chat';
 import { useAuthStore } from './authStore';
+
+export type StoredMessage = {
+  id: string;
+  text?: string;
+  mine?: boolean;
+  time?: string;
+  createdAt?: string;
+  type?: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  imageUri?: string;
+  audioUri?: string;
+  audioDurationSeconds?: number;
+  fileName?: string;
+  reaction?: string;
+};
 
 export type ChatListItem = {
   id: string;
@@ -24,6 +41,7 @@ const formatTime = (value?: string | Date) => {
 
 const buildDisplayName = (user?: any) => {
   if (!user) return 'User';
+  if (user.name) return user.name;
   if (user.username) return `@${user.username}`;
   const firstName = user.profile?.firstName || '';
   const lastName = user.profile?.lastName || '';
@@ -55,6 +73,7 @@ const previewForMessage = (message: any) => {
 
 type ChatStore = {
   chats: ChatListItem[];
+  messages: Record<string, StoredMessage[]>;
   isLoading: boolean;
   activeConversationId: string | null;
   fetchConversations: () => Promise<void>;
@@ -67,13 +86,18 @@ type ChatStore = {
   clearActiveConversation: () => void;
   isActiveConversation: (conversationId: string) => boolean;
   incrementUnread: (conversationId: string) => void;
+  setConversationMessages: (conversationId: string, messages: StoredMessage[]) => void;
+  appendMessage: (conversationId: string, message: StoredMessage) => void;
   reset: () => void;
 };
 
-export const useChatStore = create<ChatStore>((set, get) => ({
-  chats: [],
-  isLoading: false,
-  activeConversationId: null,
+export const useChatStore = create<ChatStore>()(
+  persist(
+    (set, get) => ({
+      chats: [],
+      messages: {},
+      isLoading: false,
+      activeConversationId: null,
 
   fetchConversations: async () => {
     set({ isLoading: true });
@@ -110,7 +134,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         };
       })
       .filter(Boolean) as ChatListItem[];
-      set({ chats: mappedChats });
+      set((state) => {
+        const newChats = [...state.chats];
+        mappedChats.forEach((mc) => {
+          const exists = newChats.findIndex((nc) => nc.id === mc.id);
+          if (exists >= 0) {
+            newChats[exists] = { ...newChats[exists], ...mc };
+          } else {
+            newChats.push(mc);
+          }
+        });
+        return { chats: newChats };
+      });
     } catch (error) {
       // Handle error silently
     } finally {
@@ -254,8 +289,46 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       )
     }));
   },
-  reset: () => {
-    set({ chats: [], activeConversationId: null, isLoading: false });
+  setConversationMessages: (conversationId, messages) => {
+    set((state) => ({
+      messages: { ...state.messages, [conversationId]: messages }
+    }));
   },
-}));
+  appendMessage: (conversationId, message) => {
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      const isDuplicate = existing.some(m => m.id === message.id);
+      if (isDuplicate) return state;
+      return {
+        messages: { ...state.messages, [conversationId]: [...existing, message] }
+      };
+    });
+  },
+  reset: () => {
+    set({ chats: [], messages: {}, activeConversationId: null, isLoading: false });
+  },
+    }),
+    {
+      name: 'dalaal-chat-storage',
+      storage: createJSONStorage(() => ({
+        getItem: async (name: string) => {
+          try {
+            return await SecureStore.getItemAsync(name);
+          } catch { return null; }
+        },
+        setItem: async (name: string, value: string) => {
+          try {
+            await SecureStore.setItemAsync(name, value);
+          } catch {}
+        },
+        removeItem: async (name: string) => {
+          try {
+            await SecureStore.deleteItemAsync(name);
+          } catch {}
+        },
+      })),
+      partialize: (state) => ({ chats: state.chats, messages: state.messages }),
+    }
+  )
+);
 

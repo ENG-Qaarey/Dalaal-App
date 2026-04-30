@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Animated, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Audio, ResizeMode, Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 const SENT_BUBBLE_COLOR = '#60A5FA';
 const SENT_BUBBLE_BORDER_COLOR = '#3B82F6';
@@ -46,6 +47,7 @@ export default function ChatWindow({
   autoScrollToBottom = true,
   scrollToBottomSignal = 0,
 }: Props) {
+  const router = useRouter();
   const windowWidth = Dimensions.get('window').width;
   const [playingMessageId, setPlayingMessageId] = React.useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = React.useState(false);
@@ -196,6 +198,44 @@ export default function ChatWindow({
     [playingMessageId]
   );
 
+  const renderMessageText = React.useCallback((text: string, isMine: boolean) => {
+    if (!text) return null;
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      const linkText = match[1];
+      const url = match[2];
+      
+      parts.push(
+        <Text
+          key={match.index}
+          style={{ textDecorationLine: 'underline', fontWeight: '900', color: isMine ? '#fff' : colors.brandBlue }}
+          onPress={() => {
+            if (url.startsWith('listing:')) {
+              const id = url.replace('listing:', '');
+              router.push(`/listings-detail?id=${id}`);
+            }
+          }}
+        >
+          {linkText}
+        </Text>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  }, [colors, router]);
+
   return (
     <>
       <ScrollView
@@ -300,7 +340,9 @@ export default function ChatWindow({
             {msg.text ? (
               <View style={styles.inlineTextMetaRow}>
                 <View style={styles.textWrapper}>
-                  <Text style={[styles.messageText, { color: msg.mine ? colors.surface : colors.textMain }]}>{msg.text}</Text>
+                  <Text style={[styles.messageText, { color: msg.mine ? colors.surface : colors.textMain }]}>
+                    {renderMessageText(msg.text, msg.mine || false)}
+                  </Text>
                 </View>
                 <View style={styles.inlineMeta}>
                   {msg.time ? (

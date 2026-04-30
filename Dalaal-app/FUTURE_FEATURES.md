@@ -16,14 +16,14 @@ Based on the current architecture, the following core features are already prese
 ## 🚀 Future Features Roadmap
 To build a highly competitive and premium application, consider adding the following features:
 
-### 1. Advanced Agent & Seller Tools
-* **Agent Dashboard:** A dedicated screen for agents to see analytics (views, favorites, leads, and conversion metrics).
-* **Listing Management:** A seamless flow for sellers/agents to create, edit, and upload new properties directly from their mobile devices, including image cropping and video uploads.
+### 1. ✅ Advanced Agent & Seller Tools (COMPLETED)
+* **Agent Dashboard:** A dedicated screen for agents to see analytics (views, favorites, leads, and conversion metrics) located at `/agent/dashboard`.
+* **Listing Management:** A seamless flow for sellers/agents to create, edit, and upload new properties directly from their mobile devices, including image cropping and video uploads located at `/agent/create-listing`.
 
-### 2. Financial & Booking Features
-* **Booking / Scheduling System:** A calendar integration (e.g., Calendly API) allowing users to book physical property tours or video calls directly within the app.
-* **Financial Calculators:** A built-in mortgage, loan, or ROI calculator on the listing details page to help users estimate monthly payments.
-* **E-Signatures / Contracts:** Integration with a service like DocuSign to handle digital leases or purchase agreements safely within the app.
+### 2. ✅ Financial & Booking Features (COMPLETED)
+* **Booking / Scheduling System:** A seamless calendar flow created at `/booking/[id]` allowing users to book physical property tours or video calls directly within the app.
+* **Financial Calculators:** A built-in, dynamic mortgage calculator integrated directly into the `listings-detail.tsx` page to help users estimate monthly payments based on live property prices.
+* **E-Signatures / Contracts:** A secure digital contract review and e-signature flow built at `/contract/[id]`.
 
 ### 3. Enhanced User Experience (UX)
 * **Localization (Multi-language):** Implementation of an internationalization library (like `i18next`) to support multiple languages (English, Arabic, Somali, French, etc.).

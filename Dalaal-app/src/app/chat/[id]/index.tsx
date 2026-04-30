@@ -22,12 +22,15 @@ import { useChatStore } from '../../../store/chatStore';
 
 export default function Conversation() {
   const router = useRouter();
-  const { id: conversationId, name, role, online, imageUri } = useLocalSearchParams<{
+  const { id: conversationId, name, role, online, imageUri, initialText, listingId, listingTitle } = useLocalSearchParams<{
     id: string;
     name?: string;
     role?: string;
     online?: string;
     imageUri?: string;
+    initialText?: string;
+    listingId?: string;
+    listingTitle?: string;
   }>();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
@@ -37,8 +40,9 @@ export default function Conversation() {
 
   const userName = name || 'User';
   const isOnline = online === '1';
-  const [text, setText] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [text, setText] = useState(initialText || '');
+  const initialMessages = useChatStore.getState().messages[conversationId];
+  const [messages, setMessages] = useState<ChatMessage[]>((initialMessages as ChatMessage[]) || []);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -235,6 +239,12 @@ useEffect(() => {
       return () => undefined;
     }, [conversationId, user?.id, loadMessages])
   );
+
+  useEffect(() => {
+    if (conversationId) {
+      useChatStore.getState().setConversationMessages(conversationId, messages as any);
+    }
+  }, [messages, conversationId]);
 
   useEffect(() => {
     if (!conversationId || !user?.id) return;
@@ -441,8 +451,13 @@ useEffect(() => {
   }, [performDelete]);
 
   const sendMessage = async () => {
-    const trimmed = text.trim();
+    let trimmed = text.trim();
     if (!trimmed && !pendingFile && pendingImages.length === 0) return;
+
+    // Convert plain hashtag back to markdown smart-link before sending
+    if (listingId && listingTitle && trimmed.includes(`#${listingTitle}`)) {
+      trimmed = trimmed.replace(`#${listingTitle}`, `[#${listingTitle}](listing:${listingId})`);
+    }
 
     const tempId = `temp_${Date.now()}`;
     const nowIso = new Date().toISOString();
@@ -464,6 +479,12 @@ useEffect(() => {
         id: tempId,
         conversationId,
         senderId: user.id,
+        recipient: {
+          id: conversationId,
+          name: userName,
+          role: role || 'Agent',
+          profile: { avatar: imageUri }
+        },
         content: trimmed,
         mediaUrl: pendingImages[0],
         createdAt: nowIso,
