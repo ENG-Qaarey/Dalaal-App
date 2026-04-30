@@ -59,9 +59,12 @@ export default function ExploreTab() {
         ? newUsers.filter((item: User) => item.id !== currentUserId)
         : newUsers;
       
-      const finalUsers = loadMore
+      const combinedUsers = loadMore
         ? [...usersRef.current, ...filteredUsers]
         : filteredUsers;
+      
+      // Ensure unique IDs to prevent key errors
+      const finalUsers = Array.from(new Map(combinedUsers.map(u => [u.id, u])).values());
       
       setUsers(finalUsers);
       setHasMore(newUsers.length === 20);

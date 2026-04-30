@@ -13,7 +13,7 @@ export default function Splash() {
   const router = useRouter();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
-  
+
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -38,11 +38,11 @@ export default function Splash() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
-      
+
       <View style={styles.center}>
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../assets/images/icon.png')} 
+          <Image
+            source={require('../../assets/images/AppLogo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -54,7 +54,7 @@ export default function Splash() {
           <View style={[styles.progressBarContainer, { backgroundColor: C.brandBorder + '40' }]}>
             <Animated.View style={[styles.progressBar, { backgroundColor: C.brandBlue, width: progressWidth }]} />
           </View>
-          
+
           <View style={styles.securityBadge}>
             <Ionicons name="checkmark-circle" size={16} color={C.brandBlue} />
             <Text style={[styles.securityText, { color: C.textMuted }]}>Secured by Dalaal Encryption</Text>
@@ -69,9 +69,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 100 },
   logoContainer: { alignItems: 'center', marginTop: 100 },
-  logoImage: { 
-    width: 100, 
-    height: 100, 
+  logoImage: {
+    width: 100,
+    height: 100,
     borderRadius: 24,
   },
   brand: { marginTop: 24, fontSize: 32, fontWeight: '900', letterSpacing: -1 },

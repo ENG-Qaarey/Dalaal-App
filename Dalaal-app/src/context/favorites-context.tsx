@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
 
 export type FavoriteListing = {
   id: string;
@@ -27,6 +28,13 @@ const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setFavorites([]);
+    }
+  }, [isAuthenticated]);
 
   const value = useMemo<FavoritesContextValue>(() => {
     const isFavorite = (id: string) => favorites.some((item) => item.id === id);

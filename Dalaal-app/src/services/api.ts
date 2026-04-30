@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
@@ -22,75 +21,150 @@ const resolveDevHost = () => {
 // Prefer EXPO_PUBLIC_API_URL; fall back to the Expo dev host for local development.
 const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${resolveDevHost()}:3000/api`;
 
-export const api = axios.create({
-  baseURL: API_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+interface RequestOptions extends RequestInit {
+  _retry?: boolean;
+}
 
-api.interceptors.request.use(
-  async (config) => {
-    const token = await SecureStore.getItemAsync('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+const request = async (endpoint: string, options: RequestOptions = {}) => {
+  // Normalize endpoint
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${path}`;
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    
-    if (!error.response) {
-      let message = 'Cannot connect to server';
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        message = 'Server is not responding';
-      } else if (error.code === 'ECONNREFUSED') {
-        message = 'Cannot connect to server';
-      }
-      const networkError = new Error(message) as Error & {
-        response?: { data: { message: string } };
-      };
-      networkError.response = { data: { message } };
-      return Promise.reject(networkError);
-    }
-    
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
+  // Request Interceptor: Add Auth Token
+  const token = await SecureStore.getItemAsync('accessToken');
+  
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(options.headers as Record<string, string>),
+  };
+
+  // If body is not FormData, ensure Content-Type is application/json
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Handle multipart/form-data: fetch needs the boundary to be set automatically,
+  // so we delete the manual Content-Type header if it exists for FormData.
+  if (options.body instanceof FormData && headers['Content-Type']) {
+    delete headers['Content-Type'];
+  }
+
+  const config: RequestInit = {
+    ...options,
+    headers,
+  };
+
+  try {
+    const response = await fetch(url, config);
+
+    // Response Interceptor: Handle 401 and Token Refresh
+    if (response.status === 401 && !options._retry) {
       const refreshToken = await SecureStore.getItemAsync('refreshToken');
       
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-          const refreshPayload = response.data?.data || response.data;
-          const { accessToken } = refreshPayload;
-          
-          await SecureStore.setItemAsync('accessToken', accessToken);
-          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-          
-          return api(originalRequest);
+          const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            const payload = refreshData?.data || refreshData;
+            const { accessToken } = payload;
+
+            if (accessToken) {
+              await SecureStore.setItemAsync('accessToken', accessToken);
+              
+              // Retry the original request with the new token
+              const retryHeaders = {
+                ...headers,
+                'Authorization': `Bearer ${accessToken}`,
+              };
+              return request(endpoint, { ...options, headers: retryHeaders, _retry: true });
+            }
+          }
         } catch (refreshError) {
+          // If refresh fails, clear tokens and let the 401 bubble up
           await SecureStore.deleteItemAsync('accessToken');
           await SecureStore.deleteItemAsync('refreshToken');
-          return Promise.reject(refreshError);
         }
       }
     }
-    
-    const errorMessage = error.response?.data?.message || 
-                       error.response?.data?.error || 
-                       error.message || 
-                       'An error occurred';
-    const enhancedError = new Error(errorMessage) as Error & {
-      response?: unknown;
-    };
-    enhancedError.response = error.response;
-    return Promise.reject(enhancedError);
+
+    // Handle Non-OK responses
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { message: `HTTP Error ${response.status}` };
+      }
+
+      const errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`;
+      const error = new Error(errorMessage) as any;
+      error.response = {
+        status: response.status,
+        data: errorData,
+      };
+      throw error;
+    }
+
+    // Parse success response
+    let data = {};
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = {};
+      }
+    } else {
+      // Handle non-json or empty responses (like 204 No Content)
+      await response.text(); // Consume the body
+    }
+
+    return { data }; // Wrap in data property to maintain Axios compatibility
+  } catch (error: any) {
+    // Handle Network Errors (simulating Axios error structure)
+    if (error.message === 'Network request failed') {
+      const message = 'Cannot connect to server. Please check your connection.';
+      const networkError = new Error(message) as any;
+      networkError.response = { data: { message } };
+      throw networkError;
+    }
+    throw error;
   }
-);
+};
+
+// Export an Axios-like API object
+export const api = {
+  get: (url: string, options?: RequestOptions) => 
+    request(url, { ...options, method: 'GET' }),
+  
+  post: (url: string, body?: any, options?: RequestOptions) => 
+    request(url, { 
+      ...options, 
+      method: 'POST', 
+      body: body instanceof FormData ? body : JSON.stringify(body) 
+    }),
+  
+  put: (url: string, body?: any, options?: RequestOptions) => 
+    request(url, { 
+      ...options, 
+      method: 'PUT', 
+      body: body instanceof FormData ? body : JSON.stringify(body) 
+    }),
+  
+  patch: (url: string, body?: any, options?: RequestOptions) => 
+    request(url, { 
+      ...options, 
+      method: 'PATCH', 
+      body: body instanceof FormData ? body : JSON.stringify(body) 
+    }),
+  
+  delete: (url: string, options?: RequestOptions) => 
+    request(url, { ...options, method: 'DELETE' }),
+};

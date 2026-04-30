@@ -141,7 +141,7 @@ export default function Profile() {
         style: 'destructive',
         onPress: async () => {
           await logout();
-          router.replace('/splash');
+          router.replace('/(auth)/login');
         },
       },
     ]);

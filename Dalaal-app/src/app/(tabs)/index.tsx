@@ -22,6 +22,7 @@ import { useAppTheme } from '../../context/theme-context';
 import Skeleton from '../../components/ui/Skeleton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Video, ResizeMode } from 'expo-av';
+import useAuth from '../../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.58) + 10;
@@ -58,9 +59,9 @@ const brokers = [
 ];
 
 const clips = [
-  { id: 'c1', price: '$160', title: 'Apartment Qol Kiro', location: 'Waaberi, Muqdisho', tag: 'Kiro', video: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 'c2', price: '$480', title: 'Apartment 3Qo', location: 'Wadajir, Muqdisho', tag: 'Kiro', video: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 'c3', price: '$220', title: 'Studio Central', location: 'Hodan, Muqdisho', tag: 'Kiro', video: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id: 'c1', price: '$250k', title: 'Modern Villa Tour', location: 'Hodan, Muqdisho', tag: 'Sale', video: 'https://videos.pexels.com/video-files/34386459/14568003_1440_2560_60fps.mp4' },
+  { id: 'c2', price: '$180k', title: 'Bright Interior', location: 'Garowe, Puntland', tag: 'Sale', video: 'https://cdn.pixabay.com/video/2025/01/23/254112_large.mp4' },
+  { id: 'c3', price: '$420k', title: 'Luxury Night Estate', location: 'Hargeisa, SL', tag: 'Sale', video: 'https://cdn.pixabay.com/video/2025/06/13/285663_large.mp4' },
 ];
 
 export default function HomeScreen() {
@@ -75,6 +76,7 @@ export default function HomeScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [isModalPaused, setIsModalPaused] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
@@ -168,7 +170,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.85} style={styles.profileBtn}>
             <Image
-              source={{ uri: 'https://i.pravatar.cc/160?img=14' }}
+              source={{ uri: user?.profile?.avatar || 'https://i.pravatar.cc/160?img=14' }}
               style={[styles.profileAvatar, { borderColor: C.brandBorder }]}
             />
           </TouchableOpacity>
@@ -618,7 +620,6 @@ export default function HomeScreen() {
               data={clips}
               keyExtractor={(item) => item.id}
               pagingEnabled
-              vertical
               showsVerticalScrollIndicator={false}
               initialScrollIndex={clips.findIndex(c => c.id === selectedClip.id)}
               getItemLayout={(_, index) => ({
@@ -728,7 +729,7 @@ export default function HomeScreen() {
                       <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>{isFullMuted ? "Muted" : "Sound"}</Text>
                     </TouchableOpacity>
                     <Image 
-                      source={{ uri: 'https://i.pravatar.cc/160?img=12' }} 
+                      source={{ uri: user?.profile?.avatar || 'https://i.pravatar.cc/160?img=12' }} 
                       style={[styles.modalSmallAvatar, { width: 34, height: 34, borderRadius: 10 }]} 
                     />
                   </View>

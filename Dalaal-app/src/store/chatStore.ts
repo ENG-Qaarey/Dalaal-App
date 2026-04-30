@@ -67,6 +67,7 @@ type ChatStore = {
   clearActiveConversation: () => void;
   isActiveConversation: (conversationId: string) => boolean;
   incrementUnread: (conversationId: string) => void;
+  reset: () => void;
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -252,6 +253,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           : chat
       )
     }));
+  },
+  reset: () => {
+    set({ chats: [], activeConversationId: null, isLoading: false });
   },
 }));
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,9 +41,11 @@ export default function Welcome() {
       <View style={styles.content}>
         <FadeIn>
           <View style={styles.brandRow}>
-            <View style={[styles.logoBox, { backgroundColor: C.brandBlue }]}>
-              <Ionicons name="home" size={28} color={C.surface} />
-            </View>
+            <Image
+              source={require('../../assets/images/AppLogo.png')}
+              style={{ width: 44, height: 44, borderRadius: 12, marginRight: 10 }}
+              resizeMode="contain"
+            />
             <Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
           </View>
         </FadeIn>

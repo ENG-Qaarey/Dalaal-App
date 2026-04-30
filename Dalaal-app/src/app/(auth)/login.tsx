@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -70,9 +70,11 @@ export default function Login() {
 				>
 					<FadeIn style={styles.header}>
 						<View style={styles.brandRow}>
-							<View style={[styles.logoBox, { backgroundColor: C.brandBlue }]}>
-								<Ionicons name="home" size={22} color={C.surface} />
-							</View>
+							<Image
+								source={require('../../assets/images/AppLogo.png')}
+								style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
+								resizeMode="contain"
+							/>
 							<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
 						</View>
 						<Text style={[styles.title, { color: C.textMain }]}>Welcome Back</Text>
@@ -84,7 +86,7 @@ export default function Login() {
 							<Text style={[styles.label, { color: C.textMuted }]}>Username, Email or Phone</Text>
 							<TextInput
 								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="johndoe or email@..."
+								placeholder="Username, Email or Phone"
 								placeholderTextColor={C.textMuted}
 								value={identifier}
 								onChangeText={setIdentifier}

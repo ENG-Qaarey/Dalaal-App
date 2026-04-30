@@ -43,8 +43,8 @@ function RootStack() {
     const isEmailVerified = user?.emailVerified;
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to splash if not authenticated and trying to access protected routes
-      router.replace('/splash');
+      // Redirect to login if not authenticated and trying to access protected routes
+      router.replace('/(auth)/login');
     } else if (isAuthenticated) {
       // If authenticated but email not verified, force them to verification screen
       // except if they are already on the verify-email screen

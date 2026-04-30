@@ -81,9 +81,11 @@ export default function Register() {
 				>
 					<FadeIn style={styles.header}>
 						<View style={styles.brandRow}>
-							<View style={[styles.logoBox, { backgroundColor: C.brandBlue }]}>
-								<Ionicons name="home" size={22} color={C.surface} />
-							</View>
+							<Image
+								source={require('../../assets/images/AppLogo.png')}
+								style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
+								resizeMode="contain"
+							/>
 							<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
 						</View>
 						<Text style={[styles.title, { color: C.textMain }]}>Create Account</Text>
@@ -95,7 +97,7 @@ export default function Register() {
 							<Text style={[styles.label, { color: C.textMuted }]}>Full Name</Text>
 							<TextInput
 								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="John Doe"
+								placeholder="Full Name"
 								placeholderTextColor={C.textMuted}
 								value={fullName}
 								onChangeText={setFullName}
@@ -108,7 +110,7 @@ export default function Register() {
 							<Text style={[styles.label, { color: C.textMuted }]}>Username</Text>
 							<TextInput
 								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="johndoe"
+								placeholder="Username"
 								placeholderTextColor={C.textMuted}
 								value={username}
 								onChangeText={setUsername}
