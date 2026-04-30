@@ -179,10 +179,10 @@ export default function Profile() {
 
   if (isInitialLoading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.safe, { backgroundColor: C.surface }]}>
         <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
         <ScreenSkeleton variant="profile" />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -259,14 +259,14 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['top', 'left', 'right']}>
+    <View style={[styles.safe, { backgroundColor: C.surface }]}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: 20 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.topBar, { paddingTop: insets.top }]}>
+        <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 44) + 10 }]}>
           <View>
             <Text style={[styles.topTitle, { color: C.textMain }]}>Profile</Text>
             <Text style={[styles.topSubtitle, { color: C.textMuted }]}>Manage account, preferences, and support</Text>
@@ -408,7 +408,7 @@ export default function Profile() {
           )}
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,11 +1,13 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
+import { View } from 'react-native';
 import Colors from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../context/theme-context';
 export default function TabsLayout() {
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
+  const router = useRouter();
 
   return (
     <Tabs
@@ -38,6 +40,33 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="create"
+        listeners={() => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push('/agent/create-listing');
+          },
+        })}
+        options={{
+          title: '',
+          tabBarLabel: '',
+          tabBarShowLabel: false,
+          tabBarIcon: () => (
+            <View style={{
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              backgroundColor: C.brandBlue,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: -10, // lift it above the tab bar slightly
+            }}>
+              <Ionicons name="add" size={32} color="#fff" />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat',
@@ -49,12 +78,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
-          ),
+          href: null,
         }}
       />
+      
       <Tabs.Screen
         name="profile"
         options={{
