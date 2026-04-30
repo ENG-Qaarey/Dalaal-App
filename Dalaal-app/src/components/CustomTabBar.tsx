@@ -7,7 +7,7 @@ import Animated, {
   withSpring,
   useDerivedValue,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { LayoutGrid, Search, MessageCircle, Telescope, UserRound } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Colors from '../constants/theme';
 import { useAppTheme } from '../context/theme-context';
@@ -87,13 +87,17 @@ export default function CustomTabBar({ state, descriptors, navigation }: any) {
             };
 
             const getIcon = (name: string, focused: boolean) => {
+              const color = isFocused ? ACTIVE_BLUE : (scheme === 'dark' ? '#FFFFFF' : '#666666');
+              const size = 22;
+              const strokeWidth = focused ? 2.5 : 1.5;
+
               switch (name) {
-                case 'index': return focused ? 'home' : 'home-outline';
-                case 'search': return focused ? 'search' : 'search-outline';
-                case 'chat': return focused ? 'chatbubbles' : 'chatbubbles-outline';
-                case 'explore': return focused ? 'compass' : 'compass-outline';
-                case 'profile': return focused ? 'person' : 'person-outline';
-                default: return 'help-outline';
+                case 'index': return <LayoutGrid size={size} color={color} strokeWidth={strokeWidth} />;
+                case 'search': return <Search size={size} color={color} strokeWidth={strokeWidth} />;
+                case 'chat': return <MessageCircle size={size} color={color} strokeWidth={strokeWidth} />;
+                case 'explore': return <Telescope size={size} color={color} strokeWidth={strokeWidth} />;
+                case 'profile': return <UserRound size={size} color={color} strokeWidth={strokeWidth} />;
+                default: return <LayoutGrid size={size} color={color} strokeWidth={strokeWidth} />;
               }
             };
 
@@ -104,11 +108,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: any) {
                 style={styles.tabItem}
                 activeOpacity={1}
               >
-                <Ionicons 
-                  name={getIcon(route.name, isFocused) as any} 
-                  size={24} 
-                  color={isFocused ? ACTIVE_BLUE : (scheme === 'dark' ? '#FFFFFF' : '#666666')} 
-                />
+                {getIcon(route.name, isFocused)}
                 <Text style={[
                   styles.label, 
                   { 
