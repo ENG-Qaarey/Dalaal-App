@@ -26,15 +26,7 @@ export class AuthService {
   ) {}
 
   async validateUser(identifier: string, password: string) {
-    let user = await this.authRepository.findByEmail(identifier);
-    
-    if (!user) {
-      user = await this.authRepository.findByPhone(identifier);
-    }
-
-    if (!user) {
-      user = await this.authRepository.findByUsername(identifier);
-    }
+    const user = await this.authRepository.findByIdentifier(identifier);
 
     if (!user || !user.password) {
       return null;

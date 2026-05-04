@@ -104,12 +104,6 @@ export const useChatStore = create<ChatStore>()(
     try {
       const currentUserId = useAuthStore.getState().user?.id;
       const conversations = await chatService.getConversations();
-      const hasUnreadInPayload = conversations.some(
-        (conv: any) => conv?.unreadCount != null || conv?.unread != null || conv?.participants?.some((p: any) => p?.unreadCount != null),
-      );
-      if (!hasUnreadInPayload) {
-        console.warn('chatService.getConversations() payload does not include unread counts');
-      }
       const mappedChats: ChatListItem[] = conversations
         .map((conv: any) => {
         const otherParticipant = conv.participants?.find((p: any) => p.userId !== currentUserId);

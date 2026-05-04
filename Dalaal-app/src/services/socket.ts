@@ -4,23 +4,45 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const resolveDevHost = () => {
-  const manifest = Constants.manifest as any;
-  const manifest2 = (Constants as any).manifest2;
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    manifest?.debuggerHost ||
-    manifest2?.extra?.expoClient?.hostUri;
-  const host = hostUri?.split(':')[0];
-
-  if (host) {
-    return host;
+const getSocketUrl = () => {
+  // Prefer environment variable if set
+  if (process.env.EXPO_PUBLIC_SOCKET_URL) {
+    console.log('[Config] Using EXPO_PUBLIC_SOCKET_URL:', process.env.EXPO_PUBLIC_SOCKET_URL);
+    return process.env.EXPO_PUBLIC_SOCKET_URL;
   }
 
-  return Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+  // Constants.expoConfig?.hostUri typically looks like "192.168.1.10:8081"
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  
+  if (debuggerHost) {
+    const ip = debuggerHost.split(':')[0];
+    
+    // Check for tunnel URLs (exp.direct, ngrok, etc.)
+    if (ip.includes('exp.direct') || ip.includes('ngrok') || ip.includes('tunnel')) {
+      console.log('[Config] Tunnel detected, using local network detection');
+    } else {
+      // Use the detected IP from the debugger host
+      const url = `http://${ip}:3002/chat`;
+      console.log('[Config] SOCKET_URL set to:', url);
+      return url;
+    }
+  }
+
+  // Fallback based on platform
+  if (Platform.OS === 'android') {
+    // Android emulator uses 10.0.2.2 to access host machine
+    const url = 'http://10.0.2.2:3002/chat';
+    console.log('[Config] Android emulator detected, using:', url);
+    return url;
+  }
+
+  // iOS simulator or fallback
+  const url = 'http://localhost:3002/chat';
+  console.log('[Config] Using default:', url);
+  return url;
 };
 
-const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || `http://${resolveDevHost()}:3000/chat`;
+const SOCKET_URL = getSocketUrl();
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
 type CallMode = 'audio' | 'video';

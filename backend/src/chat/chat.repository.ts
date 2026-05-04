@@ -44,7 +44,7 @@ export class ChatRepository {
   }
 
   async findUserConversations(userId: string) {
-    return this.prisma.conversation.findMany({
+    const conversations = await this.prisma.conversation.findMany({
       where: {
         participants: { some: { userId } }
       },
@@ -57,6 +57,14 @@ export class ChatRepository {
         }
       },
       orderBy: { lastMessageAt: 'desc' }
+    });
+    
+    return conversations.map(conv => {
+      const participant = conv.participants.find(p => p.userId === userId);
+      return {
+        ...conv,
+        unreadCount: participant?.unreadCount || 0
+      };
     });
   }
 

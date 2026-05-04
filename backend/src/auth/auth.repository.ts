@@ -33,6 +33,19 @@ export class AuthRepository {
     });
   }
 
+  async findByIdentifier(identifier: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier },
+          { username: { equals: identifier, mode: 'insensitive' } },
+        ],
+      },
+      include: { profile: true },
+    });
+  }
+
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
