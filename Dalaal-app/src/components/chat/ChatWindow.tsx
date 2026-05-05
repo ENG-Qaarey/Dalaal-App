@@ -61,6 +61,19 @@ export default function ChatWindow({
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const shakeAnim = React.useRef(new Animated.Value(0)).current;
 
+  const safeMessages = React.useMemo(() => {
+    const seen = new Set<string>();
+    const deduped: ChatMessage[] = [];
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const msg = messages[i];
+      const key = msg.id || `msg-${i}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(msg);
+    }
+    return deduped.reverse();
+  }, [messages]);
+
   React.useEffect(() => {
     if (showScrollToBottom) {
       const shake = Animated.loop(
@@ -78,17 +91,17 @@ export default function ChatWindow({
   }, [showScrollToBottom]);
 
   const selectedMessage = React.useMemo(
-    () => messages.find((message) => message.id === reactionTargetId) || null,
-    [messages, reactionTargetId]
+    () => safeMessages.find((message) => message.id === reactionTargetId) || null,
+    [safeMessages, reactionTargetId]
   );
 
   React.useEffect(() => {
-    if (autoScrollToBottom && scrollViewRef.current && messages.length > 0) {
+    if (autoScrollToBottom && scrollViewRef.current && safeMessages.length > 0) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [messages.length, autoScrollToBottom]);
+  }, [safeMessages.length, autoScrollToBottom]);
 
   React.useEffect(() => {
     if (!scrollViewRef.current) return;
@@ -112,14 +125,14 @@ export default function ChatWindow({
 
   const mediaItems = React.useMemo(
     () =>
-      messages
+      safeMessages
         .map((msg) => {
           if (msg.imageUri) return { id: msg.id, kind: 'image' as const, uri: msg.imageUri };
           if (msg.videoUri) return { id: msg.id, kind: 'video' as const, uri: msg.videoUri };
           return null;
         })
         .filter(Boolean) as Array<{ id: string; kind: 'image' | 'video'; uri: string }>,
-    [messages]
+    [safeMessages]
   );
 
   const openViewer = React.useCallback(
@@ -265,8 +278,8 @@ export default function ChatWindow({
         scrollEventThrottle={16}
       >
         <View style={styles.messageList}>
-        {messages.map((msg, index) => {
-          const previous = index > 0 ? messages[index - 1] : null;
+        {safeMessages.map((msg, index) => {
+          const previous = index > 0 ? safeMessages[index - 1] : null;
           const currentDate = dateLabelFor(msg.createdAt);
           const previousDate = previous ? dateLabelFor(previous.createdAt) : '';
           const showDateSeparator = !!currentDate && currentDate !== previousDate;

@@ -20,6 +20,15 @@ import { chatService } from '../../../services/chat';
 import { useAuthStore } from '../../../store/authStore';
 import { useChatStore } from '../../../store/chatStore';
 
+let webRTCService: any = null;
+try {
+  const webRTCModule = require('../../../services/webrtc');
+  webRTCService = webRTCModule.webRTCService;
+} catch (e) {
+  console.warn('WebRTC service not available');
+  webRTCService = null;
+}
+
 export default function Conversation() {
   const router = useRouter();
   const { id: conversationId, name, role, online, imageUri, initialText, listingId, listingTitle } = useLocalSearchParams<{
@@ -37,9 +46,12 @@ export default function Conversation() {
   const user = useAuthStore((s) => s.user);
   const setActiveConversation = useChatStore((s) => s.setActiveConversation);
   const clearActiveConversation = useChatStore((s) => s.clearActiveConversation);
+  const chats = useChatStore((s) => s.chats);
+  const currentChat = chats.find(c => c.conversationId === conversationId);
+  const participantId = currentChat?.participantId;
 
   const userName = name || 'User';
-  const isOnline = online === '1';
+  const isOnline = typeof currentChat?.online === 'boolean' ? currentChat.online : online === '1';
   const [text, setText] = useState(initialText || '');
   const initialMessages = useChatStore.getState().messages[conversationId];
   const [messages, setMessages] = useState<ChatMessage[]>((initialMessages as ChatMessage[]) || []);
@@ -65,6 +77,8 @@ export default function Conversation() {
     acceptedAt?: number;
   } | null>(null);
   const [callDurationSeconds, setCallDurationSeconds] = useState(0);
+  const [localStream, setLocalStream] = useState<any>(null);
+  const [remoteStream, setRemoteStream] = useState<any>(null);
   const [isPeerTyping, setIsPeerTyping] = useState(false);
   const [composerFocusTick, setComposerFocusTick] = useState(0);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -245,6 +259,50 @@ useEffect(() => {
       useChatStore.getState().setConversationMessages(conversationId, messages as any);
     }
   }, [messages, conversationId]);
+
+  useEffect(() => {
+    const handleLocalStream = (stream: any) => {
+      setLocalStream(stream);
+    };
+
+    const handleRemoteStream = (stream: any) => {
+      setRemoteStream(stream);
+    };
+
+    const handleConnectionStateChange = (state: any) => {
+      console.log('WebRTC connection state:', state);
+    };
+
+    const handleError = (error: Error) => {
+      console.error('WebRTC error:', error);
+    };
+
+    if (webRTCService) {
+      webRTCService.on('localStream', handleLocalStream);
+      webRTCService.on('remoteStream', handleRemoteStream);
+      webRTCService.on('connectionStateChange', handleConnectionStateChange);
+      webRTCService.on('error', handleError);
+    }
+
+    return () => {
+      if (webRTCService) {
+        webRTCService.off('localStream', handleLocalStream);
+        webRTCService.off('remoteStream', handleRemoteStream);
+        webRTCService.off('connectionStateChange', handleConnectionStateChange);
+        webRTCService.off('error', handleError);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!callSession) {
+      if (webRTCService) {
+        webRTCService.cleanup();
+      }
+      setLocalStream(null);
+      setRemoteStream(null);
+    }
+  }, [callSession]);
 
   useEffect(() => {
     if (!conversationId || !user?.id) return;
@@ -747,9 +805,14 @@ useEffect(() => {
   };
 
   const beginCall = useCallback(
-    (mode: 'audio' | 'video') => {
-      if (!conversationId || !user?.id) return;
+    async (mode: 'audio' | 'video') => {
+      if (!conversationId || !user?.id || !participantId) return;
       const callId = `call_${Date.now()}`;
+      
+      if (webRTCService) {
+        await webRTCService.initialize(callId, conversationId, participantId, mode);
+      }
+      
       setCallSession({
         callId,
         mode,
@@ -764,11 +827,11 @@ useEffect(() => {
         mode,
       });
     },
-    [conversationId, user?.id]
+    [conversationId, user?.id, participantId]
   );
 
   const acceptCall = useCallback(async () => {
-    if (!callSession || !conversationId || !user?.id) return;
+    if (!callSession || !conversationId || !user?.id || !participantId) return;
     if (callSession.mode === 'video') {
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
       if (!cameraPermission.granted) {
@@ -782,10 +845,15 @@ useEffect(() => {
       return;
     }
     await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
+      allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+      staysActiveInBackground: true,
     });
+
+    if (webRTCService) {
+      await webRTCService.initialize(callSession.callId, conversationId, participantId, callSession.mode);
+    }
+
     socketService.acceptCall({
       callId: callSession.callId,
       conversationId,
@@ -796,7 +864,7 @@ useEffect(() => {
       status: 'ongoing',
       acceptedAt: Date.now(),
     });
-  }, [callSession, conversationId, user?.id]);
+  }, [callSession, conversationId, user?.id, participantId]);
 
   const declineCall = useCallback(() => {
     if (!callSession || !conversationId || !user?.id) return;
@@ -828,11 +896,11 @@ useEffect(() => {
       return;
     }
     await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
+      allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+      staysActiveInBackground: true,
     });
-    beginCall('audio');
+    await beginCall('audio');
   }, [beginCall]);
 
   const startVideoCall = React.useCallback(async () => {
@@ -847,12 +915,18 @@ useEffect(() => {
       return;
     }
     await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
+      allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
+      staysActiveInBackground: true,
     });
-    beginCall('video');
+    await beginCall('video');
   }, [beginCall]);
+
+  useEffect(() => {
+    if (callSession?.status === 'ongoing' && callSession?.direction === 'outgoing' && webRTCService) {
+      webRTCService.createOffer();
+    }
+  }, [callSession?.status, callSession?.direction]);
 
   const reactToMessage = React.useCallback((messageId: string, emoji: string) => {
     setMessages((prev) =>
@@ -984,6 +1058,11 @@ useEffect(() => {
           onAccept={acceptCall}
           onDecline={declineCall}
           onEnd={endCall}
+          localStream={localStream}
+          remoteStream={remoteStream}
+          onToggleMute={webRTCService ? (muted) => webRTCService.toggleAudio(!muted) : undefined}
+          onToggleVideo={webRTCService ? (enabled) => webRTCService.toggleVideo(enabled) : undefined}
+          onSwitchCamera={webRTCService ? () => webRTCService.switchCamera() : undefined}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

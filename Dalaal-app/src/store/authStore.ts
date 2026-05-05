@@ -19,8 +19,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthenticated: (status) => set({ isAuthenticated: status }),
   setLoading: (status) => set({ isLoading: status }),
   logout: async () => {
-    await SecureStore.deleteItemAsync('accessToken');
-    await SecureStore.deleteItemAsync('refreshToken');
+    try {
+      await SecureStore.deleteItemAsync('accessToken');
+    } catch {}
+    try {
+      await SecureStore.deleteItemAsync('refreshToken');
+    } catch {}
     
     // Reset other stores
     const { useChatStore } = require('./chatStore');

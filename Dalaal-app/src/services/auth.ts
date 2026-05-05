@@ -8,13 +8,29 @@ function unwrapResponse<T>(payload: any): T {
   return payload as T;
 }
 
+const safeSetItem = async (key: string, value: string) => {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    // ignore secure store errors
+  }
+};
+
+const safeDeleteItem = async (key: string) => {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    // ignore secure store errors
+  }
+};
+
 async function persistTokens(tokens: { accessToken?: string; refreshToken?: string }) {
   if (tokens.accessToken) {
-    await SecureStore.setItemAsync('accessToken', tokens.accessToken);
+    await safeSetItem('accessToken', tokens.accessToken);
   }
 
   if (tokens.refreshToken) {
-    await SecureStore.setItemAsync('refreshToken', tokens.refreshToken);
+    await safeSetItem('refreshToken', tokens.refreshToken);
   }
 }
 
@@ -66,6 +82,27 @@ export const authService = {
     return unwrapResponse<any>(response.data);
   },
 
+  async verifyOtp(email: string, code: string) {
+    try {
+      const response = await api.post('auth/verify-otp', { email, code });
+      const data = unwrapResponse<any>(response.data);
+      await persistTokens(data);
+      return data;
+    } catch (error: any) {
+      let message = 'Verification failed';
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      const err = new Error(message);
+      err.response = error.response;
+      throw err;
+    }
+  },
+
   async verifyPhone(phone: string, firebaseToken: string) {
     const response = await api.post('auth/verify-phone', { phone, firebaseToken });
     return unwrapResponse<any>(response.data);
@@ -75,8 +112,8 @@ export const authService = {
     try {
       await api.post('auth/logout');
     } finally {
-      await SecureStore.deleteItemAsync('accessToken');
-      await SecureStore.deleteItemAsync('refreshToken');
+      await safeDeleteItem('accessToken');
+      await safeDeleteItem('refreshToken');
     }
   },
 

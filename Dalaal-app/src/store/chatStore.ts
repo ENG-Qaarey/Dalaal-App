@@ -82,6 +82,7 @@ type ChatStore = {
   applyIncomingMessage: (message: any) => void;
   markConversationRead: (conversationId: string) => void;
   updateConversationPreview: (conversationId: string, message?: any) => void;
+  updatePresence: (userId: string, isOnline: boolean) => void;
   setActiveConversation: (conversationId: string | null) => void;
   clearActiveConversation: () => void;
   isActiveConversation: (conversationId: string) => boolean;
@@ -257,6 +258,16 @@ export const useChatStore = create<ChatStore>()(
       chats: state.chats.map((chat) =>
         chat.conversationId === conversationId
           ? { ...chat, message: preview, time }
+          : chat
+      ),
+    }));
+  },
+
+  updatePresence: (userId, isOnline) => {
+    set((state) => ({
+      chats: state.chats.map((chat) =>
+        chat.participantId === userId
+          ? { ...chat, online: isOnline }
           : chat
       ),
     }));

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -118,6 +118,25 @@ function RootStack() {
       }
     };
 
+    const handlePresenceUpdate = (data: { userId: string; isOnline: boolean }) => {
+      if (!data?.userId) return;
+      useChatStore.getState().updatePresence(data.userId, data.isOnline);
+    };
+
+    const handleSessionRevoked = async () => {
+      Alert.alert('Logged out', 'Session expired. Logged in on another device.');
+      await useAuthStore.getState().logout();
+    };
+
+    const handleAppStateChange = (nextState: string) => {
+      if (!user?.id) return;
+      if (nextState !== 'active') {
+        socketService.disconnect();
+      } else {
+        socketService.connect(user.id);
+      }
+    };
+
     const setup = async () => {
       await socketService.connect(user.id);
     };
@@ -125,10 +144,16 @@ function RootStack() {
     setup();
     socketService.onNewMessage(handleNewMessage);
     socketService.onMessageDeleted(handleMessageDeleted);
+    socketService.onPresenceUpdate(handlePresenceUpdate);
+    socketService.onSessionRevoked(handleSessionRevoked);
+    const appStateSub = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       socketService.offNewMessage(handleNewMessage);
       socketService.offMessageDeleted(handleMessageDeleted);
+      socketService.offPresenceUpdate(handlePresenceUpdate);
+      socketService.offSessionRevoked(handleSessionRevoked);
+      appStateSub.remove();
     };
   }, [isAuthenticated, user?.id, router]);
 

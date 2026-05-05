@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { useAuthStore } from '../store/authStore';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -53,13 +54,37 @@ interface RequestOptions extends RequestInit {
   _retry?: boolean;
 }
 
+const safeGetItem = async (key: string) => {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    return null;
+  }
+};
+
+const safeSetItem = async (key: string, value: string) => {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    // ignore secure store errors
+  }
+};
+
+const safeDeleteItem = async (key: string) => {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    // ignore secure store errors
+  }
+};
+
 const request = async (endpoint: string, options: RequestOptions = {}) => {
   // Normalize endpoint
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${API_URL}${path}`;
 
   // Request Interceptor: Add Auth Token
-  const token = await SecureStore.getItemAsync('accessToken');
+  const token = await safeGetItem('accessToken');
   
   const headers: Record<string, string> = {
     'Accept': 'application/json',
@@ -83,12 +108,28 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
     headers,
   };
 
+  const forceLogout = async () => {
+    await safeDeleteItem('accessToken');
+    await safeDeleteItem('refreshToken');
+    await useAuthStore.getState().logout();
+  };
+
   try {
     const response = await fetch(url, config);
 
     // Response Interceptor: Handle 401 and Token Refresh
     if (response.status === 401 && !options._retry) {
-      const refreshToken = await SecureStore.getItemAsync('refreshToken');
+      let errorPayload: any = null;
+      try {
+        errorPayload = await response.clone().json();
+      } catch {
+        errorPayload = null;
+      }
+
+      if (errorPayload?.message === 'Session expired. Logged in on another device.') {
+        await forceLogout();
+      } else {
+      const refreshToken = await safeGetItem('refreshToken');
       
       if (refreshToken) {
         try {
@@ -104,7 +145,7 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
             const { accessToken } = payload;
 
             if (accessToken) {
-              await SecureStore.setItemAsync('accessToken', accessToken);
+              await safeSetItem('accessToken', accessToken);
               
               // Retry the original request with the new token
               const retryHeaders = {
@@ -115,10 +156,9 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
             }
           }
         } catch (refreshError) {
-          // If refresh fails, clear tokens and let the 401 bubble up
-          await SecureStore.deleteItemAsync('accessToken');
-          await SecureStore.deleteItemAsync('refreshToken');
+          await forceLogout();
         }
+      }
       }
     }
 

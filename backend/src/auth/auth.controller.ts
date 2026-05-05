@@ -126,6 +126,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@CurrentUser() user: any) {
-    return { message: 'Logout successful' };
+    return this.authService.logout(user.id);
   }
 }

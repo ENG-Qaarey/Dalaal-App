@@ -1,4 +1,4 @@
-import io from 'socket.io-client/dist/socket.io.js';
+import io from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
@@ -56,6 +56,11 @@ type IncomingCallCallback = (data: { callId: string; conversationId: string; cal
 type CallAcceptedCallback = (data: { callId: string; conversationId: string; userId: string; acceptedAt?: number }) => void;
 type CallDeclinedCallback = (data: { callId: string; conversationId: string; userId: string }) => void;
 type CallEndedCallback = (data: { callId: string; conversationId: string; userId: string }) => void;
+type WebRTCOfferCallback = (data: { callId: string; conversationId: string; offer: any }) => void;
+type WebRTCAnswerCallback = (data: { callId: string; conversationId: string; answer: any }) => void;
+type WebRTCIceCandidateCallback = (data: { callId: string; conversationId: string; candidate: any }) => void;
+type PresenceUpdateCallback = (data: { userId: string; isOnline: boolean; lastSeenAt?: number | null }) => void;
+type SessionRevokedCallback = (data: { reason?: string }) => void;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -68,6 +73,11 @@ class SocketService {
   private callAcceptedCallbacks: CallAcceptedCallback[] = [];
   private callDeclinedCallbacks: CallDeclinedCallback[] = [];
   private callEndedCallbacks: CallEndedCallback[] = [];
+  private webrtcOfferCallbacks: WebRTCOfferCallback[] = [];
+  private webrtcAnswerCallbacks: WebRTCAnswerCallback[] = [];
+  private webrtcIceCandidateCallbacks: WebRTCIceCandidateCallback[] = [];
+  private presenceUpdateCallbacks: PresenceUpdateCallback[] = [];
+  private sessionRevokedCallbacks: SessionRevokedCallback[] = [];
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private userId: string | null = null;
@@ -155,6 +165,33 @@ class SocketService {
         this.callEndedCallbacks.forEach(cb => cb(data));
       });
 
+      this.socket.on('webrtc:offer', (data) => {
+        this.webrtcOfferCallbacks.forEach(cb => cb(data));
+      });
+
+      this.socket.on('webrtc:answer', (data) => {
+        this.webrtcAnswerCallbacks.forEach(cb => cb(data));
+      });
+
+      this.socket.on('webrtc:ice-candidate', (data) => {
+        this.webrtcIceCandidateCallbacks.forEach(cb => cb(data));
+      });
+
+      this.socket.on('presence:update', (data) => {
+        this.presenceUpdateCallbacks.forEach(cb => cb(data));
+      });
+
+      this.socket.on('presence:sync', (data) => {
+        const onlineUserIds = Array.isArray(data?.onlineUserIds) ? data.onlineUserIds : [];
+        onlineUserIds.forEach((userId: string) => {
+          this.presenceUpdateCallbacks.forEach(cb => cb({ userId, isOnline: true, lastSeenAt: null }));
+        });
+      });
+
+      this.socket.on('session:revoked', (data) => {
+        this.sessionRevokedCallbacks.forEach(cb => cb(data || {}));
+      });
+
     } catch (error) {
       console.error('Failed to connect socket:', error);
     }
@@ -203,6 +240,18 @@ class SocketService {
 
   sendTyping(data: { conversationId: string; userId: string; isTyping: boolean }) {
     this.socket?.emit('typing', data);
+  }
+
+  sendWebRTCOffer(data: { callId: string; conversationId: string; offer: any; targetUserId: string }) {
+    this.socket?.emit('webrtc:offer', data);
+  }
+
+  sendWebRTCAnswer(data: { callId: string; conversationId: string; answer: any; targetUserId: string }) {
+    this.socket?.emit('webrtc:answer', data);
+  }
+
+  sendWebRTCIceCandidate(data: { callId: string; conversationId: string; candidate: any; targetUserId: string }) {
+    this.socket?.emit('webrtc:ice-candidate', data);
   }
 
   onNewMessage(callback: NewMessageCallback) {
@@ -319,6 +368,71 @@ class SocketService {
       if (index > -1) this.callEndedCallbacks.splice(index, 1);
     } else {
       this.callEndedCallbacks = [];
+    }
+  }
+
+  onWebRTCOffer(callback: WebRTCOfferCallback) {
+    this.webrtcOfferCallbacks.push(callback);
+  }
+
+  offWebRTCOffer(callback?: WebRTCOfferCallback) {
+    if (callback) {
+      const index = this.webrtcOfferCallbacks.indexOf(callback);
+      if (index > -1) this.webrtcOfferCallbacks.splice(index, 1);
+    } else {
+      this.webrtcOfferCallbacks = [];
+    }
+  }
+
+  onWebRTCAnswer(callback: WebRTCAnswerCallback) {
+    this.webrtcAnswerCallbacks.push(callback);
+  }
+
+  offWebRTCAnswer(callback?: WebRTCAnswerCallback) {
+    if (callback) {
+      const index = this.webrtcAnswerCallbacks.indexOf(callback);
+      if (index > -1) this.webrtcAnswerCallbacks.splice(index, 1);
+    } else {
+      this.webrtcAnswerCallbacks = [];
+    }
+  }
+
+  onWebRTCIceCandidate(callback: WebRTCIceCandidateCallback) {
+    this.webrtcIceCandidateCallbacks.push(callback);
+  }
+
+  offWebRTCIceCandidate(callback?: WebRTCIceCandidateCallback) {
+    if (callback) {
+      const index = this.webrtcIceCandidateCallbacks.indexOf(callback);
+      if (index > -1) this.webrtcIceCandidateCallbacks.splice(index, 1);
+    } else {
+      this.webrtcIceCandidateCallbacks = [];
+    }
+  }
+
+  onPresenceUpdate(callback: PresenceUpdateCallback) {
+    this.presenceUpdateCallbacks.push(callback);
+  }
+
+  offPresenceUpdate(callback?: PresenceUpdateCallback) {
+    if (callback) {
+      const index = this.presenceUpdateCallbacks.indexOf(callback);
+      if (index > -1) this.presenceUpdateCallbacks.splice(index, 1);
+    } else {
+      this.presenceUpdateCallbacks = [];
+    }
+  }
+
+  onSessionRevoked(callback: SessionRevokedCallback) {
+    this.sessionRevokedCallbacks.push(callback);
+  }
+
+  offSessionRevoked(callback?: SessionRevokedCallback) {
+    if (callback) {
+      const index = this.sessionRevokedCallbacks.indexOf(callback);
+      if (index > -1) this.sessionRevokedCallbacks.splice(index, 1);
+    } else {
+      this.sessionRevokedCallbacks = [];
     }
   }
 

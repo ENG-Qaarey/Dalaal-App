@@ -18,6 +18,7 @@ model User {
   status            UserStatus                @default(PENDING_VERIFICATION)
   emailVerified     Boolean                   @default(false)
   phoneVerified     Boolean                   @default(false)
+  sessionToken      String?                   @map("session_token")
   twoFactorEnabled  Boolean                   @default(false)
   lastLoginAt       DateTime?
   createdAt         DateTime                  @default(now())

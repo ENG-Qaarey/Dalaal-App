@@ -20,6 +20,11 @@ type Props = {
   onAccept?: () => void;
   onDecline?: () => void;
   onEnd: () => void;
+  localStream?: any;
+  remoteStream?: any;
+  onToggleMute?: (muted: boolean) => void;
+  onToggleVideo?: (enabled: boolean) => void;
+  onSwitchCamera?: () => void;
 };
 
 function hexToRgb(hex?: string) {
@@ -73,6 +78,11 @@ export default function CallSessionModal({
   onAccept,
   onDecline,
   onEnd,
+  localStream,
+  remoteStream,
+  onToggleMute,
+  onToggleVideo,
+  onSwitchCamera,
 }: Props) {
   const [isMuted, setIsMuted] = React.useState(false);
   const [speakerOn, setSpeakerOn] = React.useState(true);
@@ -99,8 +109,9 @@ export default function CallSessionModal({
     if (!visible) return;
     void Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
-      allowsRecordingIOS: false,
+      allowsRecordingIOS: true,
       playThroughEarpieceAndroid: !speakerOn,
+      staysActiveInBackground: true,
     });
   }, [speakerOn, visible]);
 
@@ -161,7 +172,7 @@ export default function CallSessionModal({
 
   const label = React.useMemo(() => formatDuration(durationSeconds), [durationSeconds]);
   const canUseVideoControls = mode === 'video' && status === 'ongoing';
-  const isLiveVideo = mode === 'video' && status === 'ongoing' && videoEnabled;
+  const isLiveVideo = mode === 'video' && status === 'ongoing' && videoEnabled && (localStream || remoteStream);
   const isLightTheme = isLightColor(colors?.surface);
   const headingColor = isLightTheme ? colors?.textMain ?? '#16223a' : '#fff';
   const subTextColor = isLightTheme ? colors?.textMuted ?? '#5b6b86' : '#D1D5DB';
@@ -235,6 +246,7 @@ export default function CallSessionModal({
                 disabled={mode !== 'video'}
                 onPress={() => {
                   if (mode !== 'video') return;
+                  if (onSwitchCamera) onSwitchCamera();
                   setCameraFacing((prev) => (prev === 'front' ? 'back' : 'front'));
                 }}
               >
@@ -245,7 +257,9 @@ export default function CallSessionModal({
                 disabled={!canUseVideoControls}
                 onPress={() => {
                   if (!canUseVideoControls) return;
-                  setVideoEnabled((v) => !v);
+                  const newEnabled = !videoEnabled;
+                  setVideoEnabled(newEnabled);
+                  if (onToggleVideo) onToggleVideo(newEnabled);
                 }}
               >
                 <Ionicons
@@ -262,7 +276,11 @@ export default function CallSessionModal({
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.controlBtn, { backgroundColor: isMuted ? '#DC2626' : neutralControlBg }]}
-                onPress={() => setIsMuted((m) => !m)}
+                onPress={() => {
+                  const newMuted = !isMuted;
+                  setIsMuted(newMuted);
+                  if (onToggleMute) onToggleMute(newMuted);
+                }}
               >
                 <Ionicons name={isMuted ? 'mic-off' : 'mic'} size={20} color={isMuted ? '#fff' : neutralIconColor} />
               </TouchableOpacity>
@@ -280,6 +298,22 @@ export default function CallSessionModal({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#05070B' },
   darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#00000088' },
+  localVideoContainer: {
+    position: 'absolute',
+    top: 84,
+    right: 24,
+    width: 120,
+    height: 160,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+    zIndex: 10,
+  },
+  localVideo: {
+    width: '100%',
+    height: '100%',
+  },
   overlay: {
     flex: 1,
     alignItems: 'center',

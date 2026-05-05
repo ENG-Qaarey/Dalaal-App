@@ -5,6 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthRepository } from './auth.repository';
@@ -47,6 +48,8 @@ export class AuthService {
         throw new ConflictException('Email already exists');
       }
 
+      const sessionToken = this.generateSessionToken();
+
       const hashedPassword = registerDto.password 
         ? await hashPassword(registerDto.password) 
         : null;
@@ -63,6 +66,7 @@ export class AuthService {
         phone: registerDto.phone,
         role: UserRole.CUSTOMER,
         status: UserStatus.PENDING_VERIFICATION,
+        sessionToken,
         profile: {
           create: {
             firstName,
@@ -75,7 +79,7 @@ export class AuthService {
       await this.sendVerificationEmail(user);
 
       // Generate tokens
-      const tokens = await this.generateTokens(user);
+      const tokens = await this.generateTokens(user, sessionToken);
 
       return {
         user: this.sanitizeUser(user),
@@ -227,20 +231,22 @@ export class AuthService {
       throw new BadRequestException('Verification code has expired');
     }
 
+    const sessionToken = this.generateSessionToken();
+
     // Mark user as active and email verified
-    await this.authRepository.update(user.id, {
+    const updatedUser = await this.authRepository.update(user.id, {
       status: UserStatus.ACTIVE,
       emailVerified: true,
+      sessionToken,
+      lastLoginAt: new Date(),
     });
 
     // Delete the code after successful verification
     await this.authRepository.deleteVerificationCode(verificationCode.id);
 
     // Update last login and return the freshest user payload to the app.
-    const updatedUser = await this.authRepository.updateLastLogin(user.id);
-
     // Generate tokens
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(updatedUser, sessionToken);
 
     return {
       user: this.sanitizeUser(updatedUser),
@@ -262,9 +268,13 @@ export class AuthService {
       throw new UnauthorizedException('Your account has been banned');
     }
 
-    const updatedUser = await this.authRepository.updateLastLogin(user.id);
+    const sessionToken = this.generateSessionToken();
+    const updatedUser = await this.authRepository.update(user.id, {
+      sessionToken,
+      lastLoginAt: new Date(),
+    });
 
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(updatedUser, sessionToken);
 
     return {
       user: this.sanitizeUser(updatedUser),
@@ -283,9 +293,16 @@ export class AuthService {
         throw new UnauthorizedException('User not found');
       }
 
-      const tokens = await this.generateTokens(user);
+      if (!payload.sessionToken || !user.sessionToken || payload.sessionToken !== user.sessionToken) {
+        throw new UnauthorizedException('Session expired. Logged in on another device.');
+      }
+
+      const tokens = await this.generateTokens(user, user.sessionToken);
       return tokens;
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -360,8 +377,17 @@ export class AuthService {
     return { message: 'Phone verified successfully' };
   }
 
-  private async generateTokens(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  async logout(userId: string) {
+    await this.authRepository.update(userId, { sessionToken: null });
+    return { message: 'Logout successful' };
+  }
+
+  private generateSessionToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private async generateTokens(user: any, sessionToken: string) {
+    const payload = { sub: user.id, email: user.email, role: user.role, sessionToken };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.secret'),

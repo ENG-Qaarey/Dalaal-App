@@ -76,6 +76,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return `chat:call_session:${callId}`;
   }
 
+  private emitPresenceUpdate(userId: string, isOnline: boolean) {
+    this.server.emit('presence:update', {
+      userId,
+      isOnline,
+      lastSeenAt: isOnline ? null : Date.now(),
+    });
+  }
+
+  private emitPresenceSync(client: Socket) {
+    const onlineUserIds = [...this.userSockets.keys()];
+    client.emit('presence:sync', { onlineUserIds });
+  }
+
   private async getCallSession(callId: string): Promise<CallSession | null> {
     const redis = await this.getRedisClient();
     if (!redis) return this.activeCalls.get(callId) ?? null;
@@ -143,25 +156,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
+    let disconnectedUserId: string | null = null;
     for (const [userId, socketIds] of this.userSockets.entries()) {
       if (socketIds.has(client.id)) {
         socketIds.delete(client.id);
         if (socketIds.size === 0) {
           this.userSockets.delete(userId);
+          this.connectedUsers.delete(userId);
+          disconnectedUserId = userId;
         }
         break;
       }
+    }
+    if (disconnectedUserId) {
+      this.emitPresenceUpdate(disconnectedUserId, false);
     }
   }
 
   @SubscribeMessage('join')
   handleJoin(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
-    if (!this.userSockets.has(data.userId)) {
-      this.userSockets.set(data.userId, new Set());
+    const existingSockets = this.userSockets.get(data.userId);
+    if (existingSockets) {
+      existingSockets.forEach((socketId) => {
+        if (socketId === client.id) return;
+        this.server.to(socketId).emit('session:revoked', { reason: 'logged_in_elsewhere' });
+        this.server.sockets.sockets.get(socketId)?.disconnect(true);
+      });
     }
-    this.userSockets.get(data.userId)?.add(client.id);
+
+    const nextSockets = new Set<string>();
+    nextSockets.add(client.id);
+    this.userSockets.set(data.userId, nextSockets);
     this.connectedUsers.set(data.userId, client.id);
     this.logger.log(`User ${data.userId} joined with socket ${client.id}`);
+    this.emitPresenceUpdate(data.userId, true);
+    this.emitPresenceSync(client);
   }
 
   @SubscribeMessage('markRead')
@@ -450,6 +479,84 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       this.logger.error('Failed to handle typing:', error);
       return { success: false, error: 'Failed to update typing state' };
+    }
+  }
+
+  @SubscribeMessage('webrtc:offer')
+  async handleWebRTCOffer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; conversationId: string; offer: any; targetUserId: string },
+  ) {
+    try {
+      const conversation = await this.chatService.getConversationById(data.conversationId, data.targetUserId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const socketIds = this.userSockets.get(data.targetUserId);
+      if (!socketIds) return { success: false, error: 'Target user not connected' };
+      
+      socketIds.forEach((socketId) => {
+        this.server.to(socketId).emit('webrtc:offer', {
+          callId: data.callId,
+          conversationId: data.conversationId,
+          offer: data.offer,
+        });
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to handle WebRTC offer:', error);
+      return { success: false, error: 'Failed to send WebRTC offer' };
+    }
+  }
+
+  @SubscribeMessage('webrtc:answer')
+  async handleWebRTCAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; conversationId: string; answer: any; targetUserId: string },
+  ) {
+    try {
+      const conversation = await this.chatService.getConversationById(data.conversationId, data.targetUserId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const socketIds = this.userSockets.get(data.targetUserId);
+      if (!socketIds) return { success: false, error: 'Target user not connected' };
+      
+      socketIds.forEach((socketId) => {
+        this.server.to(socketId).emit('webrtc:answer', {
+          callId: data.callId,
+          conversationId: data.conversationId,
+          answer: data.answer,
+        });
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to handle WebRTC answer:', error);
+      return { success: false, error: 'Failed to send WebRTC answer' };
+    }
+  }
+
+  @SubscribeMessage('webrtc:ice-candidate')
+  async handleWebRTCIceCandidate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; conversationId: string; candidate: any; targetUserId: string },
+  ) {
+    try {
+      const conversation = await this.chatService.getConversationById(data.conversationId, data.targetUserId);
+      if (!conversation) return { success: false, error: 'Conversation not found' };
+      const socketIds = this.userSockets.get(data.targetUserId);
+      if (!socketIds) return { success: false, error: 'Target user not connected' };
+      
+      socketIds.forEach((socketId) => {
+        this.server.to(socketId).emit('webrtc:ice-candidate', {
+          callId: data.callId,
+          conversationId: data.conversationId,
+          candidate: data.candidate,
+        });
+      });
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to handle WebRTC ICE candidate:', error);
+      return { success: false, error: 'Failed to send ICE candidate' };
     }
   }
 }

@@ -60,43 +60,46 @@ export default function ChatCameraModal({ visible, colors, onClose, onCapture }:
             </TouchableOpacity>
           </View>
         ) : (
-          <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={cameraType} flash={flash}>
-            <View style={styles.topBar}>
-              <TouchableOpacity style={styles.topBtn} onPress={onClose}>
-                <Ionicons name="close" size={22} color="#fff" />
-              </TouchableOpacity>
-              <View style={styles.topRight}>
-                <TouchableOpacity
-                  style={styles.topBtn}
-                  onPress={() => setFlash((prev) => (prev === 'off' ? 'on' : 'off'))}
-                >
-                  <Ionicons name={flash === 'on' ? 'flash' : 'flash-off'} size={20} color="#fff" />
+          <View style={styles.cameraStage}>
+            <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={cameraType} flash={flash} />
+            <View style={styles.cameraOverlay}>
+              <View style={styles.topBar}>
+                <TouchableOpacity style={styles.topBtn} onPress={onClose}>
+                  <Ionicons name="close" size={22} color="#fff" />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.topBtn}
-                  onPress={() => setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))}
-                >
-                  <Ionicons name="camera-reverse-outline" size={20} color="#fff" />
+                <View style={styles.topRight}>
+                  <TouchableOpacity
+                    style={styles.topBtn}
+                    onPress={() => setFlash((prev) => (prev === 'off' ? 'on' : 'off'))}
+                  >
+                    <Ionicons name={flash === 'on' ? 'flash' : 'flash-off'} size={20} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.topBtn}
+                    onPress={() => setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))}
+                  >
+                    <Ionicons name="camera-reverse-outline" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.bottomBar}>
+                <TouchableOpacity style={styles.sideAction} onPress={handlePickFromGallery}>
+                  <Ionicons name="images-outline" size={26} color="#fff" />
                 </TouchableOpacity>
+
+                <TouchableOpacity style={styles.shutterOuter} onPress={handleCapture} disabled={capturing}>
+                  {capturing ? (
+                    <ActivityIndicator color="#111" />
+                  ) : (
+                    <View style={styles.shutterInner} />
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.sideAction} />
               </View>
             </View>
-
-            <View style={styles.bottomBar}>
-              <TouchableOpacity style={styles.sideAction} onPress={handlePickFromGallery}>
-                <Ionicons name="images-outline" size={26} color="#fff" />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.shutterOuter} onPress={handleCapture} disabled={capturing}>
-                {capturing ? (
-                  <ActivityIndicator color="#111" />
-                ) : (
-                  <View style={styles.shutterInner} />
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.sideAction} />
-            </View>
-          </CameraView>
+          </View>
         )}
       </View>
     </Modal>
@@ -105,6 +108,11 @@ export default function ChatCameraModal({ visible, colors, onClose, onCapture }:
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
+  cameraStage: { flex: 1 },
+  cameraOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   permissionText: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 14 },
   permissionBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
