@@ -154,6 +154,10 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
               };
               return request(endpoint, { ...options, headers: retryHeaders, _retry: true });
             }
+          } else {
+            // Refresh token is invalid/expired; clear stored tokens but allow the original 401 to bubble up.
+            await safeDeleteItem('accessToken');
+            await safeDeleteItem('refreshToken');
           }
         } catch (refreshError) {
           await forceLogout();
@@ -184,9 +188,19 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
     let data = {};
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
+      let rawText = '';
       try {
-        data = await response.json();
+        rawText = await response.text();
+        const trimmed = rawText.trim();
+        data = trimmed ? JSON.parse(trimmed) : {};
       } catch (e) {
+        const bodyPreview = rawText ? rawText.slice(0, 2000) : '';
+        console.error('Failed to parse JSON response', {
+          error: e,
+          status: response.status,
+          url: response.url,
+          body: bodyPreview,
+        });
         data = {};
       }
     } else {
@@ -216,21 +230,21 @@ export const api = {
     request(url, { 
       ...options, 
       method: 'POST', 
-      body: body instanceof FormData ? body : JSON.stringify(body) 
+      body: body instanceof FormData ? body : (body == null ? undefined : JSON.stringify(body)) 
     }),
   
   put: (url: string, body?: any, options?: RequestOptions) => 
     request(url, { 
       ...options, 
       method: 'PUT', 
-      body: body instanceof FormData ? body : JSON.stringify(body) 
+      body: body instanceof FormData ? body : (body == null ? undefined : JSON.stringify(body)) 
     }),
   
   patch: (url: string, body?: any, options?: RequestOptions) => 
     request(url, { 
       ...options, 
       method: 'PATCH', 
-      body: body instanceof FormData ? body : JSON.stringify(body) 
+      body: body instanceof FormData ? body : (body == null ? undefined : JSON.stringify(body)) 
     }),
   
   delete: (url: string, options?: RequestOptions) => 

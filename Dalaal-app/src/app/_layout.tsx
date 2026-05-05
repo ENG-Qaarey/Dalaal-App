@@ -118,9 +118,9 @@ function RootStack() {
       }
     };
 
-    const handlePresenceUpdate = (data: { userId: string; isOnline: boolean }) => {
+    const handlePresenceUpdate = (data: { userId: string; isOnline: boolean; lastSeenAt?: number | null }) => {
       if (!data?.userId) return;
-      useChatStore.getState().updatePresence(data.userId, data.isOnline);
+      useChatStore.getState().updatePresence(data.userId, data.isOnline, data.lastSeenAt ?? null);
     };
 
     const handleSessionRevoked = async () => {

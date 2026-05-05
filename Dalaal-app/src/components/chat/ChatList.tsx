@@ -10,6 +10,7 @@ type ChatItem = {
   time: string;
   unread: number;
   online: boolean;
+  lastSeenAt?: number | null;
   pinned: boolean;
   imageUri?: string;
 };
@@ -28,10 +29,21 @@ const initialsFor = (name: string) =>
     .join('')
     .toUpperCase();
 
+const formatLastSeen = (timestamp?: number | null) => {
+  if (!timestamp) return 'Offline';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'Offline';
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `Last seen ${time}`;
+};
+
 export default function ChatList({ chats, colors, onPressChat }: Props) {
   return (
     <View style={styles.chatList}>
-      {chats.map((chat) => (
+      {chats.map((chat) => {
+        const statusText = chat.online ? 'Online' : formatLastSeen(chat.lastSeenAt);
+        const roleText = chat.role ? `${chat.role} • ${statusText}` : statusText;
+        return (
         <TouchableOpacity
           key={chat.id}
           activeOpacity={0.9}
@@ -59,7 +71,7 @@ export default function ChatList({ chats, colors, onPressChat }: Props) {
               <Text style={[styles.chatTime, { color: colors.textMuted }]}>{chat.time}</Text>
             </View>
             <Text style={[styles.chatRole, { color: colors.textMuted }]} numberOfLines={1}>
-              {chat.role}
+              {roleText}
             </Text>
             <Text style={[styles.chatMessage, { color: colors.textMain }]} numberOfLines={1}>
               {chat.message}
@@ -75,7 +87,8 @@ export default function ChatList({ chats, colors, onPressChat }: Props) {
             )}
           </View>
         </TouchableOpacity>
-      ))}
+      );
+      })}
     </View>
   );
 }

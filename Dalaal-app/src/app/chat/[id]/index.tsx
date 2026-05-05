@@ -807,6 +807,14 @@ useEffect(() => {
   const beginCall = useCallback(
     async (mode: 'audio' | 'video') => {
       if (!conversationId || !user?.id || !participantId) return;
+      if (participantId === user.id) {
+        Alert.alert('Call blocked', 'You cannot call yourself.');
+        return;
+      }
+      if (!isOnline) {
+        Alert.alert('User offline', 'This user is currently offline.');
+        return;
+      }
       const callId = `call_${Date.now()}`;
       
       if (webRTCService) {

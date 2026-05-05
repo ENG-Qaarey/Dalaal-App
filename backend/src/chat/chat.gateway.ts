@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { WsJwtGuard } from '../common/guards/ws-jwt.guard';
 import { ChatService } from './chat.service';
 import { v4 as uuidv4 } from 'uuid';
+import { PrismaService } from '../database/prisma.service';
 
 type CallSession = {
   callId: string;
@@ -41,6 +42,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {
     this.useRedisCallSessions = this.configService.get<string>('USE_REDIS_CALL_SESSIONS') === 'true';
   }
@@ -76,12 +78,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return `chat:call_session:${callId}`;
   }
 
-  private emitPresenceUpdate(userId: string, isOnline: boolean) {
+  private emitPresenceUpdate(userId: string, isOnline: boolean, lastSeenAt?: number | null) {
     this.server.emit('presence:update', {
       userId,
       isOnline,
-      lastSeenAt: isOnline ? null : Date.now(),
+      lastSeenAt: isOnline ? null : lastSeenAt ?? Date.now(),
     });
+  }
+
+  private async setUserPresence(userId: string, isOnline: boolean) {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { isOnline, lastSeenAt: new Date() },
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to update presence for ${userId}: ${String(error)}`);
+    }
   }
 
   private emitPresenceSync(client: Socket) {
@@ -154,7 +167,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`Client connected: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
     let disconnectedUserId: string | null = null;
     for (const [userId, socketIds] of this.userSockets.entries()) {
@@ -169,27 +182,47 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     if (disconnectedUserId) {
-      this.emitPresenceUpdate(disconnectedUserId, false);
+      await this.setUserPresence(disconnectedUserId, false);
+      this.emitPresenceUpdate(disconnectedUserId, false, Date.now());
     }
   }
 
   @SubscribeMessage('join')
-  handleJoin(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
-    const existingSockets = this.userSockets.get(data.userId);
+  async handleJoin(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
+    // CRITICAL SECURITY FIX: Extract userId from JWT, not from client data
+    // The guard already validated the JWT and set user in context
+    const jwtUser = (client as any).handshake?.user || (client as any).user;
+    const authenticatedUserId = jwtUser?.sub;
+    
+    // If no authenticated user, reject the join
+    if (!authenticatedUserId) {
+      this.logger.warn(`Join rejected: No authenticated user for socket ${client.id}`);
+      client.emit('session:revoked', { reason: 'unauthorized' });
+      client.disconnect(true);
+      return;
+    }
+    
+    // Use authenticated userId, ignore client-provided userId to prevent spoofing
+    const userId = authenticatedUserId;
+    
+    // Invalidate old sessions for this user (but keep current socket)
+    const existingSockets = this.userSockets.get(userId);
     if (existingSockets) {
       existingSockets.forEach((socketId) => {
         if (socketId === client.id) return;
+        // Only disconnect sockets that belong to OTHER sessions for the same user
         this.server.to(socketId).emit('session:revoked', { reason: 'logged_in_elsewhere' });
         this.server.sockets.sockets.get(socketId)?.disconnect(true);
       });
     }
 
-    const nextSockets = new Set<string>();
+    const nextSockets = existingSockets || new Set<string>();
     nextSockets.add(client.id);
-    this.userSockets.set(data.userId, nextSockets);
-    this.connectedUsers.set(data.userId, client.id);
-    this.logger.log(`User ${data.userId} joined with socket ${client.id}`);
-    this.emitPresenceUpdate(data.userId, true);
+    this.userSockets.set(userId, nextSockets);
+    this.connectedUsers.set(userId, client.id);
+    this.logger.log(`User ${userId} joined with socket ${client.id}`);
+    await this.setUserPresence(userId, true);
+    this.emitPresenceUpdate(userId, true, null);
     this.emitPresenceSync(client);
   }
 
@@ -250,6 +283,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const isParticipant = conversation.participants.some(p => p.userId === data.userId);
       if (!isParticipant) return { success: false, error: 'Not a participant in this conversation' };
+
+      const targets = conversation.participants.filter((p) => p.userId !== data.userId);
+      if (targets.length === 0) {
+        return { success: false, error: 'Cannot call yourself' };
+      }
+      const hasOnlineTarget = targets.some((target) => {
+        const sockets = this.userSockets.get(target.userId);
+        return sockets && sockets.size > 0;
+      });
+      if (!hasOnlineTarget) {
+        if (data.callId) {
+          this.server.to(client.id).emit('call:ended', {
+            callId: data.callId,
+            conversationId: data.conversationId,
+            userId: data.userId,
+            reason: 'offline',
+          });
+        }
+        return { success: false, error: 'User is offline' };
+      }
 
       const callId = data.callId || uuidv4();
       const startedAt = Date.now();

@@ -119,6 +119,16 @@ export class ChatRepository {
         }
       });
 
+      await tx.conversationParticipant.updateMany({
+        where: {
+          conversationId,
+          userId: { not: senderId },
+        },
+        data: {
+          unreadCount: { increment: 1 },
+        },
+      });
+
       return message;
     });
   }

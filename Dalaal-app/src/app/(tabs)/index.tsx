@@ -26,6 +26,7 @@ import useAuth from '../../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.58) + 10;
+const FALLBACK_AVATAR = 'https://i.pravatar.cc/160?img=14';
 
 const categories = [
   { key: 'houses', label: 'Houses', icon: 'home' },
@@ -170,7 +171,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.85} style={styles.profileBtn}>
             <Image
-              source={{ uri: user?.profile?.avatar || 'https://i.pravatar.cc/160?img=14' }}
+              source={{ uri: user?.profile?.avatar || FALLBACK_AVATAR }}
               style={[styles.profileAvatar, { borderColor: C.brandBorder }]}
             />
           </TouchableOpacity>
@@ -729,7 +730,7 @@ export default function HomeScreen() {
                       <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>{isFullMuted ? "Muted" : "Sound"}</Text>
                     </TouchableOpacity>
                     <Image 
-                      source={{ uri: user?.profile?.avatar || 'https://i.pravatar.cc/160?img=12' }} 
+                      source={{ uri: user?.profile?.avatar || FALLBACK_AVATAR }} 
                       style={[styles.modalSmallAvatar, { width: 34, height: 34, borderRadius: 10 }]} 
                     />
                   </View>

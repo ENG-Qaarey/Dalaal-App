@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chatService } from '../services/chat';
 import { useAuthStore } from './authStore';
 
@@ -28,6 +28,7 @@ export type ChatListItem = {
   time: string;
   unread: number;
   online: boolean;
+  lastSeenAt?: number | null;
   pinned: boolean;
   imageUri?: string;
   conversationId?: string;
@@ -82,7 +83,7 @@ type ChatStore = {
   applyIncomingMessage: (message: any) => void;
   markConversationRead: (conversationId: string) => void;
   updateConversationPreview: (conversationId: string, message?: any) => void;
-  updatePresence: (userId: string, isOnline: boolean) => void;
+  updatePresence: (userId: string, isOnline: boolean, lastSeenAt?: number | null) => void;
   setActiveConversation: (conversationId: string | null) => void;
   clearActiveConversation: () => void;
   isActiveConversation: (conversationId: string) => boolean;
@@ -111,8 +112,16 @@ export const useChatStore = create<ChatStore>()(
         if (!otherParticipant) return null;
         const lastMessage = conv.messages[0];
         const otherUser = otherParticipant?.user;
-        const lastSeen = otherUser?.lastLoginAt ? new Date(otherUser.lastLoginAt).getTime() : 0;
-        const isOnline = lastSeen > 0 && Date.now() - lastSeen < 10 * 60 * 1000;
+        const lastSeenAt = otherUser?.lastSeenAt
+          ? new Date(otherUser.lastSeenAt).getTime()
+          : otherUser?.lastLoginAt
+            ? new Date(otherUser.lastLoginAt).getTime()
+            : null;
+        const isOnline = typeof otherUser?.isOnline === 'boolean'
+          ? otherUser.isOnline
+          : lastSeenAt
+            ? Date.now() - lastSeenAt < 10 * 60 * 1000
+            : false;
 
         return {
           id: conv.id,
@@ -124,6 +133,7 @@ export const useChatStore = create<ChatStore>()(
           time: lastMessage ? formatTime(lastMessage.createdAt) : 'now',
           unread: conv.unreadCount ?? conv.unread ?? otherParticipant?.unreadCount ?? 0,
           online: isOnline,
+          lastSeenAt,
           pinned: false,
           imageUri: otherUser?.profile?.avatar,
         };
@@ -168,6 +178,7 @@ export const useChatStore = create<ChatStore>()(
         time: 'now',
         unread: 0,
         online: user.online,
+        lastSeenAt: null,
         pinned: false,
         imageUri: user.imageUri,
       };
@@ -263,11 +274,11 @@ export const useChatStore = create<ChatStore>()(
     }));
   },
 
-  updatePresence: (userId, isOnline) => {
+  updatePresence: (userId, isOnline, lastSeenAt) => {
     set((state) => ({
       chats: state.chats.map((chat) =>
         chat.participantId === userId
-          ? { ...chat, online: isOnline }
+          ? { ...chat, online: isOnline, lastSeenAt: lastSeenAt ?? chat.lastSeenAt }
           : chat
       ),
     }));
@@ -315,23 +326,7 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: 'dalaal-chat-storage',
-      storage: createJSONStorage(() => ({
-        getItem: async (name: string) => {
-          try {
-            return await SecureStore.getItemAsync(name);
-          } catch { return null; }
-        },
-        setItem: async (name: string, value: string) => {
-          try {
-            await SecureStore.setItemAsync(name, value);
-          } catch {}
-        },
-        removeItem: async (name: string) => {
-          try {
-            await SecureStore.deleteItemAsync(name);
-          } catch {}
-        },
-      })),
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ chats: state.chats, messages: state.messages }),
     }
   )
