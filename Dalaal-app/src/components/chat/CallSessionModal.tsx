@@ -1,9 +1,22 @@
 import React from 'react';
-import { Image, Modal, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { CameraView } from 'expo-camera';
+import { Modal, StyleSheet, Vibration, View } from 'react-native';
 import { Audio } from 'expo-av';
 import OnboardingBackground from '../OnboardingBackground';
+
+// Sub-components
+import CallHeader from './CallComponents/CallHeader';
+import CallAvatar from './CallComponents/CallAvatar';
+import CallIncomingActions from './CallComponents/CallIncomingActions';
+import CallControls from './CallComponents/CallControls';
+import CallVideoView from './CallComponents/CallVideoView';
+
+let RTCView: any = null;
+try {
+  const webrtc = require('react-native-webrtc');
+  RTCView = webrtc.RTCView;
+} catch (e) {
+  RTCView = null;
+}
 
 const RINGTONE_ASSET = require('../../assets/audio/freesound_community-ring-tone-68676.mp3');
 
@@ -30,23 +43,11 @@ type Props = {
 function hexToRgb(hex?: string) {
   if (!hex) return null;
   const cleaned = hex.replace('#', '').trim();
-  const full =
-    cleaned.length === 3
-      ? cleaned
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : cleaned;
-
+  const full = cleaned.length === 3 ? cleaned.split('').map((c) => c + c).join('') : cleaned;
   if (full.length !== 6) return null;
   const int = Number.parseInt(full, 16);
   if (Number.isNaN(int)) return null;
-
-  return {
-    r: (int >> 16) & 255,
-    g: (int >> 8) & 255,
-    b: int & 255,
-  };
+  return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
 }
 
 function isLightColor(hex?: string) {
@@ -58,9 +59,7 @@ function isLightColor(hex?: string) {
 
 const formatDuration = (seconds: number) => {
   const total = Math.max(0, seconds);
-  const mins = Math.floor(total / 60)
-    .toString()
-    .padStart(2, '0');
+  const mins = Math.floor(total / 60).toString().padStart(2, '0');
   const secs = (total % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
 };
@@ -92,9 +91,7 @@ export default function CallSessionModal({
   const vibrationLoopRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const isMutedRef = React.useRef(isMuted);
 
-  React.useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
+  React.useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   React.useEffect(() => {
     if (!visible) {
@@ -110,10 +107,11 @@ export default function CallSessionModal({
     void Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       allowsRecordingIOS: true,
-      playThroughEarpieceAndroid: !speakerOn,
       staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: !speakerOn,
     });
-  }, [speakerOn, visible]);
+  }, [speakerOn, visible, status]);
 
   React.useEffect(() => {
     if (!ringtoneRef.current) return;
@@ -131,9 +129,7 @@ export default function CallSessionModal({
         try {
           await ringtoneRef.current.stopAsync();
           await ringtoneRef.current.unloadAsync();
-        } catch {
-          // ignore cleanup errors
-        }
+        } catch { /* ignore */ }
         ringtoneRef.current = null;
       }
     };
@@ -151,40 +147,41 @@ export default function CallSessionModal({
           RINGTONE_ASSET,
           { shouldPlay: true, isLooping: true, volume: isMutedRef.current ? 0 : 1 }
         );
-        if (cancelled) {
-          await sound.unloadAsync();
-          return;
-        }
+        if (cancelled) { await sound.unloadAsync(); return; }
         ringtoneRef.current = sound;
       } catch {
-        vibrationLoopRef.current = setInterval(() => {
-          Vibration.vibrate([0, 300, 200], false);
-        }, 900);
+        vibrationLoopRef.current = setInterval(() => { Vibration.vibrate([0, 300, 200], false); }, 900);
       }
     };
-
     void startRing();
-    return () => {
-      cancelled = true;
-      void cleanupRing();
-    };
+    return () => { cancelled = true; void cleanupRing(); };
   }, [visible, status]);
+
+  const [isSignaling, setIsSignaling] = React.useState(false);
+  React.useEffect(() => {
+    if (visible && status === 'ringing' && direction === 'outgoing') {
+      setIsSignaling(true);
+      const timer = setTimeout(() => setIsSignaling(false), 1500);
+      return () => clearTimeout(timer);
+    } else { setIsSignaling(false); }
+  }, [visible, status, direction]);
 
   const label = React.useMemo(() => formatDuration(durationSeconds), [durationSeconds]);
   const canUseVideoControls = mode === 'video' && status === 'ongoing';
   const isLiveVideo = mode === 'video' && status === 'ongoing' && videoEnabled && (localStream || remoteStream);
+  
   const isLightTheme = isLightColor(colors?.surface);
-  const headingColor = isLightTheme ? colors?.textMain ?? '#16223a' : '#fff';
-  const subTextColor = isLightTheme ? colors?.textMuted ?? '#5b6b86' : '#D1D5DB';
-  const timerColor = isLightTheme ? colors?.brandBlueDark ?? '#144a95' : '#C7D2FE';
-  const controlBarBg = isLightTheme ? 'rgba(255,255,255,0.9)' : '#18181B';
-  const controlBarBorder = isLightTheme ? 'rgba(22,34,58,0.10)' : 'transparent';
-  const neutralControlBg = isLightTheme ? '#E8EEF8' : '#3F3F46';
-  const mutedControlBg = isLightTheme ? '#D7DFED' : '#27272A';
-  const neutralIconColor = isLightTheme ? colors?.textMain ?? '#111827' : '#fff';
-  const overlayColor = isLiveVideo
-    ? (isLightTheme ? '#00000044' : '#00000088')
-    : (isLightTheme ? '#FFFFFF22' : '#00000033');
+  const theme = {
+    headingColor: isLightTheme ? colors?.textMain ?? '#16223a' : '#fff',
+    subTextColor: isLightTheme ? colors?.textMuted ?? '#5b6b86' : '#D1D5DB',
+    timerColor: isLightTheme ? colors?.brandBlueDark ?? '#144a95' : '#C7D2FE',
+    controlBarBg: isLightTheme ? 'rgba(255,255,255,0.9)' : '#18181B',
+    controlBarBorder: isLightTheme ? 'rgba(22,34,58,0.10)' : 'transparent',
+    neutralControlBg: isLightTheme ? '#E8EEF8' : '#3F3F46',
+    mutedControlBg: isLightTheme ? '#D7DFED' : '#27272A',
+    neutralIconColor: isLightTheme ? colors?.textMain ?? '#111827' : '#fff',
+    overlayColor: isLiveVideo ? (isLightTheme ? '#00000044' : '#00000088') : (isLightTheme ? '#FFFFFF22' : '#00000033'),
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onEnd}>
@@ -197,97 +194,68 @@ export default function CallSessionModal({
           />
         ) : null}
 
-        {isLiveVideo ? <CameraView style={StyleSheet.absoluteFillObject} facing={cameraFacing} /> : null}
+        {isLiveVideo ? (
+          <CallVideoView
+            RTCView={RTCView}
+            remoteStream={remoteStream}
+            localStream={localStream}
+            videoEnabled={videoEnabled}
+            cameraFacing={cameraFacing}
+          />
+        ) : null}
 
-        <View style={[styles.darkOverlay, { backgroundColor: overlayColor }]} />
+        <View style={[styles.darkOverlay, { backgroundColor: theme.overlayColor }]} />
 
         <View style={styles.overlay}>
-          <View style={styles.topMeta}>
-            <Text style={[styles.nameSmall, { color: headingColor }]}>{userName}</Text>
-            <Text style={[styles.state, { color: subTextColor }]}>
-              {status === 'ringing'
-                ? direction === 'incoming'
-                  ? 'Incoming call...'
-                  : isOnline
-                  ? 'Ringing...'
-                  : 'Calling...'
-                : 'On call'}
-            </Text>
-          </View>
+          <CallHeader
+            userName={userName}
+            status={status}
+            direction={direction}
+            isOnline={isOnline}
+            isSignaling={isSignaling}
+            headingColor={theme.headingColor}
+            subTextColor={theme.subTextColor}
+          />
 
-          <View style={styles.center}>
-            <View style={styles.avatarCircle}>
-              {userImageUri ? (
-                <Image source={{ uri: userImageUri }} style={styles.avatarImage} />
-              ) : (
-                <Ionicons name="person" size={62} color={isLightTheme ? '#EEF2FF' : '#D8D4F8'} />
-              )}
-            </View>
-            {status === 'ongoing' ? (
-              <Text style={[styles.timer, { color: timerColor }]}>{label}</Text>
-            ) : null}
-          </View>
+          <CallAvatar
+            userImageUri={userImageUri}
+            status={status}
+            label={label}
+            timerColor={theme.timerColor}
+            isLightTheme={isLightTheme}
+          />
 
           {status === 'ringing' && direction === 'incoming' ? (
-            <View style={styles.incomingActions}>
-              <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
-                <Ionicons name="call" size={18} color="#fff" />
-                <Text style={styles.acceptText}>Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.declineBtn} onPress={onDecline}>
-                <Ionicons name="call" size={18} color="#fff" />
-                <Text style={styles.declineText}>Decline</Text>
-              </TouchableOpacity>
-            </View>
+            <CallIncomingActions onAccept={onAccept} onDecline={onDecline} />
           ) : (
-            <View style={[styles.controlsBar, { backgroundColor: controlBarBg, borderColor: controlBarBorder }]}>
-              <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: mode === 'video' ? neutralControlBg : mutedControlBg }]}
-                disabled={mode !== 'video'}
-                onPress={() => {
-                  if (mode !== 'video') return;
-                  if (onSwitchCamera) onSwitchCamera();
-                  setCameraFacing((prev) => (prev === 'front' ? 'back' : 'front'));
-                }}
-              >
-                <Ionicons name="camera-reverse-outline" size={20} color={neutralIconColor} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: canUseVideoControls && videoEnabled ? neutralControlBg : '#DC2626' }]}
-                disabled={!canUseVideoControls}
-                onPress={() => {
-                  if (!canUseVideoControls) return;
-                  const newEnabled = !videoEnabled;
-                  setVideoEnabled(newEnabled);
-                  if (onToggleVideo) onToggleVideo(newEnabled);
-                }}
-              >
-                <Ionicons
-                  name={canUseVideoControls && videoEnabled ? 'videocam' : 'videocam-off'}
-                  size={20}
-                  color={canUseVideoControls && videoEnabled ? neutralIconColor : '#fff'}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: speakerOn ? '#fff' : neutralControlBg }]}
-                onPress={() => setSpeakerOn((s) => !s)}
-              >
-                <Ionicons name={speakerOn ? 'volume-high' : 'volume-mute'} size={20} color={speakerOn ? '#111827' : neutralIconColor} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.controlBtn, { backgroundColor: isMuted ? '#DC2626' : neutralControlBg }]}
-                onPress={() => {
-                  const newMuted = !isMuted;
-                  setIsMuted(newMuted);
-                  if (onToggleMute) onToggleMute(newMuted);
-                }}
-              >
-                <Ionicons name={isMuted ? 'mic-off' : 'mic'} size={20} color={isMuted ? '#fff' : neutralIconColor} />
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.controlBtn, { backgroundColor: '#E11D48' }]} onPress={onEnd}>
-                <Ionicons name="call" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            <CallControls
+              mode={mode}
+              speakerOn={speakerOn}
+              isMuted={isMuted}
+              videoEnabled={videoEnabled}
+              canUseVideoControls={canUseVideoControls}
+              neutralControlBg={theme.neutralControlBg}
+              mutedControlBg={theme.mutedControlBg}
+              neutralIconColor={theme.neutralIconColor}
+              controlBarBg={theme.controlBarBg}
+              controlBarBorder={theme.controlBarBorder}
+              onSwitchCamera={() => {
+                if (onSwitchCamera) onSwitchCamera();
+                setCameraFacing((p) => (p === 'front' ? 'back' : 'front'));
+              }}
+              onToggleVideo={() => {
+                const next = !videoEnabled;
+                setVideoEnabled(next);
+                if (onToggleVideo) onToggleVideo(next);
+              }}
+              onToggleSpeaker={() => setSpeakerOn(!speakerOn)}
+              onToggleMute={() => {
+                const next = !isMuted;
+                setIsMuted(next);
+                if (onToggleMute) onToggleMute(next);
+              }}
+              onEnd={onEnd}
+            />
           )}
         </View>
       </View>
@@ -297,23 +265,7 @@ export default function CallSessionModal({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#05070B' },
-  darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#00000088' },
-  localVideoContainer: {
-    position: 'absolute',
-    top: 84,
-    right: 24,
-    width: 120,
-    height: 160,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
-    zIndex: 10,
-  },
-  localVideo: {
-    width: '100%',
-    height: '100%',
-  },
+  darkOverlay: { ...StyleSheet.absoluteFillObject },
   overlay: {
     flex: 1,
     alignItems: 'center',
@@ -321,63 +273,4 @@ const styles = StyleSheet.create({
     paddingTop: 84,
     paddingBottom: 46,
   },
-  topMeta: { alignItems: 'center' },
-  nameSmall: { fontSize: 32, fontWeight: '800', color: '#fff' },
-  state: { marginTop: 6, fontSize: 18, color: '#D1D5DB', fontWeight: '600' },
-  center: { alignItems: 'center' },
-  avatarCircle: {
-    width: 214,
-    height: 214,
-    borderRadius: 107,
-    backgroundColor: '#4C3F9A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: { width: '100%', height: '100%' },
-  timer: { marginTop: 12, fontSize: 16, color: '#C7D2FE', fontWeight: '700' },
-  controlsBar: {
-    backgroundColor: '#18181B',
-    borderWidth: 1,
-    borderRadius: 30,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  controlBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  incomingActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-  },
-  acceptBtn: {
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 18,
-    height: 48,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  acceptText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  declineBtn: {
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 18,
-    height: 48,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  declineText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 });

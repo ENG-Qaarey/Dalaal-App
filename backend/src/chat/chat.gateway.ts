@@ -288,6 +288,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (targets.length === 0) {
         return { success: false, error: 'Cannot call yourself' };
       }
+      /* 
       const hasOnlineTarget = targets.some((target) => {
         const sockets = this.userSockets.get(target.userId);
         return sockets && sockets.size > 0;
@@ -303,6 +304,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
         return { success: false, error: 'User is offline' };
       }
+      */
 
       const callId = data.callId || uuidv4();
       const startedAt = Date.now();

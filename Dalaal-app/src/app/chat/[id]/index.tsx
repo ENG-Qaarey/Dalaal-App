@@ -811,10 +811,12 @@ useEffect(() => {
         Alert.alert('Call blocked', 'You cannot call yourself.');
         return;
       }
+      /* 
       if (!isOnline) {
         Alert.alert('User offline', 'This user is currently offline.');
         return;
       }
+      */
       const callId = `call_${Date.now()}`;
       
       if (webRTCService) {
@@ -856,6 +858,8 @@ useEffect(() => {
       allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
     });
 
     if (webRTCService) {
@@ -907,6 +911,8 @@ useEffect(() => {
       allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
     });
     await beginCall('audio');
   }, [beginCall]);
@@ -926,6 +932,8 @@ useEffect(() => {
       allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
     });
     await beginCall('video');
   }, [beginCall]);
