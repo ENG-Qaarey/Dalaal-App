@@ -90,6 +90,7 @@ type ChatStore = {
   incrementUnread: (conversationId: string) => void;
   setConversationMessages: (conversationId: string, messages: StoredMessage[]) => void;
   appendMessage: (conversationId: string, message: StoredMessage) => void;
+  clearMessages: (conversationId: string) => void;
   reset: () => void;
 };
 
@@ -319,6 +320,16 @@ export const useChatStore = create<ChatStore>()(
         messages: { ...state.messages, [conversationId]: [...existing, message] }
       };
     });
+  },
+  clearMessages: (conversationId) => {
+    set((state) => ({
+      messages: { ...state.messages, [conversationId]: [] },
+      chats: state.chats.map((chat) =>
+        chat.conversationId === conversationId
+          ? { ...chat, message: 'No messages yet', time: 'now' }
+          : chat
+      ),
+    }));
   },
   reset: () => {
     set({ chats: [], messages: {}, activeConversationId: null, isLoading: false });

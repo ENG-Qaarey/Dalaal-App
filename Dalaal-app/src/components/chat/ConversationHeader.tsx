@@ -13,6 +13,7 @@ type Props = {
   onBack: () => void;
   onAudioCall: () => void;
   onVideoCall: () => void;
+  onUserPress?: () => void;
 };
 
 export default function ConversationHeader({
@@ -25,6 +26,7 @@ export default function ConversationHeader({
   onBack,
   onAudioCall,
   onVideoCall,
+  onUserPress,
 }: Props) {
   const [isCallMenuOpen, setIsCallMenuOpen] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(userImageUri || null);
@@ -58,7 +60,7 @@ export default function ConversationHeader({
         <Ionicons name="arrow-back" size={16} color={colors.textMain} />
       </TouchableOpacity>
 
-      <View style={styles.userInfo}>
+      <TouchableOpacity style={styles.userInfo} activeOpacity={0.75} onPress={onUserPress}>
         <View style={styles.avatarWrap}>
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -77,7 +79,7 @@ export default function ConversationHeader({
             {typingText || `${isOnline ? 'Online' : 'Offline'}${userRole ? ` • ${userRole}` : ''}`}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.callArea}>
         <TouchableOpacity

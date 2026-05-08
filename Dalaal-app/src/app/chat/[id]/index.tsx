@@ -983,6 +983,19 @@ useEffect(() => {
         onBack={() => router.back()}
         onAudioCall={() => void startAudioCall()}
         onVideoCall={() => void startVideoCall()}
+        onUserPress={() =>
+          router.push({
+            pathname: '/chat/user-content',
+            params: {
+              userId: participantId ?? '',
+              userName,
+              userRole: role ?? '',
+              userImageUri: imageUri ?? '',
+              isOnline: isOnline ? 'true' : 'false',
+              conversationId: conversationId ?? '',
+            },
+          })
+        }
       />
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
