@@ -26,6 +26,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.deleteItemAsync('refreshToken');
     } catch {}
     
+    // Completely wipe persistent chat storage to prevent cross-user data leakage
+    try {
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.removeItem('dalaal-chat-storage');
+    } catch (e) {
+      console.warn('Failed to clear chat storage:', e);
+    }
+    
     // Reset other stores
     const { useChatStore } = require('./chatStore');
     useChatStore.getState().reset();

@@ -86,11 +86,19 @@ class SocketService {
     if (userId) {
       this.setUserId(userId);
     }
-    if (this.socket?.connected) return;
+    const token = await SecureStore.getItemAsync('accessToken');
+    
+    // If we are already connected, verify we have the right token/socket
+    if (this.socket?.connected) {
+      // If the socket was authenticated with a different token (or no token), force reconnect
+      if ((this.socket.auth as any)?.token !== token) {
+        this.disconnect();
+      } else {
+        return;
+      }
+    }
 
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
-      
       this.socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
