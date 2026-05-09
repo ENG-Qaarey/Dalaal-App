@@ -1,3 +1,20 @@
+# Dalaal Web
+
+The main combined documentation file is:
+
+- [MASTER_GUIDE.md](MASTER_GUIDE.md)
+
+Use that file for setup, structure, development, testing, deployment, and route details.
+
+## Quick Start
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open http://localhost:3000
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
