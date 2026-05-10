@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const testimonials = [
   {
@@ -24,12 +27,10 @@ const testimonials = [
 ];
 
 const Testimonials = () => {
+  const { t } = useLanguage();
+
   return (
-    <section className="py-16 bg-zinc-900 dark:bg-white relative overflow-hidden">
-      {/* Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="absolute -top-24 -left-24 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
-      <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-secondary/10 rounded-full blur-[100px]" />
+    <section className="py-16 relative overflow-hidden bg-transparent">
       
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -37,27 +38,27 @@ const Testimonials = () => {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-block px-3 py-1 mb-4 rounded-full bg-white/10 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] font-black uppercase tracking-wider"
+            className="inline-block px-3 py-1 mb-4 rounded-full bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider"
           >
-            Testimonials
+            {t.testimonials.tag}
           </motion.div>
           <motion.h2 
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-3xl md:text-4xl font-black text-white dark:text-zinc-900 mb-4 leading-tight tracking-tight"
+            className="text-3xl md:text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-800 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-4 leading-tight tracking-tight"
           >
-            Community Stories
+            {t.testimonials.title}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-zinc-400 dark:text-zinc-500 text-base md:text-lg leading-relaxed"
+            className="text-gray-600 dark:text-gray-400 text-base md:text-lg leading-relaxed"
           >
-            Real feedback from our satisfied property community.
+            {t.testimonials.subtitle}
           </motion.p>
         </div>
 
@@ -69,28 +70,30 @@ const Testimonials = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="bg-zinc-800/50 dark:bg-zinc-50 backdrop-blur-sm border border-white/5 dark:border-zinc-200 p-8 rounded-[2rem] flex flex-col gap-6 group hover:bg-zinc-800 dark:hover:bg-white hover:-translate-y-1 transition-all duration-500 shadow-xl"
+              className="group relative bg-white/70 dark:bg-zinc-950/60 backdrop-blur-xl border border-white/20 dark:border-white/10 p-8 rounded-2xl flex flex-col gap-6 hover:shadow-xl dark:hover:shadow-blue-500/20 hover:-translate-y-2 transition-all duration-500 shadow-lg dark:shadow-2xl"
             >
-              <div className="flex gap-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 via-transparent to-cyan-400/0 dark:from-blue-500/10 dark:to-emerald-500/5 group-hover:from-blue-400/20 group-hover:to-cyan-400/10 transition-all duration-300 rounded-2xl" />
+              
+              <div className="relative z-10 flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < t.rating ? 'fill-accent text-accent' : 'text-zinc-600 dark:text-zinc-300'}`} />
+                  <Star key={i} className={`h-4 w-4 ${i < t.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
                 ))}
               </div>
 
-              <div className="relative">
-                <Quote className="absolute -top-4 -left-4 h-8 w-8 text-white/5 dark:text-zinc-200 -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
-                <p className="text-zinc-200 dark:text-zinc-700 text-lg font-medium leading-relaxed relative z-10 italic">
+              <div className="relative z-10">
+                <Quote className="absolute -top-4 -left-4 h-8 w-8 text-gray-200 dark:text-gray-800 -rotate-12 group-hover:rotate-0 transition-transform duration-500 opacity-30" />
+                <p className="text-gray-700 dark:text-gray-300 text-base font-medium leading-relaxed relative z-10 italic">
                   "{t.content}"
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 mt-auto pt-5 border-t border-white/10 dark:border-zinc-200">
-                <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-black text-lg border-2 border-white/10 dark:border-white shadow-md">
+              <div className="relative z-10 flex items-center gap-3 mt-auto pt-5 border-t border-white/10 dark:border-white/5">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 flex items-center justify-center text-blue-700 dark:text-blue-300 font-black text-lg border border-blue-200/50 dark:border-blue-800/30 shadow-md">
                   {t.name[0]}
                 </div>
                 <div>
-                  <div className="text-white dark:text-zinc-900 font-bold text-base">{t.name}</div>
-                  <div className="text-zinc-500 dark:text-zinc-400 font-medium text-xs uppercase tracking-wider">{t.role}</div>
+                  <div className="text-gray-900 dark:text-white font-bold text-sm">{t.name}</div>
+                  <div className="text-gray-600 dark:text-gray-400 font-medium text-xs uppercase tracking-wider">{t.role}</div>
                 </div>
               </div>
             </motion.div>

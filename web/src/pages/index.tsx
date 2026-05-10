@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import PageBackground from '@/components/shared/PageBackground';
 import Hero from '@/components/home/Hero';
 import StatsBar from '@/components/home/StatsBar';
 import BrowseByCategory from '@/components/home/BrowseByCategory';
@@ -12,15 +13,20 @@ import Testimonials from '@/components/home/Testimonials';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
 import CTABanner from '@/components/home/CTABanner';
 import NewsletterContact from '@/components/home/NewsletterContact';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const HomePage = () => {
+  const { dir } = useLanguage();
+
   return (
-    <div className="relative min-h-screen bg-white dark:bg-zinc-950 overflow-hidden font-inter">
+    <div className="relative min-h-screen bg-transparent overflow-hidden font-inter" dir={dir}>
       <Head>
         <title>DalaalConnect - Somalia's Most Trusted Property Marketplace</title>
         <meta name="description" content="Connecting verified real estate brokers with property seekers in Somalia and the diaspora." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+
+      <PageBackground />
 
       <Navbar />
 
