@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Test coverage
+coverage
+
+# Misc
+.eslintrc.json
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+AGENTS.md
+CLAUDE.md
+MASTER_GUIDE.md

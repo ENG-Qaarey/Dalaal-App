@@ -1,0 +1,484 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.5s;
+}
+
+.navScrolled {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid hsl(214.3 31.8% 91.4%);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.dark .navScrolled {
+  background: hsl(222 47% 11% / 0.02);
+  border-color: hsl(217 33% 20%);
+}
+
+.navTransparent {
+  background: transparent;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.logoIcon {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid hsl(214.3 31.8% 91.4%);
+  transition: all 0.5s;
+}
+
+.logo:hover .logoIcon {
+  transform: scale(1.1) rotate(3deg);
+  box-shadow: 0 4px 20px hsla(211, 100%, 50%, 0.2);
+}
+
+.dark .logoIcon {
+  border-color: hsl(217 33% 20%);
+}
+
+.logoImage {
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  transition: color 0.3s;
+}
+
+.logoTextLight {
+  color: hsl(215 16% 47%);
+}
+
+.logoTextDark {
+  color: hsl(210 40% 98%);
+}
+
+.logoAccent {
+  color: hsl(211 100% 50%);
+}
+
+.center {
+  display: none;
+  flex: 2;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .center {
+    display: flex;
+  }
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  background: hsl(210 40% 96.1% / 0.5);
+  border: 1px solid hsl(214.3 31.8% 91.4% / 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.dark .navLinks {
+  background: hsl(222 47% 11% / 0.5);
+  border-color: hsl(217 33% 20% / 0.5);
+}
+
+.navLink {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  transition: all 0.3s;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.navLinkLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.navLinkDark {
+  color: hsl(215 20% 65%);
+}
+
+.navLink:hover {
+  color: hsl(211 100% 50%);
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .navLink:hover {
+  background: hsl(217 33% 20%);
+}
+
+.right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.themeBtn {
+  border-radius: 9999px;
+  transition: all 0.3s;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+}
+
+.themeBtn:hover {
+  background: hsl(211 100% 50% / 0.1);
+  color: hsl(211 100% 50%);
+}
+
+.themeBtnLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.themeBtnDark {
+  color: hsl(215 20% 65%);
+}
+
+.themeIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.themeIconRotate {
+  animation: rotate 0.3s forwards;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0); }
+  to { transform: rotate(180deg); }
+}
+
+.langBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.langBtnLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.langBtnDark {
+  color: hsl(215 20% 65%);
+}
+
+.langBtn:hover {
+  background: hsl(210 40% 96.1%);
+}
+
+.dark .langBtn:hover {
+  background: hsl(217 33% 20%);
+}
+
+.langIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.langDropdown {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 10rem;
+  padding: 0.5rem 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-radius: 0.75rem;
+  border: 1px solid hsl(214.3 31.8% 91.4%);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.dark .langDropdown {
+  background: hsl(222 47% 11% / 0.95);
+  border-color: hsl(217 33% 20%);
+}
+
+.langOption {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.langOptionLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.langOptionDark {
+  color: hsl(215 20% 65%);
+}
+
+.langOption:hover {
+  color: hsl(211 100% 50%);
+  background: hsl(210 40% 96.1%);
+}
+
+.dark .langOption:hover {
+  background: hsl(217 33% 20%);
+}
+
+.langOptionActive {
+  color: hsl(211 100% 50%);
+  font-weight: 700;
+  background: hsl(211 100% 50% / 0.05);
+}
+
+.desktopButtons {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .desktopButtons {
+    display: flex;
+  }
+}
+
+.signInBtn {
+  font-weight: 700;
+  transition: all 0.3s;
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.signInBtnLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.signInBtnDark {
+  color: hsl(215 20% 65%);
+}
+
+.signInBtn:hover {
+  color: hsl(211 100% 50%);
+  background: hsl(211 100% 50% / 0.1);
+}
+
+.getStartedBtn {
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 9999px;
+  border: none;
+  transition: all 0.3s;
+  transform: translateY(0);
+}
+
+.getStartedBtnLight {
+  background: hsl(211 100% 50%);
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.25);
+}
+
+.getStartedBtnLight:hover {
+  background: hsl(211 100% 50% / 0.9);
+  box-shadow: 0 6px 25px rgba(14, 165, 233, 0.4);
+  transform: translateY(-0.125rem);
+}
+
+.getStartedBtnDark {
+  background: hsl(199 89% 60%);
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+}
+
+.getStartedBtnDark:hover {
+  background: hsl(199 89% 65%);
+  box-shadow: 0 6px 25px rgba(56, 189, 248, 0.4);
+  transform: translateY(-0.125rem);
+}
+
+.mobileMenuBtn {
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .mobileMenuBtn {
+    display: none;
+  }
+}
+
+.mobileMenuBtnLight {
+  color: hsl(215 16% 47%);
+}
+
+.mobileMenuBtnDark {
+  color: white;
+}
+
+.mobileMenuBtnIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.mobileMenu {
+  width: 300px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid hsl(214.3 31.8% 91.4%);
+}
+
+@media (min-width: 640px) {
+  .mobileMenu {
+    width: 400px;
+  }
+}
+
+.dark .mobileMenu {
+  background: hsl(222 47% 11% / 0.95);
+  border-color: hsl(217 33% 20%);
+}
+
+.mobileMenuContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.mobileMenuLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobileMenuLink {
+  padding: 0.75rem 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(215 16% 47%);
+  border-radius: 1rem;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+
+.mobileMenuLink:hover {
+  color: hsl(211 100% 50%);
+  background: hsl(210 40% 96.1%);
+}
+
+.dark .mobileMenuLink {
+  color: white;
+}
+
+.dark .mobileMenuLink:hover {
+  background: hsl(217 33% 20%);
+}
+
+.mobileMenuDivider {
+  border-color: hsl(214.3 31.8% 91.4%);
+}
+
+.dark .mobileMenuDivider {
+  border-color: hsl(217 33% 20%);
+}
+
+.mobileMenuButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mobileMenuBtnItem {
+  width: 100%;
+  padding: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 1rem;
+  border: 1px solid;
+  transition: all 0.3s;
+}
+
+.mobileMenuBtnOutline {
+  background: none;
+}
+
+.mobileMenuBtnOutlineLight {
+  border-color: hsl(214.3 31.8% 91.4%);
+  color: hsl(215 16% 47%);
+}
+
+.mobileMenuBtnOutlineLight:hover {
+  border-color: hsl(211 100% 50%);
+  color: hsl(211 100% 50%);
+  background: hsl(211 100% 50% / 0.05);
+}
+
+.dark .mobileMenuBtnOutline {
+  border-color: hsl(217 33% 20%);
+  color: white;
+}
+
+.mobileMenuBtnFilled {
+  color: white;
+  border: none;
+}
+
+.mobileMenuBtnFilledLight {
+  background: hsl(211 100% 50%);
+}
+
+.mobileMenuBtnFilledDark {
+  background: hsl(199 89% 60%);
+}

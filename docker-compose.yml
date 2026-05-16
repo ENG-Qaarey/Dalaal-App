@@ -1,0 +1,96 @@
+# ============================================
+# Docker Compose for Dalaal Connect
+# ============================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dalaal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-Dalaal-App}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-Dalaal-App}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: dalaal-backend
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-1234}@postgres:5432/${DB_NAME:-Dalaal-App}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8081}
+      - BACKEND_URL=http://localhost:3002
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - JWT_REFRESH_SECRET=your-refresh-secret-key-change-in-production
+      - JWT_REFRESH_EXPIRES_IN=30d
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-muscabqaarey@gmail.com}
+      - SMTP_PASS=${SMTP_PASS:-ooqnatzjgobliahu}
+      - SMTP_FROM=${SMTP_FROM:-muscabqaarey@gmail.com}
+      - APP_NAME=${APP_NAME:-Dalaal Connect}
+      - STREAM_APP_ID=${STREAM_APP_ID:-1599835}
+      - STREAM_API_KEY=${STREAM_API_KEY:-wa7fg2fv4vzq}
+      - STREAM_SECRET_KEY=${STREAM_SECRET_KEY:-7pp6d8fy6wgeqma5kjn7bhk8vf35rjfnthk34pfcezkwd2stgswk79kfrek62zng}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost,http://localhost:8081,http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src:delegated
+
+  nginx:
+    image: nginx:alpine
+    container_name: dalaal-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    container_name: dalaal-web
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost/api
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:3002
+    depends_on:
+      - backend
+    volumes:
+      - ./web/src:/app/src:delegated
+      - ./web/public:/app/public:delegated
+      - ./web/next.config.js:/app/next.config.js:delegated
+      - web_next_cache:/app/.next
+
+volumes:
+  web_next_cache:

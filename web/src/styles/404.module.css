@@ -1,0 +1,132 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(to bottom right, hsl(210 40% 96.1%), white, hsl(199 89% 96%));
+}
+
+.dark .main {
+  background: linear-gradient(to bottom right, hsl(222 47% 11%), hsl(222 47% 11%), hsl(222 47% 14%));
+}
+
+.card {
+  width: 100%;
+  max-width: 36rem;
+  border-radius: 2rem;
+  border: 1px solid hsl(214.3 31.8% 91.4% / 0.7);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(16px);
+}
+
+.dark .card {
+  border-color: hsl(217 33% 20% / 0.8);
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+.iconWrapper {
+  margin: 0 auto 1.5rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(201 98% 39%);
+  color: white;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+}
+
+.dark .iconWrapper {
+  background: hsl(199 89% 60%);
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3);
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.badge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: hsl(201 98% 39%);
+}
+
+.badgeDark {
+  color: hsl(199 89% 69%);
+}
+
+.title {
+  margin-top: 1rem;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.titleLight {
+  color: hsl(215 16% 47%);
+}
+
+.titleDark {
+  color: white;
+}
+
+.description {
+  margin-top: 1rem;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.descriptionLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.descriptionDark {
+  color: hsl(215 20% 65%);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: hsl(201 98% 39%);
+  color: white;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+  transition: all 0.3s;
+}
+
+.link:hover {
+  background: hsl(211 100% 40%);
+  transform: translateY(-0.125rem);
+}
+
+.dark .link {
+  background: hsl(199 89% 60%);
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3);
+}
+
+.dark .link:hover {
+  background: hsl(199 89% 65%);
+}
+
+.linkIcon {
+  width: 1rem;
+  height: 1rem;
+}

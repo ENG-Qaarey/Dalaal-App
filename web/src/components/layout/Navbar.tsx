@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { Moon, Sun, Menu, ChevronDown, Globe } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/lib/LanguageContext';
+import styles from '@/styles/Navbar.module.css';
 
 const Navbar = () => {
   const { setTheme, resolvedTheme } = useTheme();
@@ -52,18 +53,11 @@ const Navbar = () => {
   if (!mounted) return null;
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-white/9 dark:bg-zinc-950/2 backdrop-blur-xl shadow-lg border-b border-zinc-200 dark:border-zinc-800 py-3'
-          : 'bg-transparent py-5'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        {/* Left: Logo */}
-        <div className="flex-1 flex justify-start">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-10 h-10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm group-hover:shadow-primary/20">
+    <nav className={`${styles.nav} ${scrolled ? styles.navScrolled : styles.navTransparent}`}>
+      <div className={styles.inner}>
+        <div className={styles.left}>
+          <Link href="/" className={styles.logo}>
+            <div className={styles.logoIcon}>
               {mounted && (
                 <>
                   <Image
@@ -71,38 +65,31 @@ const Navbar = () => {
                     alt="Dalaal Icon"
                     fill
                     sizes="40px"
-                    className="object-contain dark:hidden"
+                    className={`${styles.logoImage} ${styles.logoImageLight}`}
                   />
                   <Image
                     src="/AppIcon/Dalaal-Dark-icon.png"
                     alt="Dalaal Icon"
                     fill
                     sizes="40px"
-                    className="object-contain hidden dark:block"
+                    className={`${styles.logoImage} ${styles.logoImageDark}`}
                   />
                 </>
               )}
             </div>
-            <span className={`text-xl font-bold tracking-tight transition-colors duration-300 ${
-              scrolled ? 'text-zinc-900 dark:text-white' : 'text-zinc-900 dark:text-white'
-            }`}>
-              Dalaal<span className="text-primary">Connect</span>
+            <span className={`${styles.logoText} ${styles.logoTextLight}`}>
+              Dalaal<span className={styles.logoAccent}>Connect</span>
             </span>
           </Link>
         </div>
 
-        {/* Center: Navigation Links (Desktop) */}
-        <div className="hidden lg:flex flex-[2] justify-center">
-          <div className="flex items-center gap-1 bg-zinc-100/50 dark:bg-zinc-900/50 p-1 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-sm">
+        <div className={styles.center}>
+          <div className={styles.navLinks}>
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-5 py-2 text-sm font-bold rounded-full transition-all duration-300 hover:text-primary hover:bg-white dark:hover:bg-zinc-800 shadow-sm shadow-transparent hover:shadow-zinc-200/50 dark:hover:shadow-black/50 cursor-pointer ${
-                  scrolled 
-                    ? 'text-zinc-900 dark:text-zinc-100' 
-                    : 'text-zinc-700 dark:text-zinc-300'
-                }`}
+                className={`${styles.navLink} ${styles.navLinkLight}`}
               >
                 {link.name}
               </Link>
@@ -110,39 +97,30 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex-1 flex items-center justify-end gap-3">
+        <div className={styles.right}>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className={`rounded-full transition-all duration-300 ${
-              scrolled 
-                ? 'text-zinc-600 dark:text-zinc-400 hover:bg-primary/10 hover:text-primary dark:hover:text-primary' 
-                : 'text-zinc-600 dark:text-zinc-400 hover:bg-primary/10 hover:text-primary dark:hover:text-primary'
-            }`}
+            className={`${styles.themeBtn} ${styles.themeBtnLight}`}
           >
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Sun className={styles.themeIcon} />
+            <Moon className={styles.themeIcon} />
             <span className="sr-only">Toggle theme</span>
           </Button>
 
           <div ref={langRef} className="relative">
             <button
               onClick={() => setLangOpen(!langOpen)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
-                scrolled 
-                  ? 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800' 
-                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
+              className={`${styles.langBtn} ${styles.langBtnLight}`}
             >
-              <Globe className="h-4 w-4" />
+              <Globe className={styles.langIcon} />
               <span>{lang}</span>
               <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
             </button>
-            
+
             {langOpen && (
-              <div className="absolute right-0 mt-2 w-40 py-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/50 z-50">
+              <div className={styles.langDropdown}>
                 {languages.map((l) => (
                   <button
                     key={l.code}
@@ -150,13 +128,9 @@ const Navbar = () => {
                       setLang(l.code);
                       setLangOpen(false);
                     }}
-                    className={`w-full px-4 py-2 text-left text-sm flex items-center gap-3 transition-colors duration-200 hover:text-primary hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
-                      lang === l.code 
-                        ? 'text-primary font-bold bg-primary/5' 
-                        : 'text-zinc-700 dark:text-zinc-300'
-                    }`}
+                    className={`${styles.langOption} ${styles.langOptionLight} ${lang === l.code ? styles.langOptionActive : ''}`}
                   >
-                    <span className="text-base">{l.flag}</span>
+                    <span>{l.flag}</span>
                     <span>{l.label}</span>
                   </button>
                 ))}
@@ -164,59 +138,49 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className={styles.desktopButtons}>
             <Link href="/login">
-              <Button 
-                variant="ghost" 
-                className={`font-bold transition-all duration-300 ${
-                  scrolled 
-                    ? 'text-zinc-600 dark:text-zinc-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary' 
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-primary hover:bg-primary/10 dark:hover:text-primary'
-                }`}
-              >
+              <Button variant="ghost" className={`${styles.signInBtn} ${styles.signInBtnLight}`}>
                 {t.nav.signIn}
               </Button>
             </Link>
-            <Link href=".././auth/RegisterForm">
-              <Button className="bg-primary hover:bg-primary/90 text-white rounded-full px-6 font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-0.5">
+            <Link href="/register">
+              <Button className={`${styles.getStartedBtn} ${styles.getStartedBtnLight}`}>
                 {t.nav.getStarted}
               </Button>
             </Link>
           </div>
 
-          {/* Mobile Nav */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={`lg:hidden transition-colors ${
-                  scrolled ? 'text-zinc-900 dark:text-white' : 'text-zinc-900 dark:text-white'
-                }`}
-              >
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className={`${styles.mobileMenuBtn} ${styles.mobileMenuBtnLight}`}>
+                <Menu className={styles.mobileMenuBtnIcon} />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-zinc-200 dark:border-zinc-800">
-              <div className="flex flex-col gap-8 mt-12">
-                <div className="flex flex-col gap-2">
+            <SheetContent side="right" className={styles.mobileMenu}>
+              <div className={styles.mobileMenuContent}>
+                <div className={styles.mobileMenuLinks}>
                   {navLinks.map((link) => (
                     <Link
                       key={link.name}
                       href={link.href}
-                      className="px-4 py-3 text-lg font-semibold text-zinc-900 dark:text-white hover:text-primary hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-2xl transition-all cursor-pointer"
+                      className={styles.mobileMenuLink}
                     >
                       {link.name}
                     </Link>
                   ))}
                 </div>
-                <hr className="border-zinc-200 dark:border-zinc-800" />
-                <div className="flex flex-col gap-4">
+                <hr className={styles.mobileMenuDivider} />
+                <div className={styles.mobileMenuButtons}>
                   <Link href="/login">
-                    <Button variant="outline" className="w-full font-bold h-12 rounded-2xl border-zinc-200 dark:border-zinc-800 hover:border-primary hover:text-primary hover:bg-primary/5">{t.nav.signIn}</Button>
+                    <Button variant="outline" className={`w-full font-bold h-12 rounded-2xl border-zinc-200 dark:border-zinc-800 hover:border-primary hover:text-primary hover:bg-primary/5 ${styles.mobileMenuBtnItem}`}>
+                      {t.nav.signIn}
+                    </Button>
                   </Link>
                   <Link href="/register">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 rounded-2xl shadow-lg shadow-primary/20">{t.nav.getStarted}</Button>
+                    <Button className={`w-full font-bold h-12 rounded-2xl shadow-lg ${styles.mobileMenuBtnItem} ${styles.mobileMenuBtnFilled} ${styles.mobileMenuBtnFilledLight}`}>
+                      {t.nav.getStarted}
+                    </Button>
                   </Link>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/card';
 import { Property } from '@/types/property.types';
 import { formatCurrency } from '@/lib/utils';
 

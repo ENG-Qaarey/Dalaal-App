@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+Docker.md
+
+# Documentation
+*.md
+!README.md
+
+# Backend specific
+backend/node_modules
+backend/dist
+backend/.env
+
+# Web specific  
+web/node_modules
+web/.next
+web/.env*
+
+# App
+Dalaal-app/node_modules
+Dalaal-app/.expo

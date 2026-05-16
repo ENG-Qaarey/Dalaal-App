@@ -26,51 +26,106 @@ const Hero = () => {
     }
   };
 
-  return (
-    <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-16 px-4 md:px-6 overflow-hidden bg-transparent">
+  const featureCards = [
+    {
+      title: 'Verified brokers',
+      copy: 'No guesswork, no random listings, no dead ends.',
+      icon: Shield,
+      accent: 'from-blue-500/20 to-cyan-500/10',
+      iconTone: 'text-blue-500 dark:text-blue-400',
+    },
+    {
+      title: 'Fast chat handoff',
+      copy: 'Move from browsing to real conversation in one step.',
+      icon: CheckCircle2,
+      accent: 'from-emerald-500/20 to-lime-500/10',
+      iconTone: 'text-emerald-500 dark:text-emerald-400',
+    },
+    {
+      title: 'Market pulse',
+      copy: 'See what is active now instead of chasing stale posts.',
+      icon: TrendingUp,
+      accent: 'from-amber-500/20 to-orange-500/10',
+      iconTone: 'text-amber-500 dark:text-amber-400',
+    },
+  ];
 
-      <motion.div 
+  return (
+    <section className="relative isolate min-h-[92vh] overflow-hidden px-4 pt-28 pb-16 md:px-6 bg-transparent">
+      <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center"
+        className="relative z-10 mx-auto w-full max-w-7xl"
       >
-        {/* Badge */}
-        <motion.div variants={fadeInUp} className="mb-8 px-5 py-2.5 rounded-full bg-white/60 dark:bg-zinc-950/60 backdrop-blur-xl border border-blue-500/20 dark:border-white/10 flex items-center gap-3 shadow-lg shadow-blue-500/10">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-            {t.hero.badge}
-          </span>
-        </motion.div>
+        <div className="grid items-stretch gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <motion.div
+            variants={fadeInUp}
+            className="relative overflow-hidden rounded-[2rem] border border-zinc-900/10 bg-white/75 p-6 shadow-[0_32px_120px_rgba(15,23,42,0.14)] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/70 md:p-10"
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-400" />
+            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-400/15 blur-3xl" />
+            <div className="absolute -bottom-20 left-8 h-56 w-56 rounded-full bg-emerald-400/12 blur-3xl" />
 
-        {/* Headline */}
-        <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-foreground mb-6 leading-[1.1]">
-          {t.hero.headline} <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-emerald-400 to-cyan-400">{t.hero.headlineAccent}</span> {t.hero.headlineSuffix}
-        </motion.h1>
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-zinc-950 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white shadow-lg shadow-black/10 dark:border-white/10 dark:bg-white dark:text-zinc-950">
+                <Sparkles className="h-3.5 w-3.5" />
+                Anti-design market
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-700 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200">
+                Somalia / diaspora / live inventory
+              </div>
+            </div>
 
-        {/* Subtitle */}
-        <motion.p variants={fadeInUp} className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-          {t.hero.subtitle}
-        </motion.p>
+            <div className="max-w-3xl">
+              <p className="mb-4 text-xs font-black uppercase tracking-[0.32em] text-zinc-500 dark:text-zinc-400">
+                {t.hero.badge}
+              </p>
+              <h1 className="max-w-4xl text-5xl font-black leading-[0.9] tracking-[-0.06em] text-zinc-950 dark:text-white md:text-7xl lg:text-[5.8rem]">
+                <span className="block">{t.hero.headline}</span>
+                <span className="mt-2 inline-block -rotate-1 rounded-[1.2rem] bg-zinc-950 px-4 py-1 text-white dark:bg-white dark:text-zinc-950">
+                  {t.hero.headlineAccent}
+                </span>
+                <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-emerald-500 to-amber-500">
+                  {t.hero.headlineSuffix}
+                </span>
+              </h1>
 
-        {/* Search Bar */}
-        <motion.div variants={fadeInUp} className="w-full max-w-4xl mx-auto">
-          <div className="bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl p-3 md:p-4 rounded-2xl shadow-2xl shadow-black/10 border border-zinc-200/50 dark:border-white/10">
-            <div className="flex flex-col md:flex-row items-stretch gap-3">
-              {/* Location */}
-              <div className="flex-1 flex flex-col gap-1.5 p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200/30 dark:border-white/5">
-                <div className="flex items-center gap-2 text-blue-500">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-600 dark:text-zinc-300 md:text-lg">
+                {t.hero.subtitle}
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link href="/properties">
+                <Button className="h-12 rounded-full bg-zinc-950 px-6 text-sm font-black text-white shadow-lg shadow-black/15 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100">
+                  {t.nav.getStarted}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/dalaals">
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-full border-zinc-300 bg-white/70 px-6 text-sm font-black text-zinc-800 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-50 dark:border-white/15 dark:bg-zinc-900/70 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  Meet brokers
+                </Button>
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-3 md:grid-cols-[1.1fr_1fr_1.2fr]">
+              <div className="rounded-[1.4rem] border border-zinc-900/10 bg-white/85 p-4 shadow-sm dark:border-white/10 dark:bg-zinc-900/70">
+                <div className="mb-2 flex items-center gap-2 text-blue-500">
                   <MapPin className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{t.hero.location}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">
+                    {t.hero.location}
+                  </span>
                 </div>
                 <Select defaultValue="mogadishu">
-                  <SelectTrigger className="bg-transparent border-0 p-0 h-auto text-sm font-semibold text-foreground focus:ring-0">
+                  <SelectTrigger className="h-auto border-0 bg-transparent p-0 text-left text-sm font-semibold text-zinc-950 shadow-none focus:ring-0 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-2xl">
                     <SelectItem value="mogadishu">{t.locations.mogadishu}</SelectItem>
                     <SelectItem value="hargeisa">{t.locations.hargeisa}</SelectItem>
                     <SelectItem value="garowe">{t.locations.garowe}</SelectItem>
@@ -79,19 +134,18 @@ const Hero = () => {
                 </Select>
               </div>
 
-              <div className="hidden md:block w-px bg-zinc-200/50 dark:bg-zinc-800/50" />
-
-              {/* Category */}
-              <div className="flex-1 flex flex-col gap-1.5 p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200/30 dark:border-white/5">
-                <div className="flex items-center gap-2 text-emerald-500">
+              <div className="rounded-[1.4rem] border border-zinc-900/10 bg-white/85 p-4 shadow-sm dark:border-white/10 dark:bg-zinc-900/70">
+                <div className="mb-2 flex items-center gap-2 text-emerald-500">
                   <Home className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{t.hero.category}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">
+                    {t.hero.category}
+                  </span>
                 </div>
                 <Select defaultValue="all">
-                  <SelectTrigger className="bg-transparent border-0 p-0 h-auto text-sm font-semibold text-foreground focus:ring-0">
+                  <SelectTrigger className="h-auto border-0 bg-transparent p-0 text-left text-sm font-semibold text-zinc-950 shadow-none focus:ring-0 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-2xl">
                     <SelectItem value="all">{t.categories.all}</SelectItem>
                     <SelectItem value="houses">{t.categories.houses}</SelectItem>
                     <SelectItem value="land">{t.categories.land}</SelectItem>
@@ -99,89 +153,169 @@ const Hero = () => {
                 </Select>
               </div>
 
-              <div className="hidden md:block w-px bg-zinc-200/50 dark:bg-zinc-800/50" />
-
-              {/* Search Input */}
-              <div className="flex-[1.5] flex flex-col gap-1.5 p-3 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200/30 dark:border-white/5">
-                <div className="flex items-center gap-2 text-blue-500">
+              <div className="rounded-[1.4rem] border border-zinc-900/10 bg-zinc-950 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)] dark:border-white/10 dark:bg-white">
+                <div className="mb-2 flex items-center gap-2 text-white dark:text-zinc-950">
                   <Search className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{t.hero.search}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70 dark:text-zinc-600">
+                    {t.hero.search}
+                  </span>
                 </div>
-                <Input 
-                  placeholder={t.hero.searchPlaceholder}
-                  className="bg-transparent border-0 p-0 h-auto text-sm font-medium focus:ring-0 shadow-none"
-                />
+                <div className="flex items-center gap-3">
+                  <Input
+                    placeholder={t.hero.searchPlaceholder}
+                    className="h-auto border-0 bg-transparent p-0 text-sm font-medium text-white placeholder:text-white/45 shadow-none focus:ring-0 dark:text-zinc-950 dark:placeholder:text-zinc-500"
+                  />
+                  <Button className="h-10 rounded-full bg-white px-4 text-sm font-black text-zinc-950 hover:bg-zinc-100 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-800">
+                    Go
+                  </Button>
+                </div>
               </div>
-
-              {/* Search Button */}
-              <Link href="/properties" className="md:w-auto">
-                <Button className="w-full md:w-auto h-full min-h-[52px] px-6 md:px-8 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 flex items-center justify-center gap-2">
-                  <Search className="h-5 w-5" />
-                  <span className="hidden sm:inline">Search</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
             </div>
-          </div>
-        </motion.div>
 
-        {/* Quick Tags */}
-        <motion.div variants={fadeInUp} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {[
-            { label: t.hero.forRent, color: 'blue' },
-            { label: t.hero.forSale, color: 'emerald' },
-            { label: t.hero.verified, color: 'amber' }
-          ].map((tag, index) => (
-            <button
-              key={tag.label}
-              className={`px-5 py-2.5 rounded-full border text-xs font-bold transition-all duration-300 hover:scale-105 backdrop-blur-sm cursor-pointer
-                ${tag.color === 'blue' ? 'border-blue-500/30 text-blue-500 hover:bg-blue-500 hover:text-white dark:border-white/10 dark:text-blue-400' : ''}
-                ${tag.color === 'emerald' ? 'border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white dark:border-white/10 dark:text-emerald-400' : ''}
-                ${tag.color === 'amber' ? 'border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-white dark:border-white/10 dark:text-amber-400' : ''}
-              `}
+            <div className="mt-8 flex flex-wrap gap-3">
+              {[
+                { label: t.hero.forRent, tone: 'border-blue-500/25 text-blue-600 dark:text-blue-400' },
+                { label: t.hero.forSale, tone: 'border-emerald-500/25 text-emerald-600 dark:text-emerald-400' },
+                { label: t.hero.verified, tone: 'border-amber-500/25 text-amber-600 dark:text-amber-400' },
+              ].map((tag) => (
+                <span
+                  key={tag.label}
+                  className={`rounded-full border bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] shadow-sm dark:bg-zinc-900/70 ${tag.tone}`}
+                >
+                  {tag.label}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+
+          <div className="grid gap-6">
+            <motion.div
+              variants={fadeInUp}
+              className="relative overflow-hidden rounded-[2rem] border border-zinc-900/10 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 p-6 text-white shadow-[0_32px_110px_rgba(0,0,0,0.24)] dark:border-white/10"
             >
-              {tag.label}
-            </button>
-          ))}
-        </motion.div>
+              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl" />
+              <div className="absolute bottom-0 right-0 h-28 w-28 rounded-full bg-blue-400/20 blur-2xl" />
 
-        {/* Trust Badges */}
-        <motion.div variants={fadeInUp} className="mt-14 flex flex-wrap items-center justify-center gap-6 md:gap-12">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
+                    Live market board
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] md:text-3xl">
+                    Hot listings, no dead weight.
+                  </h2>
+                </div>
+                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 backdrop-blur">
+                  24/7
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {[
+                  { label: 'Mogadishu / Villa', value: '3 beds · Verified broker · 12m ago' },
+                  { label: 'Hargeisa / Commercial', value: 'High visibility · Quick response · New' },
+                  { label: 'Garowe / Land plot', value: 'Best for long-term holds · Ready now' },
+                ].map((item, index) => (
+                  <div
+                    key={item.label}
+                    className={`flex items-start justify-between gap-4 rounded-[1.35rem] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm ${
+                      index === 1 ? 'translate-x-3 rotate-[-1deg]' : ''
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-[0.18em] text-white">
+                        {item.label}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-white/70">
+                        {item.value}
+                      </p>
+                    </div>
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-white/70" />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div variants={fadeInUp} className="grid gap-4 sm:grid-cols-2">
+              {featureCards.map((card, index) => (
+                <div
+                  key={card.title}
+                  className={`group relative overflow-hidden rounded-[1.6rem] border border-zinc-900/10 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 ${
+                    index === 0 ? '-rotate-2' : index === 1 ? 'rotate-2 translate-y-2' : '-translate-y-1'
+                  }`}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${card.accent}`} />
+                  <div className="absolute inset-0 bg-white/35 dark:bg-zinc-950/35" />
+                  <div className="relative z-10 flex items-start gap-4">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-900/10 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900 ${card.iconTone}`}>
+                      <card.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.18em] text-zinc-950 dark:text-white">
+                        {card.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                        {card.copy}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+
+        <motion.div variants={fadeInUp} className="mt-6 grid gap-4 md:grid-cols-3">
           {[
-            { icon: Shield, color: 'blue', title: t.hero.verified, subtitle: 'Verified Brokers' },
-            { icon: CheckCircle2, color: 'emerald', title: t.cta.freeForSeekers, subtitle: 'No Hidden Fees' }
+            {
+              kicker: '01',
+              title: 'Browse like a sketchbook',
+              copy: 'The layout is intentionally rougher, so the listings stand out instead of blending into a template wall.',
+            },
+            {
+              kicker: '02',
+              title: 'Talk to the source faster',
+              copy: 'Every route pushes the user toward verified brokers and quick contact instead of endless clicking.',
+            },
+            {
+              kicker: '03',
+              title: 'Signal over decoration',
+              copy: 'Bold blocks, tilted cards, and contrast-first hierarchy keep the page memorable while staying usable.',
+            },
           ].map((item, index) => (
-            <div key={index} className="flex items-center gap-4 group cursor-pointer">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 border
-                ${item.color === 'blue' ? 'bg-blue-500/10 border-blue-500/20 group-hover:bg-blue-500 group-hover:border-blue-500' : ''}
-                ${item.color === 'emerald' ? 'bg-emerald-500/10 border-emerald-500/20 group-hover:bg-emerald-500 group-hover:border-emerald-500' : ''}
-              `}>
-                <item.icon className={`h-6 w-6 transition-colors duration-300
-                  ${item.color === 'blue' ? 'text-blue-500 group-hover:text-white' : ''}
-                  ${item.color === 'emerald' ? 'text-emerald-500 group-hover:text-white' : ''}
-                `} />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-bold text-foreground">{item.title}</div>
-                <div className="text-xs text-muted-foreground">{item.subtitle}</div>
-              </div>
+            <div
+              key={item.kicker}
+              className={`rounded-[1.4rem] border border-zinc-900/10 bg-white/80 p-5 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 ${
+                index === 1 ? 'md:-translate-y-2' : ''
+              }`}
+            >
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
+                {item.kicker}
+              </p>
+              <h3 className="mt-3 text-lg font-black tracking-[-0.03em] text-zinc-950 dark:text-white">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                {item.copy}
+              </p>
             </div>
           ))}
         </motion.div>
       </motion.div>
 
-      {/* Scroll Indicator */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
       >
-        <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-muted-foreground">{t.hero.discoverMore}</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-muted-foreground">
+          {t.hero.discoverMore}
+        </span>
         <motion.div
           animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-10 h-10 rounded-full bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm border border-zinc-200/50 dark:border-white/10 flex items-center justify-center"
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/50 bg-white/60 backdrop-blur-sm dark:border-white/10 dark:bg-zinc-950/60"
         >
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </motion.div>

@@ -1,0 +1,182 @@
+.nav {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  width: 100%;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 50;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.logoIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s;
+}
+
+.logo:hover .logoIcon {
+  transform: scale(1.1);
+}
+
+.logoIconLight {
+  background: hsl(201 98% 39%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logoIconDark {
+  background: hsl(199 89% 60%);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.4);
+}
+
+.logoIconInner {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+}
+
+.logoText {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.logoTextLight {
+  color: hsl(222.2 84% 4.9%);
+}
+
+.logoTextDark {
+  color: hsl(210 40% 98%);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.themeBtn {
+  border-radius: 0.75rem;
+  border: 1px solid;
+  padding: 0.625rem;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.themeBtnLight {
+  border-color: hsl(214.3 31.8% 91.4%);
+  background: white;
+  color: hsl(215 20% 46.9%);
+}
+
+.themeBtnLight:hover {
+  border-color: hsl(199 89% 69%);
+  color: hsl(215 16% 47%);
+}
+
+.themeBtnDark {
+  border-color: hsl(217 33% 20%);
+  background: hsl(222 47% 11% / 0.7);
+  color: hsl(215 20% 80%);
+}
+
+.themeBtnDark:hover {
+  border-color: hsl(217 33% 25%);
+  color: white;
+}
+
+.themeIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.signInLink {
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: color 0.3s;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+}
+
+.signInLinkLight {
+  color: hsl(215 20% 46.9%);
+}
+
+.signInLinkLight:hover {
+  color: hsl(199 89% 69%);
+}
+
+.signInLinkDark {
+  color: hsl(215 20% 80%);
+}
+
+.signInLinkDark:hover {
+  color: hsl(199 89% 69%);
+}
+
+.signInLinkActive {
+  color: hsl(199 89% 69%);
+}
+
+.getStartedLink {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.625rem 1.5rem;
+  border-radius: 1rem;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+
+.getStartedLinkLight {
+  background: hsl(201 98% 39%);
+}
+
+.getStartedLinkLight:hover {
+  background: hsl(211 100% 40%);
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+}
+
+.getStartedLinkDark {
+  background: hsl(199 89% 60%);
+}
+
+.getStartedLinkDark:hover {
+  background: hsl(199 89% 65%);
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+}
+
+.getStartedLinkActive {
+  outline: 2px solid hsl(199 89% 69%);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .nav {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .nav {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
