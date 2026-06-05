@@ -1,0 +1,7 @@
+{
+  "name": "dalaal",
+  "private": true,
+  "scripts": {
+    "verify": "node scripts/verify-connection.mjs"
+  }
+}

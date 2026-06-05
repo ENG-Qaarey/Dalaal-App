@@ -3,12 +3,17 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" EXPO_NO_CACHE=1 npx expo start --clear",
+    "prestart": "node ../scripts/resolve-api-url.mjs",
+    "start": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
+    "start:lan": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
+    "start:usb": "adb reverse tcp:3002 tcp:3002 && npx cross-env EXPO_PUBLIC_API_URL=http://localhost:3002/api EXPO_PUBLIC_SOCKET_URL=http://localhost:3002/chat NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
+    "start:tunnel": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --tunnel --clear",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" EXPO_NO_CACHE=1 npx expo start --android",
-    "ios": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" EXPO_NO_CACHE=1 npx expo start --ios",
-    "web": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" EXPO_NO_CACHE=1 npx expo start --web",
-    "lint": "npx expo lint"
+    "android": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --android --lan",
+    "ios": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --ios --lan",
+    "web": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --web",
+    "lint": "npx expo lint",
+    "postinstall": "node -e \"try{require('http-proxy')}catch(e){console.warn('Run: npm install')}\""
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -62,8 +67,10 @@
     "@babel/runtime": "^7.29.2",
     "@react-native/dev-middleware": "^0.85.2",
     "@types/react": "~19.1.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "http-proxy": "^1.18.1",
     "typescript": "~5.9.2"
   },
   "private": true

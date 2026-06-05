@@ -12,9 +12,10 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
     ports:
-      - "5432:5432"
+      # 5433 avoids conflict with Windows PostgreSQL on 5432
+      - "5433:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-Dalaal-App}"]
       interval: 10s
@@ -28,6 +29,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: dalaal-backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     ports:
       - "3002:3002"
     environment:
@@ -49,12 +52,13 @@ services:
       - STREAM_APP_ID=${STREAM_APP_ID:-1599835}
       - STREAM_API_KEY=${STREAM_API_KEY:-wa7fg2fv4vzq}
       - STREAM_SECRET_KEY=${STREAM_SECRET_KEY:-7pp6d8fy6wgeqma5kjn7bhk8vf35rjfnthk34pfcezkwd2stgswk79kfrek62zng}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost,http://localhost:8081,http://localhost:3000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost,http://localhost:8081,http://localhost:3000,http://127.0.0.1:8081}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend/src:/app/src:delegated
+      - ./backend/prisma:/app/prisma:delegated
 
   nginx:
     image: nginx:alpine
@@ -94,3 +98,4 @@ services:
 
 volumes:
   web_next_cache:
+  postgres_data:

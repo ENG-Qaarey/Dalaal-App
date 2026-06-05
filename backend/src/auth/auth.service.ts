@@ -10,6 +10,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../notifications/email.service';
+import {
+  buildVerificationEmailHtml,
+  getVerificationEmailSubject,
+} from '../notifications/email-templates';
 import { SmsService } from '../notifications/sms.service';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { hashPassword, comparePassword } from '../common/utils/password.utils';
@@ -111,13 +115,11 @@ export class AuthService {
 
     // Send email to user
     try {
-      const appName = this.configService.get<string>('email.appName');
+      const appName = this.configService.get<string>('email.appName') || 'Dalaal-App';
       await this.emailService.sendEmail(
         user.email,
-        `Verify your email - ${appName}`,
-        `<h1>Welcome to ${appName}</h1>
-         <p>Your verification code is: <strong>${code}</strong></p>
-         <p>This code will expire in 10 minutes.</p>`,
+        getVerificationEmailSubject('email-verification', appName),
+        buildVerificationEmailHtml({ kind: 'email-verification', code, appName }),
         { code },
       );
       console.log('✅ Verification email sent to:', user.email);
@@ -192,11 +194,11 @@ export class AuthService {
       await this.authRepository.createVerificationCode(user.id, code, expiresAt);
 
       // Send email via SMTP
-      const appName = this.configService.get<string>('email.appName');
+      const appName = this.configService.get<string>('email.appName') || 'Dalaal-App';
       await this.emailService.sendEmail(
         email,
-        `Your ${appName} Login Code`,
-        '<h1>Login Verification</h1><p>Your 6-digit verification code is: <strong>{{code}}</strong></p><p>This code will expire in 10 minutes.</p>',
+        getVerificationEmailSubject('login', appName),
+        buildVerificationEmailHtml({ kind: 'login', code, appName }),
         { code },
       );
 
@@ -324,14 +326,11 @@ export class AuthService {
     await this.authRepository.createVerificationCode(user.id, code, expiresAt);
 
     // Send email
-    const appName = this.configService.get<string>('email.appName');
+    const appName = this.configService.get<string>('email.appName') || 'Dalaal-App';
     await this.emailService.sendEmail(
       user.email,
-      `Password Reset Code - ${appName}`,
-      `<h1>Password Reset</h1>
-       <p>You requested a password reset. Your 6-digit verification code is:</p>
-       <h2 style="font-size: 32px; letter-spacing: 5px;">${code}</h2>
-       <p>This code will expire in 15 minutes.</p>`,
+      getVerificationEmailSubject('password-reset', appName),
+      buildVerificationEmailHtml({ kind: 'password-reset', code, appName }),
       { code },
     );
 

@@ -1,54 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../store/authStore';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-
-const getApiUrl = () => {
-  // Prefer environment variable if set
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    console.log('[Config] Using EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // Constants.expoConfig?.hostUri typically looks like "192.168.1.10:8081"
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  
-  if (debuggerHost) {
-    const ip = debuggerHost.split(':')[0];
-    
-    // Check for tunnel URLs (exp.direct, ngrok, etc.)
-    if (ip.includes('exp.direct') || ip.includes('ngrok') || ip.includes('tunnel')) {
-      console.log('[Config] Tunnel detected, using local network detection');
-    } else {
-      // Use the detected IP from the debugger host
-      const url = `http://${ip}:3002/api`;
-      console.log('[Config] API_URL set to:', url);
-      return url;
-    }
-  }
-
-  // Fallback based on platform
-  if (Platform.OS === 'android') {
-    // Android emulator uses 10.0.2.2 to access host machine
-    const url = 'http://10.0.2.2:3002/api';
-    console.log('[Config] Android emulator detected, using:', url);
-    return url;
-  }
-
-  // iOS simulator or fallback
-  const url = 'http://localhost:3002/api';
-  console.log('[Config] Using default:', url);
-  return url;
-};
-
-const getSocketUrl = () => {
-  const apiUrl = getApiUrl();
-  // Replace /api with /chat for socket URL
-  return apiUrl.replace('/api', '/chat');
-};
-
-const API_URL = getApiUrl();
-const SOCKET_URL = getSocketUrl();
+import { getApiBaseUrl, getNetworkHelpMessage } from '../utils/network-config';
 
 interface RequestOptions extends RequestInit {
   _retry?: boolean;
@@ -78,10 +30,35 @@ const safeDeleteItem = async (key: string) => {
   }
 };
 
-const request = async (endpoint: string, options: RequestOptions = {}) => {
-  // Normalize endpoint
+const REQUEST_TIMEOUT_MS = 20000;
+
+async function fetchWithTimeout(url: string, config: RequestInit) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...config, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Network request timed out');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function buildUrl(base: string, endpoint: string): string {
+  const root = base.replace(/\/$/, '');
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = `${API_URL}${path}`;
+  return `${root}${path}`;
+}
+
+const request = async (endpoint: string, options: RequestOptions = {}) => {
+  const API_URL = getApiBaseUrl();
+  const url = buildUrl(API_URL, endpoint);
+  if (__DEV__) {
+    console.log('[API]', options.method || 'GET', url);
+  }
 
   // Request Interceptor: Add Auth Token
   const token = await safeGetItem('accessToken');
@@ -115,7 +92,7 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
   };
 
   try {
-    const response = await fetch(url, config);
+    const response = await fetchWithTimeout(url, config);
 
     // Response Interceptor: Handle 401 and Token Refresh
     if (response.status === 401 && !options._retry) {
@@ -133,7 +110,7 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
       
       if (refreshToken) {
         try {
-          const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+          const refreshResponse = await fetchWithTimeout(`${API_URL}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),
@@ -175,7 +152,11 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
         errorData = { message: `HTTP Error ${response.status}` };
       }
 
-      const errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`;
+      let errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`;
+      if (response.status === 404) {
+        errorMessage =
+          'API not found (404). Start docker-compose up, then reload the app. Check console for [API] URL.';
+      }
       const error = new Error(errorMessage) as any;
       error.response = {
         status: response.status,
@@ -211,8 +192,12 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
     return { data }; // Wrap in data property to maintain Axios compatibility
   } catch (error: any) {
     // Handle Network Errors (simulating Axios error structure)
-    if (error.message === 'Network request failed') {
-      const message = 'Cannot connect to server. Please check your connection.';
+    if (
+      error.message === 'Network request failed' ||
+      error.message?.includes('timed out') ||
+      error.message?.includes('Failed to fetch')
+    ) {
+      const message = getNetworkHelpMessage();
       const networkError = new Error(message) as any;
       networkError.response = { data: { message } };
       throw networkError;
@@ -250,3 +235,5 @@ export const api = {
   delete: (url: string, options?: RequestOptions) => 
     request(url, { ...options, method: 'DELETE' }),
 };
+
+export { getApiBaseUrl };

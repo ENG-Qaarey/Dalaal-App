@@ -39,7 +39,7 @@ export default function Login() {
 		setLoading(true);
 		try {
 			const result = await login({
-				identifier: identifier.trim().toLowerCase(),
+				identifier: identifier.trim(),
 				password: password,
 			});
 			// Navigate to the main app after successful login

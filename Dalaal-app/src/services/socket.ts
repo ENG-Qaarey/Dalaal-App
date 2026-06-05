@@ -1,48 +1,7 @@
 import io from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-
-const getSocketUrl = () => {
-  // Prefer environment variable if set
-  if (process.env.EXPO_PUBLIC_SOCKET_URL) {
-    console.log('[Config] Using EXPO_PUBLIC_SOCKET_URL:', process.env.EXPO_PUBLIC_SOCKET_URL);
-    return process.env.EXPO_PUBLIC_SOCKET_URL;
-  }
-
-  // Constants.expoConfig?.hostUri typically looks like "192.168.1.10:8081"
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  
-  if (debuggerHost) {
-    const ip = debuggerHost.split(':')[0];
-    
-    // Check for tunnel URLs (exp.direct, ngrok, etc.)
-    if (ip.includes('exp.direct') || ip.includes('ngrok') || ip.includes('tunnel')) {
-      console.log('[Config] Tunnel detected, using local network detection');
-    } else {
-      // Use the detected IP from the debugger host
-      const url = `http://${ip}:3002/chat`;
-      console.log('[Config] SOCKET_URL set to:', url);
-      return url;
-    }
-  }
-
-  // Fallback based on platform
-  if (Platform.OS === 'android') {
-    // Android emulator uses 10.0.2.2 to access host machine
-    const url = 'http://10.0.2.2:3002/chat';
-    console.log('[Config] Android emulator detected, using:', url);
-    return url;
-  }
-
-  // iOS simulator or fallback
-  const url = 'http://localhost:3002/chat';
-  console.log('[Config] Using default:', url);
-  return url;
-};
-
-const SOCKET_URL = getSocketUrl();
+import { getSocketBaseUrl } from '../utils/network-config';
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
 type CallMode = 'audio' | 'video';
@@ -98,8 +57,9 @@ class SocketService {
       }
     }
 
+    const socketUrl = getSocketBaseUrl();
     try {
-      this.socket = io(SOCKET_URL, {
+      this.socket = io(socketUrl, {
         auth: { token },
         transports: ['websocket'],
         reconnection: true,
@@ -109,7 +69,7 @@ class SocketService {
       });
 
       this.socket.on('connect', () => {
-        console.log('Connected to chat socket');
+        console.log('Connected to chat socket at', socketUrl);
         this.reconnectAttempts = 0;
         if (this.userId) {
           this.join(this.userId);
