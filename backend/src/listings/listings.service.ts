@@ -64,6 +64,29 @@ export class ListingsService {
     return { data: listings, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  async findMine(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { userId };
+
+    const [listings, total] = await Promise.all([
+      this.prisma.listing.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, email: true, profile: true } },
+          property: true,
+          vehicle: true,
+          images: { orderBy: { order: 'asc' } },
+        },
+      }),
+      this.prisma.listing.count({ where }),
+    ]);
+
+    return { data: listings, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
   async findById(id: string) {
     const listing = await this.prisma.listing.findUnique({
       where: { id },

@@ -44,6 +44,19 @@ export class ListingsController {
     return this.listingsService.findAll(+page, +limit, filters);
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get listings owned by the current user' })
+  @ApiResponse({ status: 200, description: 'User listings' })
+  async findMine(
+    @CurrentUser() user: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.listingsService.findMine(user.id, +page, +limit);
+  }
+
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get listing by ID' })

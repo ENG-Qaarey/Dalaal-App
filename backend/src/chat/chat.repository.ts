@@ -26,6 +26,13 @@ export class ChatRepository {
       return existing;
     }
 
+    if (listingId) {
+      await this.prisma.listing.update({
+        where: { id: listingId },
+        data: { inquiryCount: { increment: 1 } },
+      });
+    }
+
     return this.prisma.conversation.create({
       data: {
         listingId,

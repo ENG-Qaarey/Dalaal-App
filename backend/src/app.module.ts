@@ -28,6 +28,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { VerificationModule } from './verification/verification.module';
 import { AdminModule } from './admin/admin.module';
+import { AgentsModule } from './agents/agents.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -64,6 +65,7 @@ import { AppService } from './app.service';
     FavoritesModule,
     VerificationModule,
     AdminModule,
+    AgentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

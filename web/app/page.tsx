@@ -200,7 +200,7 @@ export default function Home() {
             </p>
             <div className="flex gap-4 pt-2 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200">
               <Link
-                href="https://github.com"
+                href="https://github.com/ENG-Qaarey"
                 target="_blank"
                 className="hover:scale-110 transition-transform"
               >

@@ -22,6 +22,7 @@ import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import useAuth from '../../hooks/useAuth';
 import { authService } from '../../services/auth';
 import ProfileSectionCard from '../../components/profile/ProfileSectionCard';
+import { ANALYTICS_ROLES } from '../../services/analytics';
 
 const languageOptions = ['English', 'Somali'];
 
@@ -186,8 +187,21 @@ export default function Profile() {
     );
   }
 
+  const canViewAnalytics = ANALYTICS_ROLES.includes(userRole as any);
+
   const rows = {
     account: [
+      ...(canViewAnalytics
+        ? [
+            {
+              id: 'analyse',
+              label: 'Analyse',
+              icon: 'analytics-outline',
+              value: '',
+              onPress: () => router.push('/agent/dashboard'),
+            },
+          ]
+        : []),
       {
         id: 'edit',
         label: 'Edit Profile',

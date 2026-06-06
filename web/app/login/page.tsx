@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Mail,
   Phone,
@@ -16,6 +17,7 @@ import {
 import ThemeToggle from "@/components/theme-toggle";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -50,7 +52,26 @@ export default function LoginPage() {
     // Simulate API call
     await new Promise((res) => setTimeout(res, 1500));
     setIsLoading(false);
-    alert("Login successful! (Demo)");
+    
+    // Super-admin hardcoded route
+    const cleanPhone = phone.replace(/[\s\+]/g, "");
+    const cleanEmail = email.trim();
+    
+    // Check if either email contains the number/admin email, or phone ends with the number
+    const isSuperAdmin = 
+      (method === "phone" && cleanPhone.includes("614463895")) || 
+      (method === "email" && (cleanEmail.includes("muscabqaareey@gmail.com") || cleanEmail.includes("mmqaareey@gmail.com")));
+      
+    if (isSuperAdmin && password.trim() === "muscab123") {
+      router.push("/super-admin");
+      return;
+    }
+
+    // Show error if credentials don't match the demo admin
+    setErrors({
+      ...(method === "email" ? { email: "Account not found in demo system" } : { phone: "Account not found in demo system" }),
+      password: "Or incorrect password"
+    });
   };
 
   return (
