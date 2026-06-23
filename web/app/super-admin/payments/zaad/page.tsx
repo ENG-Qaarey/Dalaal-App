@@ -1,6 +1,7 @@
 "use client";
 
-import { JSX, useState } from "react";
+import * as React from "react";
+import { useState } from "react";
 import { Search, Download, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
 
 const zaadTransactions = [
@@ -13,7 +14,7 @@ const zaadTransactions = [
 ];
 
 const StatusBadge = ({ status }: { status: string }) => {
-  const map: Record<string, { cls: string; icon: JSX.Element }> = {
+  const map: Record<string, { cls: string; icon: React.JSX.Element }> = {
     Completed: { cls: "text-emerald-600", icon: <CheckCircle className="w-3.5 h-3.5" /> },
     Pending: { cls: "text-amber-600", icon: <Clock className="w-3.5 h-3.5 animate-pulse" /> },
     Failed: { cls: "text-red-500", icon: <XCircle className="w-3.5 h-3.5" /> },

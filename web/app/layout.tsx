@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { LanguageProvider } from "@/lib/language-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import ThemeInitializer from "@/components/ThemeInitializer";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -34,20 +35,7 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var t = localStorage.getItem('dalaal-theme');
-                  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch(e) {}
-              })();
-            `,
-          }}
-        />
+<ThemeInitializer />
       </head>
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
