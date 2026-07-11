@@ -61,10 +61,25 @@ export const authService = {
   },
 
   async register(registerData: any) {
-    const response = await api.post('auth/register', registerData);
-    const data = unwrapResponse<any>(response.data);
-    await persistTokens(data);
-    return data;
+    try {
+      const response = await api.post('auth/register', registerData);
+      const data = unwrapResponse<any>(response.data);
+      await persistTokens(data);
+      return data;
+    } catch (error: any) {
+      console.log('[Auth] Register error:', error.message);
+      let message = 'Registration failed';
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      const err = new Error(message);
+      err.response = error.response;
+      throw err;
+    }
   },
 
   async resendVerification(email: string) {
@@ -79,7 +94,9 @@ export const authService = {
 
   async verifyEmail(email: string, code: string) {
     const response = await api.post('auth/verify-email', { email, code });
-    return unwrapResponse<any>(response.data);
+    const data = unwrapResponse<any>(response.data);
+    await persistTokens(data);
+    return data;
   },
 
   async verifyOtp(email: string, code: string) {

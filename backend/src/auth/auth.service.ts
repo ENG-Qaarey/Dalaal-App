@@ -140,14 +140,20 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    await this.authRepository.update(user.id, {
+    const updatedUser = await this.authRepository.update(user.id, {
       emailVerified: true,
       status: UserStatus.ACTIVE,
     });
 
     await this.authRepository.deleteUserVerificationCodes(user.id);
 
-    return { message: 'Email verified successfully' };
+    const tokens = await this.generateTokens(updatedUser, updatedUser.sessionToken || '');
+
+    return {
+      message: 'Email verified successfully',
+      user: this.sanitizeUser(updatedUser),
+      ...tokens,
+    };
   }
 
   async resendVerification(email: string) {
@@ -270,6 +276,10 @@ export class AuthService {
       throw new UnauthorizedException('Your account has been banned');
     }
 
+    if (user.status === UserStatus.PENDING_VERIFICATION) {
+      throw new UnauthorizedException('Please verify your email before logging in');
+    }
+
     const sessionToken = this.generateSessionToken();
     const updatedUser = await this.authRepository.update(user.id, {
       sessionToken,
@@ -311,8 +321,10 @@ export class AuthService {
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.authRepository.findByEmail(forgotPasswordDto.email);
+
+    // Return generic message to prevent user enumeration
     if (!user) {
-      throw new NotFoundException('User with this email does not exist');
+      return { message: 'If an account exists with that email, a reset code has been sent.' };
     }
 
     // Delete existing verification codes for this user
@@ -334,7 +346,7 @@ export class AuthService {
       { code },
     );
 
-    return { message: 'Verification code has been sent to your email' };
+    return { message: 'If an account exists with that email, a reset code has been sent.' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -390,12 +402,12 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.secret'),
-      expiresIn: (this.configService.get<string>('jwt.expiresIn') || '1d') as any,
+      expiresIn: 604800, // 7 days in seconds
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.refreshSecret'),
-      expiresIn: (this.configService.get<string>('jwt.refreshExpiresIn') || '7d') as any,
+      expiresIn: 2592000, // 30 days in seconds
     });
 
     return { accessToken, refreshToken };

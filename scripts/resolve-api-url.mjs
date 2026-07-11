@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENV_PATH = join(__dirname, '..', 'Dalaal-app', '.env');
-const BACKEND_PORT = 3002;
+const BACKEND_PORT = 3005;
 
 const BLOCKED = ['172.25.', '172.17.', '172.18.', '172.19.', '169.254.'];
 
@@ -90,7 +90,7 @@ async function main() {
   }
 
   console.warn('\n  Could not reach backend on any LAN IP.');
-  console.warn('  Run: docker-compose up (from project root)');
+  console.warn('  Run: cd backend && npm run start:dev  (or npm run start:prod if already built)');
   console.warn('  Then run this script again or set EXPO_PUBLIC_API_URL in Dalaal-app/.env\n');
 }
 

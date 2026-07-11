@@ -4,39 +4,33 @@ import { usePathname } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
+  BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 
 const pageTitles: Record<string, string> = {
-  "/super-admin": "Dashboard",
-  "/super-admin/analytics": "Analytics",
-  "/super-admin/reports": "Reports",
-  "/super-admin/users": "Users & Brokers",
-  "/super-admin/users/brokers": "Brokers",
-  "/super-admin/users/roles": "Roles",
-  "/super-admin/properties": "Properties",
-  "/super-admin/properties/pending": "Pending Approval",
-  "/super-admin/properties/categories": "Categories",
-  "/super-admin/vehicles": "Vehicles",
-  "/super-admin/vehicles/pending": "Pending Approval",
-  "/super-admin/vehicles/categories": "Categories",
-  "/super-admin/escrow": "Escrow Vault",
-  "/super-admin/payments": "Payments API",
-  "/super-admin/payments/evc": "EVC Plus",
-  "/super-admin/payments/zaad": "Zaad",
-  "/super-admin/settings": "Settings",
-  "/super-admin/settings/security": "Security",
-  "/super-admin/settings/notifications": "Notifications",
-  "/super-admin/map": "Location Map",
-  "/super-admin/logs": "Activity Logs",
+  "/pages/super-admin": "Dashboard",
+  "/pages/super-admin/analytics": "Analytics",
+  "/pages/super-admin/reports": "Reports",
+  "/pages/super-admin/users": "Users",
+  "/pages/super-admin/users/brokers": "Brokers",
+  "/pages/super-admin/users/roles": "Roles",
+  "/pages/super-admin/properties": "Properties",
+  "/pages/super-admin/properties/pending": "Pending Approval",
+  "/pages/super-admin/properties/categories": "Categories",
+  "/pages/super-admin/vehicles": "Vehicles",
+  "/pages/super-admin/vehicles/pending": "Pending Approval",
+  "/pages/super-admin/vehicles/categories": "Categories",
+  "/pages/super-admin/escrow": "Escrow Vault",
+  "/pages/super-admin/payments": "Payments",
+  "/pages/super-admin/payments/evc": "EVC Plus",
+  "/pages/super-admin/payments/zaad": "Zaad",
+  "/pages/super-admin/settings": "Settings",
 };
 
 export function SuperAdminBreadcrumb() {
   const pathname = usePathname();
-  const currentPage = pageTitles[pathname] ?? "Data Fetching";
+  const currentPage = pageTitles[pathname] ?? "Dashboard";
 
   return (
     <Breadcrumb>

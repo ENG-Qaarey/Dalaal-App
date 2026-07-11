@@ -122,10 +122,11 @@ export default function ResetPassword() {
 							</View>
 						</FadeIn>
 
-						<FadeIn delay={180}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Confirm New Password</Text>
+					<FadeIn delay={180}>
+						<Text style={[styles.label, { color: C.textMuted }]}>Confirm New Password</Text>
+						<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
 							<TextInput
-								style={[styles.input, { borderColor: C.brandBorder, color: C.textMain, backgroundColor: C.surface }]}
+								style={[styles.passwordInput, { color: C.textMain }]}
 								placeholder="••••••••"
 								placeholderTextColor={C.textMuted}
 								value={confirmPassword}
@@ -133,7 +134,18 @@ export default function ResetPassword() {
 								secureTextEntry={!showPassword}
 								autoCapitalize="none"
 							/>
-						</FadeIn>
+							<TouchableOpacity
+								style={styles.eyeIcon}
+								onPress={() => setShowPassword(!showPassword)}
+							>
+								<Ionicons
+									name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+									size={20}
+									color={C.textMuted}
+								/>
+							</TouchableOpacity>
+						</View>
+					</FadeIn>
 					</View>
 
 					<View style={{ flex: 1 }} />

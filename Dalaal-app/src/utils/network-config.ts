@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const BACKEND_PORT = 3002;
+const BACKEND_PORT = 3005;
 
 const BLOCKED_PREFIXES = ['172.25.', '172.17.', '172.18.', '172.19.', '169.254.'];
 
@@ -67,29 +67,34 @@ function getEnvSocketUrl(): string | null {
 }
 
 export function getApiBaseUrl(): string {
+  const isWeb = (Platform as any).OS === "web";
+
   const envUrl = getEnvApiUrl();
   if (envUrl) {
     console.log('[Config] Using EXPO_PUBLIC_API_URL:', envUrl);
     return envUrl;
   }
 
+  if (isWeb) return `http://localhost:${BACKEND_PORT}/api`;
+
   const lanHost = getLanHostFromExpo();
-  if (__DEV__ && Platform.OS !== 'web' && lanHost) {
+  if (__DEV__ && !isWeb && lanHost) {
     const url = `http://${lanHost}:${BACKEND_PORT}/api`;
     console.log('[Config] API (device → backend):', url);
     return url;
   }
 
+  // Last resort: emulator defaults.
   if (Platform.OS === 'android' && !Constants.isDevice) {
-    return `http://10.0.2.2:${BACKEND_PORT}/api`;
+    const url = `http://10.0.2.2:${BACKEND_PORT}/api`;
+    console.log('[Config] API (Android emulator fallback):', url);
+    return url;
   }
 
   if (Platform.OS === 'ios' && !Constants.isDevice) {
-    return `http://localhost:${BACKEND_PORT}/api`;
-  }
-
-  if (Platform.OS === 'web') {
-    return `http://localhost:${BACKEND_PORT}/api`;
+    const url = `http://localhost:${BACKEND_PORT}/api`;
+    console.log('[Config] API (iOS simulator fallback):', url);
+    return url;
   }
 
   return `http://localhost:${BACKEND_PORT}/api`;
@@ -109,13 +114,15 @@ export function getSocketBaseUrl(): string {
   return api.replace(/\/api$/, '/chat');
 }
 
-export function getNetworkHelpMessage(): string {
+export function getNetworkHelpMessage(resolvedApiUrl?: string): string {
+  const resolved = resolvedApiUrl ?? '(not resolved)';
   return [
     'Cannot reach the backend.',
-    '1. docker-compose up (project root)',
+    `Resolved API URL: ${resolved}`,
+    '1. cd backend && npm run start:dev',
     '2. Turn OFF mobile data — use same Wi‑Fi as PC',
-    '3. cd Dalaal-app && npm start (auto-sets API URL)',
-    '4. Windows Firewall: allow TCP port 3002',
+    '3. cd Dalaal-app && npm start',
+    '4. Windows Firewall: allow TCP port 3005',
     '5. Android USB: npm run start:usb',
   ].join('\n');
 }

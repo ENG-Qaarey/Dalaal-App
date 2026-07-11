@@ -42,8 +42,6 @@ export default function Login() {
 				identifier: identifier.trim(),
 				password: password,
 			});
-			// Navigate to the main app after successful login
-			router.replace('/(tabs)');
 		} catch (error: any) {
 			const errorMessage = error?.response?.data?.message || error?.message || error?.data?.message || 'Invalid email/phone or password.';
 			Alert.alert('Login Error', errorMessage);

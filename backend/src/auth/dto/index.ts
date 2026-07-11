@@ -6,3 +6,5 @@ export * from './refresh-token.dto';
 export * from './verify-phone.dto';
 export * from './send-otp.dto';
 export * from './verify-otp.dto';
+export * from './verify-email.dto';
+export * from './resend-verification.dto';

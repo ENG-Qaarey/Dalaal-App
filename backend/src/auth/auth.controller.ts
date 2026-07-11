@@ -19,10 +19,13 @@ import {
   RefreshTokenDto, 
   VerifyPhoneDto,
   SendOtpDto,
-  VerifyOtpDto
+  VerifyOtpDto,
+  VerifyEmailDto,
+  ResendVerificationDto
 } from './dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { Response } from 'express';
 
@@ -33,6 +36,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ auth: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
@@ -44,16 +48,16 @@ export class AuthController {
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email with code' })
-  async verifyEmail(@Body() body: { email: string; code: string }) {
-    return this.authService.verifyEmail(body.email, body.code);
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto.email, verifyEmailDto.code);
   }
 
   @Public()
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resend verification email' })
-  async resendVerification(@Body() body: { email: string }) {
-    return this.authService.resendVerification(body.email);
+  async resendVerification(@Body() resendVerificationDto: ResendVerificationDto) {
+    return this.authService.resendVerification(resendVerificationDto.email);
   }
 
   @Public()
@@ -75,6 +79,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })

@@ -1,127 +1,64 @@
 "use client"
-
 import * as React from "react"
-
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-} from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon, MapPinIcon, CarIcon, BanknoteIcon, CreditCardIcon, ShieldCheckIcon, FileTextIcon, SettingsIcon, HomeIcon, BarChart3Icon } from "lucide-react"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar"
+import { ShieldCheckIcon, BanknoteIcon, MapPinIcon, FileTextIcon } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 const data = {
-  user: {
-    name: "Muscab Qaareey",
-    email: "muscabqaareey@gmail.com",
-    avatar: "",
-  },
-  teams: [
-    {
-      name: "Dalaal Admin",
-      logo: <ShieldCheckIcon className="size-4" />,
-      plan: "Super Admin",
-    },
-  ],
   navMain: [
-    {
-      title: "Dashboard",
-      url: "/super-admin",
-      icon: <LayoutDashboardIcon />,
-      isActive: true,
-      items: [
-        { title: "Overview", url: "/super-admin" },
-        { title: "Analytics", url: "/super-admin/analytics" },
-        { title: "Reports", url: "/super-admin/reports" },
-      ],
-    },
-    {
-      title: "Users & Brokers",
-      url: "/super-admin/users",
-      icon: <UsersIcon />,
-      items: [
-        { title: "All Users", url: "/super-admin/users" },
-        { title: "Brokers", url: "/super-admin/users/brokers" },
-        { title: "Roles", url: "/super-admin/users/roles" },
-      ],
-    },
-    {
-      title: "Properties",
-      url: "/super-admin/properties",
-      icon: <HomeIcon />,
-      items: [
-        { title: "All Listings", url: "/super-admin/properties" },
-        { title: "Pending Approval", url: "/super-admin/properties/pending" },
-        { title: "Categories", url: "/super-admin/properties/categories" },
-      ],
-    },
-    {
-      title: "Vehicles",
-      url: "/super-admin/vehicles",
-      icon: <CarIcon />,
-      items: [
-        { title: "All Vehicles", url: "/super-admin/vehicles" },
-        { title: "Pending Approval", url: "/super-admin/vehicles/pending" },
-        { title: "Categories", url: "/super-admin/vehicles/categories" },
-      ],
-    },
-    {
-      title: "Payments API",
-      url: "/super-admin/payments",
-      icon: <CreditCardIcon />,
-      items: [
-        { title: "Transactions", url: "/super-admin/payments" },
-        { title: "EVC Plus", url: "/super-admin/payments/evc" },
-        { title: "Zaad", url: "/super-admin/payments/zaad" },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "/super-admin/settings",
-      icon: <SettingsIcon />,
-      items: [
-        { title: "General", url: "/super-admin/settings" },
-        { title: "Security", url: "/super-admin/settings/security" },
-        { title: "Notifications", url: "/super-admin/settings/notifications" },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Escrow Vault",
-      url: "/super-admin/escrow",
-      icon: <BanknoteIcon />,
-    },
-    {
-      name: "Location Map",
-      url: "/super-admin/map",
-      icon: <MapPinIcon />,
-    },
-    {
-      name: "Activity Logs",
-      url: "/super-admin/logs",
-      icon: <FileTextIcon />,
-    },
+    { title: "Dashboard", url: "/pages/super-admin", items: [
+      { title: "Overview", url: "/pages/super-admin" },
+      { title: "Analytics", url: "/pages/super-admin/analytics" },
+      { title: "Reports", url: "/pages/super-admin/reports" },
+    ]},
+    { title: "Users", url: "/pages/super-admin/users", items: [
+      { title: "All Users", url: "/pages/super-admin/users" },
+      { title: "Brokers", url: "/pages/super-admin/users/brokers" },
+      { title: "Roles", url: "/pages/super-admin/users/roles" },
+    ]},
+    { title: "Properties", url: "/pages/super-admin/properties", items: [
+      { title: "All Listings", url: "/pages/super-admin/properties" },
+      { title: "Pending Approval", url: "/pages/super-admin/properties/pending" },
+      { title: "Categories", url: "/pages/super-admin/properties/categories" },
+    ]},
+    { title: "Vehicles", url: "/pages/super-admin/vehicles", items: [
+      { title: "All Vehicles", url: "/pages/super-admin/vehicles" },
+      { title: "Pending Approval", url: "/pages/super-admin/vehicles/pending" },
+      { title: "Categories", url: "/pages/super-admin/vehicles/categories" },
+    ]},
+    { title: "Payments", url: "/pages/super-admin/payments", items: [
+      { title: "Transactions", url: "/pages/super-admin/payments" },
+      { title: "EVC Plus", url: "/pages/super-admin/payments/evc" },
+      { title: "Zaad", url: "/pages/super-admin/payments/zaad" },
+    ]},
+    { title: "Escrow", url: "/pages/super-admin/escrow", items: [] },
+    { title: "Settings", url: "/pages/super-admin/settings", items: [] },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth()
+  const userName = user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim() : user?.email?.split("@")[0] || "Admin"
+  const userEmail = user?.email || "admin@dalaal.so"
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <span className="w-7 h-7 rounded-lg bg-sky-600 flex items-center justify-center text-white font-black text-xs">D</span>
+          <div>
+            <span className="text-sm font-black">Dalaal</span>
+            <span className="ml-1.5 text-[10px] font-bold text-sky-500 bg-sky-50 dark:bg-sky-950 px-1.5 py-0.5 rounded-full">Admin</span>
+          </div>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={{ name: userName, email: userEmail, avatar: user?.profile?.avatar || "" }} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

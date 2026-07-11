@@ -52,7 +52,7 @@ function RootStack() {
       
       if (!isEmailVerified && !isVerifyEmailScreen) {
         router.replace({
-          pathname: '/verify-email',
+          pathname: '/(auth)/verify-email',
           params: { email: user?.email, type: 'register' }
         });
       } else if (isEmailVerified && inAuthGroup) {

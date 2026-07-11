@@ -51,10 +51,16 @@ export default function useAuth() {
   const register = async (registerData: any) => {
     setLoading(true);
     try {
+      console.log('[useAuth] Registering user:', registerData.email);
       const data = await authService.register(registerData);
-      // We don't setAuthenticated(true) here because we need to verify OTP first
+      // We don't setAuthenticated(true) here because we need to verify email first
       setUser(data.user);
+      console.log('[useAuth] Register success, user set, awaiting verification');
       return data;
+    } catch (error: any) {
+      console.log('[useAuth] Register error:', error.message);
+      const message = error?.response?.data?.message || error?.message || 'Registration failed';
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -69,10 +75,24 @@ export default function useAuth() {
     }
   };
 
+  const resendVerification = async (email: string) => {
+    setLoading(true);
+    try {
+      return await authService.resendVerification(email);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const verifyEmail = async (email: string, code: string) => {
     setLoading(true);
     try {
-      return await authService.verifyEmail(email, code);
+      const data = await authService.verifyEmail(email, code);
+      if (data.user) {
+        setUser(data.user);
+      }
+      setAuthenticated(true);
+      return data;
     } finally {
       setLoading(false);
     }
@@ -113,13 +133,14 @@ export default function useAuth() {
     }
   };
 
-  return {
+    return {
     user,
     isAuthenticated,
     isLoading,
     login,
     register,
     sendOtp,
+    resendVerification,
     verifyEmail,
     verifyOtp,
     verifyPhone,

@@ -4,10 +4,16 @@ import { View } from 'react-native';
 import Colors from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../context/theme-context';
+import { useAuthStore } from '../../store/authStore';
+
+const CREATOR_ROLES = new Set(['PROPERTY_OWNER', 'VEHICLE_OWNER', 'REGULAR_DALAAL', 'VERIFIED_DALAAL', 'SUPER_ADMIN']);
+
 export default function TabsLayout() {
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const canCreate = CREATOR_ROLES.has(user?.role);
 
   return (
     <Tabs
@@ -51,6 +57,7 @@ export default function TabsLayout() {
           title: '',
           tabBarLabel: '',
           tabBarShowLabel: false,
+          href: canCreate ? undefined : null,
           tabBarIcon: () => (
             <View style={{
               width: 50,
@@ -59,7 +66,7 @@ export default function TabsLayout() {
               backgroundColor: C.brandBlue,
               alignItems: 'center',
               justifyContent: 'center',
-              marginTop: -10, // lift it above the tab bar slightly
+              marginTop: -10,
             }}>
               <Ionicons name="add" size={32} color="#fff" />
             </View>

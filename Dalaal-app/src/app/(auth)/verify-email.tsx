@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,13 +19,30 @@ export default function VerifyEmail() {
 	const params = useLocalSearchParams<Params>();
 	const { scheme } = useAppTheme();
 	const C = Colors[scheme];
-	const { user, verifyEmail, sendOtp, isLoading: authLoading } = useAuth();
+	const { user, verifyEmail, resendVerification, isLoading: authLoading } = useAuth();
 
 	const [code, setCode] = useState('');
 	const [loading, setLoading] = useState(false);
+	const [resendCooldown, setResendCooldown] = useState(0);
 
 	const email = params.email || user?.email;
 	const isLogin = params.type === 'login';
+
+	useEffect(() => {
+		if (!email) {
+			console.log('[VerifyEmail] No email found in params or store, redirecting');
+			Alert.alert('Error', 'No email provided. Please register again.', [
+				{ text: 'OK', onPress: () => router.replace('/(auth)/register') }
+			]);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (resendCooldown > 0) {
+			const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+			return () => clearTimeout(timer);
+		}
+	}, [resendCooldown]);
 
 	const onVerifyPress = async () => {
 		if (code.length !== 6 || !email) return;
@@ -43,10 +60,11 @@ export default function VerifyEmail() {
 	};
 
 	const onResendPress = async () => {
-		if (!email) return;
+		if (!email || resendCooldown > 0) return;
 		setLoading(true);
 		try {
-			await sendOtp(email);
+			await resendVerification(email);
+			setResendCooldown(60);
 			Alert.alert('Success', 'A new 6-digit code has been sent to your email.');
 		} catch (error: any) {
 			Alert.alert('Error', error.response?.data?.message || 'Failed to resend code');
@@ -114,12 +132,15 @@ export default function VerifyEmail() {
 								)}
 							</TouchableOpacity>
 
-							<TouchableOpacity
-								onPress={onResendPress}
-								style={[styles.resendBtn, { borderColor: C.brandBorder }]}
-							>
-								<Text style={[styles.resendText, { color: C.brandBlue }]}>Resend Code</Text>
-							</TouchableOpacity>
+						<TouchableOpacity
+							disabled={resendCooldown > 0 || loading}
+							onPress={onResendPress}
+							style={[styles.resendBtn, { borderColor: resendCooldown > 0 ? C.brandBorder : C.brandBorder }]}
+						>
+							<Text style={[styles.resendText, { color: resendCooldown > 0 ? C.textMuted : C.brandBlue }]}>
+								{resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+							</Text>
+						</TouchableOpacity>
 
 							<TouchableOpacity
 								onPress={async () => {

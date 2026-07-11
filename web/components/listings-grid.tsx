@@ -211,11 +211,11 @@ export default function ListingsGrid() {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="group relative bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-zinc-300 dark:hover:border-zinc-700"
+            className="group relative bg-white dark:bg-zinc-900 rounded-[5px] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-zinc-300 dark:hover:border-zinc-700"
           >
             {/* Listing Image */}
             <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">

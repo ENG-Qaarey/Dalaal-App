@@ -34,12 +34,15 @@ export class AuthRepository {
   }
 
   async findByIdentifier(identifier: string) {
+    const trimmed = identifier.trim().replace(/\s+/g, '');
     return this.prisma.user.findFirst({
       where: {
         OR: [
-          { email: identifier },
-          { phone: identifier },
-          { username: { equals: identifier, mode: 'insensitive' } },
+          { email: trimmed },
+          { phone: trimmed },
+          { phone: trimmed.replace(/^\+/, '') },
+          { phone: '+' + trimmed },
+          { username: { equals: trimmed, mode: 'insensitive' } },
         ],
       },
       include: { profile: true },

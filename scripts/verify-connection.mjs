@@ -4,7 +4,7 @@
  * Run from project root: npm run verify
  */
 
-const BACKEND = 'http://127.0.0.1:3002';
+const BACKEND = 'http://127.0.0.1:3005';
 
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
@@ -43,7 +43,7 @@ async function checkBackendDb() {
     return false;
   } catch (e) {
     console.log(`❌ ${name}: ${e.message}`);
-    console.log('   → docker-compose up');
+    console.log('   → cd backend && npm run start:dev');
     return false;
   }
 }
@@ -70,7 +70,7 @@ async function checkLoginRoute() {
 
 async function main() {
   console.log('\nDalaal connection check\n');
-  console.log('  App → http://PC_IP:3002/api → Postgres (Docker)\n');
+  console.log('  App → http://PC_IP:3002/api → Neon PostgreSQL\n');
   const results = await Promise.all([checkBackendDb(), checkLoginRoute()]);
   const passed = results.filter(Boolean).length;
   console.log(`\n${passed}/${results.length} checks passed.\n`);

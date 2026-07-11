@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { LanguageProvider } from "@/lib/language-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ThemeInitializer from "@/components/ThemeInitializer";
+import { AuthProvider } from "@/lib/auth-context";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -38,9 +39,11 @@ export default function RootLayout({
 <ThemeInitializer />
       </head>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>
-          <LanguageProvider>{children}</LanguageProvider>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <LanguageProvider>{children}</LanguageProvider>
+          </TooltipProvider>
+        </AuthProvider>
       </body>
     </html>
   );

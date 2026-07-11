@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import {
   appConfig,
   databaseConfig,
@@ -49,6 +50,18 @@ import { AppService } from './app.service';
         firebaseConfig,
       ],
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'auth',
+        ttl: 60000,
+        limit: 10,
+      },
+      {
+        name: 'global',
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     UsersModule,

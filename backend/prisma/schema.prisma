@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -7,51 +8,332 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String                    @id @default(uuid())
-  email             String                    @unique
-  username          String?                   @unique
-  phone             String?                   @unique
-  password          String?
-  googleId          String?                   @unique
-  role              UserRole                  @default(CUSTOMER)
-  status            UserStatus                @default(PENDING_VERIFICATION)
-  emailVerified     Boolean                   @default(false)
-  phoneVerified     Boolean                   @default(false)
-  sessionToken      String?                   @map("session_token")
-  twoFactorEnabled  Boolean                   @default(false)
-  lastLoginAt       DateTime?
-  lastSeenAt        DateTime?                 @map("last_seen_at")
-  isOnline          Boolean                   @default(false) @map("is_online")
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
-  AdminActor        AdminAction[]             @relation("AdminActor")
-  AdminTarget       AdminAction[]             @relation("AdminTarget")
-  conversations     ConversationParticipant[]
-  escrowsAsBuyer    Escrow[]                  @relation("EscrowBuyer")
-  escrowsAsSeller   Escrow[]                  @relation("EscrowSeller")
-  favorites         Favorite[]
-  verification      IdentityVerification?
-  listings          Listing[]
-  sentMessages      Message[]                 @relation("SentMessages")
-  messageDeletions  MessageDeletion[]
-  notifications     Notification[]
-  resetTokens       PasswordResetToken[]
-  receivedPayments  Payment[]                 @relation("ReceivedPayments")
-  payments          Payment[]                 @relation("UserPayments")
-  profile           Profile?
-  reportsAgainst    Report[]                  @relation("Reported")
-  reportsMade       Report[]                  @relation("Reporter")
-  reviewsReceived   Review[]                  @relation("ReviewsReceived")
-  reviewsGiven      Review[]                  @relation("ReviewsGiven")
-  savedSearches     SavedSearch[]
-  verificationCodes VerificationCode[]
+model AdminAction {
+  id                                      String   @id @default(uuid())
+  actorId                                 String
+  targetUserId                            String?
+  targetListingId                         String?
+  actionType                              String
+  reason                                  String?
+  details                                 Json?
+  createdAt                               DateTime @default(now())
+  actor                                   User     @relation("admin_actions_actorIdTousers", fields: [actorId], references: [id])
+  targetUser                              User?    @relation("admin_actions_targetUserIdTousers", fields: [targetUserId], references: [id])
 
-  @@index([email])
-  @@index([phone])
-  @@index([role])
+  @@index([actionType])
+  @@index([createdAt])
+  @@map("admin_actions")
+}
+
+model Announcement {
+  id        String    @id @default(uuid())
+  title     String
+  content   String
+  type      String    @default("INFO")
+  isActive  Boolean   @default(true)
+  startsAt  DateTime?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("announcements")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model ContactMessage {
+  id          String    @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String
+  status      String    @default("NEW")
+  response    String?
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+
   @@index([status])
-  @@map("users")
+  @@map("contact_messages")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  isAdmin        Boolean      @default(false)
+  lastReadAt     DateTime?
+  unreadCount    Int          @default(0)
+  joinedAt       DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  listingId    String?
+  title        String?
+  isGroup      Boolean                   @default(false)
+  lastMessageAt DateTime?
+  messageCount Int                       @default(0)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model Escrow {
+  id              String       @id @default(uuid())
+  paymentId       String?      @unique
+  buyerId         String
+  sellerId        String
+  listingId       String
+  amount          Decimal      @db.Decimal(12, 2)
+  currency        String       @default("USD")
+  platformFee     Decimal      @db.Decimal(12, 2)
+  netAmount       Decimal      @db.Decimal(12, 2)
+  status          EscrowStatus @default(PENDING_DEPOSIT)
+  buyerConfirmed  Boolean      @default(false)
+  sellerConfirmed Boolean      @default(false)
+  releasedAt      DateTime?
+  isDisputed      Boolean      @default(false)
+  disputedAt      DateTime?
+  disputeReason   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  buyer           User         @relation("escrows_buyerIdTousers", fields: [buyerId], references: [id])
+  listing         Listing      @relation(fields: [listingId], references: [id])
+  seller          User         @relation("escrows_sellerIdTousers", fields: [sellerId], references: [id])
+  payment         Payment?
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@map("escrows")
+}
+
+model Faq {
+  id        String   @id @default(uuid())
+  category  String
+  question  String
+  answer    String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  language  String   @default("so")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([language])
+  @@map("faqs")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@map("favorites")
+}
+
+model IdentityVerification {
+  id              String             @id @default(uuid())
+  userId          String             @unique
+  documentType    DocumentType
+  documentNumber  String?
+  documentImage   String?
+  selfieImage     String?
+  businessLicense String?
+  status          VerificationStatus @default(PENDING)
+  submittedAt     DateTime           @default(now())
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("identity_verifications")
+}
+
+model ListingImage {
+  id        String   @id @default(uuid())
+  listingId String
+  url       String
+  thumbnail String?
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("listing_images")
+}
+
+model Listing {
+  id              String        @id @default(uuid())
+  userId          String
+  type            ListingType
+  title           String
+  slug            String        @unique
+  description     String?
+  price           Decimal       @db.Decimal(12, 2)
+  priceNegotiable Boolean       @default(false)
+  currency        String        @default("USD")
+  city            String
+  district        String?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  status          ListingStatus @default(DRAFT)
+  isVerified      Boolean       @default(false)
+  isFeatured      Boolean       @default(false)
+  viewCount       Int           @default(0)
+  favoriteCount   Int           @default(0)
+  inquiryCount    Int           @default(0)
+  featuredImage   String?
+  videoUrl        String?
+  availableFrom   DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+  escrows         Escrow[]
+  favorites       Favorite[]
+  images          ListingImage[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments        Payment[]
+  property        Property?
+  reports         Report[]
+  reviews         Review[]
+  vehicle         Vehicle?
+
+  @@index([city])
+  @@index([createdAt])
+  @@index([isVerified])
+  @@index([price])
+  @@index([status])
+  @@index([type])
+  @@index([userId])
+  @@map("listings")
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  senderId       String
+  type           MessageType       @default(TEXT)
+  content        String?
+  mediaUrl       String?
+  isRead         Boolean           @default(false)
+  readAt         DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  deletions      MessageDeletion[]
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model MessageDeletion {
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@map("message_deletions")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  actionUrl String?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([userId])
+  @@map("notifications")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Payment {
+  id          String          @id @default(uuid())
+  userId      String
+  recipientId String?
+  listingId   String?
+  escrowId    String?         @unique
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    String          @default("USD")
+  provider    PaymentProvider
+  providerRef String?
+  type        PaymentType
+  status      PaymentStatus   @default(PENDING)
+  description String?
+  failureReason String?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  escrow      Escrow?         @relation(fields: [escrowId], references: [id])
+  listing     Listing?        @relation(fields: [listingId], references: [id])
+  recipient   User?           @relation("payments_recipientIdTousers", fields: [recipientId], references: [id])
+  user        User            @relation("payments_userIdTousers", fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([userId])
+  @@map("payments")
 }
 
 model Profile {
@@ -80,74 +362,6 @@ model Profile {
   @@map("profiles")
 }
 
-model IdentityVerification {
-  id              String             @id @default(uuid())
-  userId          String             @unique
-  documentType    DocumentType
-  documentNumber  String?
-  documentImage   String?
-  selfieImage     String?
-  businessLicense String?
-  status          VerificationStatus @default(PENDING)
-  submittedAt     DateTime           @default(now())
-  reviewedAt      DateTime?
-  rejectionReason String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([status])
-  @@map("identity_verifications")
-}
-
-model Listing {
-  id              String         @id @default(uuid())
-  userId          String
-  type            ListingType
-  title           String
-  slug            String         @unique
-  description     String?
-  price           Decimal        @db.Decimal(12, 2)
-  priceNegotiable Boolean        @default(false)
-  currency        String         @default("USD")
-  city            String
-  district        String?
-  address         String?
-  latitude        Float?
-  longitude       Float?
-  status          ListingStatus  @default(DRAFT)
-  isVerified      Boolean        @default(false)
-  isFeatured      Boolean        @default(false)
-  viewCount       Int            @default(0)
-  favoriteCount   Int            @default(0)
-  inquiryCount    Int            @default(0)
-  featuredImage   String?
-  videoUrl        String?
-  availableFrom   DateTime?
-  expiresAt       DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  publishedAt     DateTime?
-  escrows         Escrow[]
-  favorites       Favorite[]
-  images          ListingImage[]
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments        Payment[]
-  property        Property?
-  reports         Report[]
-  reviews         Review[]
-  vehicle         Vehicle?
-
-  @@index([userId])
-  @@index([type])
-  @@index([status])
-  @@index([city])
-  @@index([price])
-  @@index([isVerified])
-  @@index([createdAt])
-  @@map("listings")
-}
-
 model Property {
   id             String       @id @default(uuid())
   listingId      String       @unique
@@ -171,177 +385,24 @@ model Property {
   @@map("properties")
 }
 
-model Vehicle {
-  id              String        @id @default(uuid())
-  listingId       String        @unique
-  vehicleType     VehicleType
-  make            String
-  model           String
-  year            Int
-  mileage         Int?
-  condition       String?       @default("GOOD")
-  fuelType        FuelType?
-  transmission    Transmission?
-  color           String?
-  seats           Int?
-  vehicleStatus   String?       @default("FOR_SALE")
-  minRentalDays   Int?
-  depositRequired Boolean       @default(false)
-  listing         Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([vehicleType])
-  @@index([make])
-  @@index([year])
-  @@map("vehicles")
-}
-
-model ListingImage {
-  id        String   @id @default(uuid())
-  listingId String
-  url       String
-  thumbnail String?
-  order     Int      @default(0)
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
-  @@index([listingId])
-  @@map("listing_images")
-}
-
-model Favorite {
-  id        String   @id @default(uuid())
-  userId    String
-  listingId String
-  createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, listingId])
-  @@map("favorites")
-}
-
-model Conversation {
-  id            String                    @id @default(uuid())
-  listingId     String?
-  title         String?
-  isGroup       Boolean                   @default(false)
-  lastMessageAt DateTime?
-  messageCount  Int                       @default(0)
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  participants  ConversationParticipant[]
-  messages      Message[]
-
-  @@index([lastMessageAt])
-  @@map("conversations")
-}
-
-model ConversationParticipant {
-  id             String       @id @default(uuid())
-  conversationId String
-  userId         String
-  isAdmin        Boolean      @default(false)
-  lastReadAt     DateTime?
-  unreadCount    Int          @default(0)
-  joinedAt       DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([conversationId, userId])
-  @@map("conversation_participants")
-}
-
-model Message {
-  id             String            @id @default(uuid())
-  conversationId String
-  senderId       String
-  type           MessageType       @default(TEXT)
-  content        String?
-  mediaUrl       String?
-  isRead         Boolean           @default(false)
-  readAt         DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  deletions      MessageDeletion[]
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([createdAt])
-  @@map("messages")
-}
-
-model MessageDeletion {
-  id        String   @id @default(uuid())
-  messageId String
-  userId    String
-  createdAt DateTime @default(now())
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId])
-  @@index([userId])
-  @@map("message_deletions")
-}
-
-model Payment {
-  id            String          @id @default(uuid())
-  userId        String
-  recipientId   String?
-  listingId     String?
-  escrowId      String?         @unique
-  amount        Decimal         @db.Decimal(12, 2)
-  currency      String          @default("USD")
-  provider      PaymentProvider
-  providerRef   String?
-  type          PaymentType
-  status        PaymentStatus   @default(PENDING)
-  description   String?
-  failureReason String?
-  completedAt   DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  escrow        Escrow?         @relation(fields: [escrowId], references: [id])
-  listing       Listing?        @relation(fields: [listingId], references: [id])
-  recipient     User?           @relation("ReceivedPayments", fields: [recipientId], references: [id])
-  user          User            @relation("UserPayments", fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("payments")
-}
-
-model Escrow {
-  id              String       @id @default(uuid())
-  paymentId       String?      @unique
-  buyerId         String
-  sellerId        String
-  listingId       String
-  amount          Decimal      @db.Decimal(12, 2)
-  currency        String       @default("USD")
-  platformFee     Decimal      @db.Decimal(12, 2)
-  netAmount       Decimal      @db.Decimal(12, 2)
-  status          EscrowStatus @default(PENDING_DEPOSIT)
-  buyerConfirmed  Boolean      @default(false)
-  sellerConfirmed Boolean      @default(false)
-  releasedAt      DateTime?
-  isDisputed      Boolean      @default(false)
-  disputedAt      DateTime?
-  disputeReason   String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  buyer           User         @relation("EscrowBuyer", fields: [buyerId], references: [id])
-  listing         Listing      @relation(fields: [listingId], references: [id])
-  seller          User         @relation("EscrowSeller", fields: [sellerId], references: [id])
-  payment         Payment?
+model Report {
+  id          String    @id @default(uuid())
+  reporterId  String
+  reportedId  String?
+  listingId   String?
+  type        String
+  description String
+  status      String    @default("SUBMITTED")
+  resolution  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  listing     Listing?  @relation(fields: [listingId], references: [id])
+  reportedUser User?   @relation("reports_reportedIdTousers", fields: [reportedId], references: [id])
+  reporter    User      @relation("reports_reporterIdTousers", fields: [reporterId], references: [id])
 
   @@index([status])
-  @@index([buyerId])
-  @@index([sellerId])
-  @@map("escrows")
+  @@map("reports")
 }
 
 model Review {
@@ -362,68 +423,12 @@ model Review {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   listing             Listing?  @relation(fields: [listingId], references: [id])
-  reviewee            User      @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
-  reviewer            User      @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee            User      @relation("reviews_revieweeIdTousers", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer            User      @relation("reviews_reviewerIdTousers", fields: [reviewerId], references: [id], onDelete: Cascade)
 
-  @@index([revieweeId])
   @@index([listingId])
+  @@index([revieweeId])
   @@map("reviews")
-}
-
-model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
-  body      String
-  data      Json?
-  isRead    Boolean          @default(false)
-  readAt    DateTime?
-  actionUrl String?
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-  @@map("notifications")
-}
-
-model Report {
-  id          String    @id @default(uuid())
-  reporterId  String
-  reportedId  String?
-  listingId   String?
-  type        String
-  description String
-  status      String    @default("SUBMITTED")
-  resolution  String?
-  resolvedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  listing     Listing?  @relation(fields: [listingId], references: [id])
-  reported    User?     @relation("Reported", fields: [reportedId], references: [id])
-  reporter    User      @relation("Reporter", fields: [reporterId], references: [id])
-
-  @@index([status])
-  @@map("reports")
-}
-
-model AdminAction {
-  id              String   @id @default(uuid())
-  actorId         String
-  targetUserId    String?
-  targetListingId String?
-  actionType      String
-  reason          String?
-  details         Json?
-  createdAt       DateTime @default(now())
-  actor           User     @relation("AdminActor", fields: [actorId], references: [id])
-  targetUser      User?    @relation("AdminTarget", fields: [targetUserId], references: [id])
-
-  @@index([actionType])
-  @@index([createdAt])
-  @@map("admin_actions")
 }
 
 model SavedSearch {
@@ -446,81 +451,75 @@ model SavedSearch {
   @@map("saved_searches")
 }
 
-model Faq {
-  id        String   @id @default(uuid())
-  category  String
-  question  String
-  answer    String
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  language  String   @default("so")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id                                              String                    @id @default(uuid())
+  email                                           String                    @unique
+  phone                                           String?                   @unique
+  password                                        String?
+  googleId                                        String?                   @unique
+  role                                            UserRole                  @default(CUSTOMER)
+  status                                          UserStatus                @default(PENDING_VERIFICATION)
+  emailVerified                                   Boolean                   @default(false)
+  phoneVerified                                   Boolean                   @default(false)
+  twoFactorEnabled                                Boolean                   @default(false)
+  lastLoginAt                                     DateTime?
+  createdAt                                       DateTime                  @default(now())
+  updatedAt                                       DateTime                  @updatedAt
+  sessionToken                                    String?                   @map("session_token")
+  lastSeenAt                                      DateTime?                 @map("last_seen_at")
+  isOnline                                        Boolean                   @default(false) @map("is_online")
+  username                                        String?                   @unique
+  adminActionsAsActor                             AdminAction[]             @relation("admin_actions_actorIdTousers")
+  adminActionsAsTarget                            AdminAction[]             @relation("admin_actions_targetUserIdTousers")
+  conversation_participants                       ConversationParticipant[]
+  escrowsAsBuyer                                  Escrow[]                  @relation("escrows_buyerIdTousers")
+  escrowsAsSeller                                 Escrow[]                  @relation("escrows_sellerIdTousers")
+  favorites                                       Favorite[]
+  verification                                    IdentityVerification?
+  listings                                        Listing[]
+  messages                                        Message[]
+  notifications                                   Notification[]
+  passwordResetTokens                             PasswordResetToken[]
+  receivedPayments                                Payment[]                 @relation("payments_recipientIdTousers")
+  payments                                        Payment[]                 @relation("payments_userIdTousers")
+  profile                                         Profile?
+  reportsAsReported                               Report[]                  @relation("reports_reportedIdTousers")
+  reportsAsReporter                               Report[]                  @relation("reports_reporterIdTousers")
+  reviewsAsReviewee                               Review[]                  @relation("reviews_revieweeIdTousers")
+  reviewsAsReviewer                               Review[]                  @relation("reviews_reviewerIdTousers")
+  savedSearches                                   SavedSearch[]
+  verificationCodes                               VerificationCode[]
+  messageDeletions                                MessageDeletion[]
 
-  @@index([category])
-  @@index([language])
-  @@map("faqs")
-}
-
-model Announcement {
-  id        String    @id @default(uuid())
-  title     String
-  content   String
-  type      String    @default("INFO")
-  isActive  Boolean   @default(true)
-  startsAt  DateTime?
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([isActive])
-  @@index([expiresAt])
-  @@map("announcements")
-}
-
-model ContactMessage {
-  id          String    @id @default(uuid())
-  name        String
-  email       String
-  phone       String?
-  subject     String
-  message     String
-  status      String    @default("NEW")
-  response    String?
-  respondedAt DateTime?
-  createdAt   DateTime  @default(now())
-
+  @@index([email])
+  @@index([phone])
+  @@index([role])
   @@index([status])
-  @@map("contact_messages")
+  @@map("users")
 }
 
-model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?
-  action     String
-  entityType String
-  entityId   String?
-  oldValues  Json?
-  newValues  Json?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
+model Vehicle {
+  id              String        @id @default(uuid())
+  listingId       String        @unique
+  vehicleType     VehicleType
+  make            String
+  model           String
+  year            Int
+  mileage         Int?
+  condition       String?       @default("GOOD")
+  fuelType        FuelType?
+  transmission    Transmission?
+  color           String?
+  seats           Int?
+  vehicleStatus   String?       @default("FOR_SALE")
+  minRentalDays   Int?
+  depositRequired Boolean       @default(false)
+  listing         Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([entityType, entityId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("password_reset_tokens")
+  @@index([make])
+  @@index([vehicleType])
+  @@index([year])
+  @@map("vehicles")
 }
 
 model VerificationCode {
@@ -535,24 +534,6 @@ model VerificationCode {
   @@map("verification_codes")
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  MODERATOR
-  VERIFIED_DALAAL
-  REGULAR_DALAAL
-  PROPERTY_OWNER
-  VEHICLE_OWNER
-  CUSTOMER
-}
-
-enum UserStatus {
-  ACTIVE
-  SUSPENDED
-  BANNED
-  PENDING_VERIFICATION
-  INACTIVE
-}
-
 enum DocumentType {
   NATIONAL_ID
   PASSPORT
@@ -561,36 +542,12 @@ enum DocumentType {
   DRIVERS_LICENSE
 }
 
-enum VerificationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  EXPIRED
-}
-
-enum ListingType {
-  PROPERTY
-  VEHICLE
-}
-
-enum PropertyType {
-  HOUSE
-  APARTMENT
-  LAND
-  COMMERCIAL
-  VILLA
-  TOWNHOUSE
-  OFFICE
-}
-
-enum VehicleType {
-  CAR
-  TRUCK
-  MOTORCYCLE
-  BUS
-  VAN
-  SUV
-  PICKUP
+enum EscrowStatus {
+  PENDING_DEPOSIT
+  HOLDING
+  RELEASED
+  DISPUTED
+  REFUNDED
 }
 
 enum FuelType {
@@ -598,11 +555,6 @@ enum FuelType {
   DIESEL
   ELECTRIC
   HYBRID
-}
-
-enum Transmission {
-  MANUAL
-  AUTOMATIC
 }
 
 enum ListingStatus {
@@ -613,6 +565,32 @@ enum ListingStatus {
   EXPIRED
   REJECTED
   ARCHIVED
+}
+
+enum ListingType {
+  PROPERTY
+  VEHICLE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  LISTING_SHARE
+  SYSTEM
+}
+
+enum NotificationType {
+  NEW_LISTING
+  PRICE_DROP
+  NEW_MESSAGE
+  LISTING_VERIFIED
+  PAYMENT_RECEIVED
+  ESCROW_RELEASED
+  REVIEW_RECEIVED
+  ACCOUNT_VERIFIED
+  WELCOME
+  SYSTEM_ANNOUNCEMENT
 }
 
 enum PaymentProvider {
@@ -637,31 +615,52 @@ enum PaymentType {
   COMMISSION
 }
 
-enum EscrowStatus {
-  PENDING_DEPOSIT
-  HOLDING
-  RELEASED
-  DISPUTED
-  REFUNDED
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  LAND
+  COMMERCIAL
+  VILLA
+  TOWNHOUSE
+  OFFICE
 }
 
-enum NotificationType {
-  NEW_LISTING
-  PRICE_DROP
-  NEW_MESSAGE
-  LISTING_VERIFIED
-  PAYMENT_RECEIVED
-  ESCROW_RELEASED
-  REVIEW_RECEIVED
-  ACCOUNT_VERIFIED
-  WELCOME
-  SYSTEM_ANNOUNCEMENT
+enum Transmission {
+  MANUAL
+  AUTOMATIC
 }
 
-enum MessageType {
-  TEXT
-  IMAGE
-  DOCUMENT
-  LISTING_SHARE
-  SYSTEM
+enum UserRole {
+  SUPER_ADMIN
+  MODERATOR
+  VERIFIED_DALAAL
+  REGULAR_DALAAL
+  PROPERTY_OWNER
+  VEHICLE_OWNER
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  PENDING_VERIFICATION
+  INACTIVE
+}
+
+enum VehicleType {
+  CAR
+  TRUCK
+  MOTORCYCLE
+  BUS
+  VAN
+  SUV
+  PICKUP
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
 }

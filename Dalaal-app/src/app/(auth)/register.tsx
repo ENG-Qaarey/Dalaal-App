@@ -19,14 +19,16 @@ export default function Register() {
 	const params = useLocalSearchParams<Params>();
 	const { scheme } = useAppTheme();
 	const C = Colors[scheme];
-	const { register, sendOtp, isLoading: authLoading } = useAuth();
+	const { register, isLoading: authLoading } = useAuth();
 
 	const [fullName, setFullName] = useState('');
 	const [username, setUsername] = useState('');
 	const [phone, setPhone] = useState('');
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [confirmPassword, setConfirmPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
+	const [agreedTerms, setAgreedTerms] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const onRegisterPress = async () => {
@@ -42,29 +44,40 @@ export default function Register() {
 			Alert.alert('Invalid Password', 'Password must be at least 8 characters long.');
 			return;
 		}
+		if (password !== confirmPassword) {
+			Alert.alert('Password Mismatch', 'Passwords do not match.');
+			return;
+		}
+		if (!agreedTerms) {
+			Alert.alert('Terms Required', 'Please agree to the Terms of Service.');
+			return;
+		}
 
 		setLoading(true);
 		try {
+			const normalizedEmail = normalizeEmail(email);
+			console.log('[Register] Creating account for:', normalizedEmail);
 			await register({
 				fullName: fullName.trim(),
 				username: username.trim().toLowerCase() || undefined,
 				phone: phone.trim() || undefined,
-				email: normalizeEmail(email),
+				email: normalizedEmail,
 				password: password,
 			});
-			// Go directly to verification page
-			router.push({
-				pathname: '/verify-email',
-				params: { email: normalizeEmail(email), type: 'register' }
+			console.log('[Register] Account created, navigating to verify-email');
+			router.replace({
+				pathname: '/(auth)/verify-email',
+				params: { email: normalizedEmail, type: 'register' }
 			});
 		} catch (error: any) {
+			console.log('[Register] Error:', error.message);
 			Alert.alert('Registration Error', error.message || 'Failed to create account.');
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const canContinue = fullName.trim().length > 2 && isValidEmail(email) && password.length >= 8;
+	const canContinue = fullName.trim().length > 2 && isValidEmail(email) && password.length >= 8 && password === confirmPassword && agreedTerms;
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
@@ -146,31 +159,76 @@ export default function Register() {
 							/>
 						</FadeIn>
 
-						<FadeIn delay={180}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
-							<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
-								<TextInput
-									style={[styles.passwordInput, { color: C.textMain }]}
-									placeholder="••••••••"
-									placeholderTextColor={C.textMuted}
-									value={password}
-									onChangeText={setPassword}
-									secureTextEntry={!showPassword}
-									returnKeyType="done"
-									onSubmitEditing={onRegisterPress}
+					<FadeIn delay={180}>
+						<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
+						<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+							<TextInput
+								style={[styles.passwordInput, { color: C.textMain }]}
+								placeholder="••••••••"
+								placeholderTextColor={C.textMuted}
+								value={password}
+								onChangeText={setPassword}
+								secureTextEntry={!showPassword}
+								returnKeyType="next"
+							/>
+							<TouchableOpacity
+								style={styles.eyeIcon}
+								onPress={() => setShowPassword(!showPassword)}
+							>
+								<Ionicons
+									name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+									size={20}
+									color={C.textMuted}
 								/>
-								<TouchableOpacity
-									style={styles.eyeIcon}
-									onPress={() => setShowPassword(!showPassword)}
-								>
-									<Ionicons
-										name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-										size={20}
-										color={C.textMuted}
-									/>
-								</TouchableOpacity>
+							</TouchableOpacity>
+						</View>
+					</FadeIn>
+
+					<FadeIn delay={200}>
+						<Text style={[styles.label, { color: C.textMuted }]}>Confirm Password</Text>
+						<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+							<TextInput
+								style={[styles.passwordInput, { color: C.textMain }]}
+								placeholder="••••••••"
+								placeholderTextColor={C.textMuted}
+								value={confirmPassword}
+								onChangeText={setConfirmPassword}
+								secureTextEntry={!showPassword}
+								returnKeyType="done"
+								onSubmitEditing={onRegisterPress}
+							/>
+							<TouchableOpacity
+								style={styles.eyeIcon}
+								onPress={() => setShowPassword(!showPassword)}
+							>
+								<Ionicons
+									name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+									size={20}
+									color={C.textMuted}
+								/>
+							</TouchableOpacity>
+						</View>
+						{confirmPassword.length > 0 && password !== confirmPassword && (
+							<Text style={{ fontSize: 12, color: '#ef4444', marginTop: 4, fontWeight: '600' }}>Passwords do not match</Text>
+						)}
+					</FadeIn>
+
+					<FadeIn delay={220}>
+						<TouchableOpacity
+							onPress={() => setAgreedTerms(!agreedTerms)}
+							style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 }}
+						>
+							<View style={[{
+								width: 20, height: 20, borderRadius: 6, borderWidth: 1.5,
+								alignItems: 'center', justifyContent: 'center', marginTop: 1,
+							}, { borderColor: agreedTerms ? C.brandBlue : C.brandBorder, backgroundColor: agreedTerms ? C.brandBlue : 'transparent' }]}>
+								{agreedTerms && <Ionicons name="checkmark" size={12} color="#fff" />}
 							</View>
-						</FadeIn>
+							<Text style={{ fontSize: 13, color: C.textMuted, lineHeight: 18, flex: 1 }}>
+								I agree to the Terms of Service and Privacy Policy
+							</Text>
+						</TouchableOpacity>
+					</FadeIn>
 					</View>
 
 					<View style={{ flex: 1, minHeight: 40 }} />

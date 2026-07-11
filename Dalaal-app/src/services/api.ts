@@ -2,8 +2,25 @@ import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../store/authStore';
 import { getApiBaseUrl, getNetworkHelpMessage } from '../utils/network-config';
 
+let cachedApiBaseUrl: string | null = null;
+
 interface RequestOptions extends RequestInit {
   _retry?: boolean;
+  params?: Record<string, string | number | boolean | undefined>;
+}
+
+function buildUrlWithParams(base: string, endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
+  const root = base.replace(/\/$/, '');
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  if (!params) return `${root}${path}`;
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) {
+      searchParams.append(key, String(value));
+    }
+  }
+  const qs = searchParams.toString();
+  return qs ? `${root}${path}?${qs}` : `${root}${path}`;
 }
 
 const safeGetItem = async (key: string) => {
@@ -53,9 +70,48 @@ function buildUrl(base: string, endpoint: string): string {
   return `${root}${path}`;
 }
 
+function uniqueUrls(urls: Array<string | null | undefined>): string[] {
+  const cleaned = urls
+    .map((u) => (u ? u.replace(/\/$/, '') : null))
+    .filter((u): u is string => Boolean(u));
+  return [...new Set(cleaned)];
+}
+
+async function probeHealth(baseUrl: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(buildUrl(baseUrl, 'health'), { method: 'GET' });
+    if (!res.ok) return false;
+    const json = await res.json().catch(() => null);
+    const payload = json?.data ?? json;
+    return payload?.ok === true || payload?.database === 'connected';
+  } catch {
+    return false;
+  }
+}
+
+async function resolveReachableApiBaseUrl(primary: string): Promise<string> {
+  const candidates = uniqueUrls([
+    primary,
+    process.env.EXPO_PUBLIC_API_URL,
+    // Common Android emulator host mapping
+    'http://10.0.2.2:3005/api',
+    // Common iOS simulator / web fallback
+    'http://localhost:3005/api',
+  ]);
+
+  for (const candidate of candidates) {
+    if (await probeHealth(candidate)) {
+      return candidate;
+    }
+  }
+
+  return primary;
+}
+
 const request = async (endpoint: string, options: RequestOptions = {}) => {
-  const API_URL = getApiBaseUrl();
-  const url = buildUrl(API_URL, endpoint);
+  const API_URL = cachedApiBaseUrl ?? getApiBaseUrl();
+  const { params, ...fetchOptions } = options;
+  const url = buildUrlWithParams(API_URL, endpoint, params);
   if (__DEV__) {
     console.log('[API]', options.method || 'GET', url);
   }
@@ -81,7 +137,7 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
   }
 
   const config: RequestInit = {
-    ...options,
+    ...fetchOptions,
     headers,
   };
 
@@ -129,7 +185,8 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
                 ...headers,
                 'Authorization': `Bearer ${accessToken}`,
               };
-              return request(endpoint, { ...options, headers: retryHeaders, _retry: true });
+              const retryBody = options.body ? options.body : undefined;
+              return request(endpoint, { ...options, body: retryBody, headers: retryHeaders, _retry: true });
             }
           } else {
             // Refresh token is invalid/expired; clear stored tokens but allow the original 401 to bubble up.
@@ -155,7 +212,7 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
       let errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`;
       if (response.status === 404) {
         errorMessage =
-          'API not found (404). Start docker-compose up, then reload the app. Check console for [API] URL.';
+          'API not found (404). Start the backend (cd backend && npm run start:dev), then reload the app. Check console for [API] URL.';
       }
       const error = new Error(errorMessage) as any;
       error.response = {
@@ -197,7 +254,16 @@ const request = async (endpoint: string, options: RequestOptions = {}) => {
       error.message?.includes('timed out') ||
       error.message?.includes('Failed to fetch')
     ) {
-      const message = getNetworkHelpMessage();
+      // Auto-heal: try common base URLs and retry once.
+      if (!options._retry) {
+        const reachable = await resolveReachableApiBaseUrl(API_URL);
+        if (reachable && reachable !== API_URL) {
+          cachedApiBaseUrl = reachable;
+          return request(endpoint, { ...options, _retry: true });
+        }
+      }
+
+      const message = getNetworkHelpMessage(API_URL);
       const networkError = new Error(message) as any;
       networkError.response = { data: { message } };
       throw networkError;

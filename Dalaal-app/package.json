@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "scripts": {
     "prestart": "node ../scripts/resolve-api-url.mjs",
-    "start": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
+    "start": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
     "start:lan": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
     "start:usb": "adb reverse tcp:3002 tcp:3002 && npx cross-env EXPO_PUBLIC_API_URL=http://localhost:3002/api EXPO_PUBLIC_SOCKET_URL=http://localhost:3002/chat NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --lan --clear",
     "start:tunnel": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --tunnel --clear",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --android --lan",
-    "ios": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --ios --lan",
-    "web": "npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --web",
+    "android": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --android --lan",
+    "ios": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --ios --lan",
+    "web": "npm run prestart && npx cross-env NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_CACHE=1 npx expo start --web",
     "lint": "npx expo lint",
     "postinstall": "node -e \"try{require('http-proxy')}catch(e){console.warn('Run: npm install')}\""
   },
