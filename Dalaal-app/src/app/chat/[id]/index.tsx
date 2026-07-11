@@ -14,7 +14,7 @@ import ChatCameraModal from '../../../components/chat/ChatCameraModal';
 import ChatMediaPreviewModal from '../../../components/chat/ChatMediaPreviewModal';
 import ChatComposer from '../../../components/chat/ChatComposer';
 import CallSessionModal from '../../../components/chat/CallSessionModal';
-import OnboardingBackground from '../../../components/OnboardingBackground';
+import OnboardingBackground from '../../../components/common/OnboardingBackground';
 import { socketService } from '../../../services/socket';
 import { chatService } from '../../../services/chat';
 import { useAuthStore } from '../../../store/authStore';

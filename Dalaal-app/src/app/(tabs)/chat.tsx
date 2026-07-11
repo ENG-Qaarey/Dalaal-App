@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import ChatList from '../../components/chat/ChatList';
 import { useChatStore } from '../../store/chatStore';

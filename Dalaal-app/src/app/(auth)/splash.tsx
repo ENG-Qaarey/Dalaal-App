@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 
 export const options = { headerShown: false };
 

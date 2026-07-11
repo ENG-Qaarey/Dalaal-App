@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useAppTheme } from '../../context/theme-context';
 import Skeleton from '../../components/ui/Skeleton';
 import useAuth from '../../hooks/useAuth';
@@ -89,7 +89,7 @@ export default function HomeScreen() {
   const filteredBrokers = useMemo(() => q ? brokers.filter((b) => matches(`${b.name} ${b.stat}`)) : brokers, [q]);
 
   const openListingDetail = (params: any) => {
-    router.push({ pathname: '/listings-detail', params: { ...params, posterVerified: params.posterVerified ? '1' : '0' } });
+    router.push({ pathname: '/listings/detail', params: { ...params, posterVerified: params.posterVerified ? '1' : '0' } });
   };
 
   return (

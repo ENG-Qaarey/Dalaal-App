@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
-import FadeIn from '../../components/FadeIn';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import FadeIn from '../../components/common/FadeIn';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };

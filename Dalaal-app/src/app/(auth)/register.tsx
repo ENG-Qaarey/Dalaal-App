@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import { useAppTheme } from '../../context/theme-context';
-import FadeIn from '../../components/FadeIn';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import FadeIn from '../../components/common/FadeIn';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { isValidEmail, normalizeEmail } from '../../utils/auth-form';
 import useAuth from '../../hooks/useAuth';
 

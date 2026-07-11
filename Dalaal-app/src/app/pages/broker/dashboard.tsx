@@ -4,18 +4,18 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
-import { useAppTheme } from '../../context/theme-context';
-import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
-import useAuth from '../../hooks/useAuth';
+import Colors from '../../../constants/theme';
+import OnboardingBackground from '../../../components/common/OnboardingBackground';
+import { useAppTheme } from '../../../context/theme-context';
+import ScreenSkeleton from '../../../components/ui/ScreenSkeleton';
+import useAuth from '../../../hooks/useAuth';
 import {
   analyticsService,
   ANALYTICS_ROLES,
   formatChangePercent,
   formatCompactNumber,
-} from '../../services/analytics';
-import type { AgentStats, AnalyticsPeriod } from '../../types/analytics';
+} from '../../../services/analytics';
+import type { AgentStats, AnalyticsPeriod } from '../../../types/analytics';
 
 export const options = { headerShown: false };
 
@@ -42,7 +42,7 @@ function formatStatChange(key: keyof AgentStats, stats: AgentStats): string {
   return formatChangePercent(stats.leads.changePercent);
 }
 
-export default function AgentDashboard() {
+export default function BrokerDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { scheme } = useAppTheme();
@@ -98,7 +98,7 @@ export default function AgentDashboard() {
           <Text style={[styles.headerTitle, { color: C.textMain }]}>Analyse</Text>
           <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Overview & Performance</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/agent/create-listing')} activeOpacity={0.85} style={[styles.iconBtn, { borderColor: C.brandOrange, backgroundColor: C.brandOrange + '20' }]}>
+        <TouchableOpacity onPress={() => router.push('/pages/broker/create-listing')} activeOpacity={0.85} style={[styles.iconBtn, { borderColor: C.brandOrange, backgroundColor: C.brandOrange + '20' }]}>
           <Ionicons name="add" size={20} color={C.brandOrange} />
         </TouchableOpacity>
       </View>
@@ -152,7 +152,7 @@ export default function AgentDashboard() {
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity activeOpacity={0.85} style={[styles.actionBtn, { backgroundColor: C.brandBlue }]} onPress={() => router.push('/agent/create-listing')}>
+          <TouchableOpacity activeOpacity={0.85} style={[styles.actionBtn, { backgroundColor: C.brandBlue }]} onPress={() => router.push('/pages/broker/create-listing')}>
             <Ionicons name="add-circle" size={24} color={C.surface} />
             <Text style={[styles.actionText, { color: C.surface }]}>New Listing</Text>
           </TouchableOpacity>

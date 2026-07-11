@@ -1,14 +1,14 @@
 import React from 'react';
 import { Modal, StyleSheet, Vibration, View } from 'react-native';
 import { Audio } from 'expo-av';
-import OnboardingBackground from '../OnboardingBackground';
+import OnboardingBackground from '../common/OnboardingBackground';
 
 // Sub-components
-import CallHeader from './CallComponents/CallHeader';
-import CallAvatar from './CallComponents/CallAvatar';
-import CallIncomingActions from './CallComponents/CallIncomingActions';
-import CallControls from './CallComponents/CallControls';
-import CallVideoView from './CallComponents/CallVideoView';
+import CallHeader from './calls/CallHeader';
+import CallAvatar from './calls/CallAvatar';
+import CallIncomingActions from './calls/CallIncomingActions';
+import CallControls from './calls/CallControls';
+import CallVideoView from './calls/CallVideoView';
 
 let RTCView: any = null;
 try {

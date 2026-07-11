@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Shield, CheckCircle2, SlidersHorizontal, ArrowUpRight, BedDouble, Bath, Maximize2, Fuel, Settings2 } from "lucide-react";
+import {
+  MapPin,
+  Shield,
+  CheckCircle2,
+  SlidersHorizontal,
+  ArrowUpRight,
+  BedDouble,
+  Bath,
+  Maximize2,
+  Fuel,
+  Settings2,
+} from "lucide-react";
 
 interface ListingItem {
   id: string;
@@ -38,10 +49,12 @@ const mockListings: ListingItem[] = [
     location: "Hodan, Mogadishu",
     isVerified: true,
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
     brokerName: "Abdi Rahman (Dalaal)",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-    specs: { beds: 5, baths: 4, size: "380 m²" }
+    image:
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+    specs: { beds: 5, baths: 4, size: "380 m²" },
   },
   {
     id: "prop-2",
@@ -52,10 +65,12 @@ const mockListings: ListingItem[] = [
     location: "Jigjiga Yar, Hargeisa",
     isVerified: true,
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
     brokerName: "Faisal Yusuf",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
-    specs: { beds: 3, baths: 2, size: "150 m²" }
+    image:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+    specs: { beds: 3, baths: 2, size: "150 m²" },
   },
   {
     id: "prop-3",
@@ -66,10 +81,12 @@ const mockListings: ListingItem[] = [
     location: "Waberi, Mogadishu",
     isVerified: false,
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=100&q=80",
     brokerName: "Khadra Ahmed",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-    specs: { beds: 0, baths: 6, size: "750 m²" }
+    image:
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+    specs: { beds: 0, baths: 6, size: "750 m²" },
   },
   // Vehicles
   {
@@ -81,10 +98,18 @@ const mockListings: ListingItem[] = [
     location: "Garowe, Puntland",
     isVerified: true,
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
     brokerName: "Mustafa Ali",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80",
-    specs: { make: "Toyota", model: "Prado", year: 2022, fuel: "Diesel", transmission: "Automatic" }
+    image:
+      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80",
+    specs: {
+      make: "Toyota",
+      model: "Prado",
+      year: 2022,
+      fuel: "Diesel",
+      transmission: "Automatic",
+    },
   },
   {
     id: "veh-2",
@@ -95,10 +120,18 @@ const mockListings: ListingItem[] = [
     location: "Hodan, Mogadishu",
     isVerified: true,
     isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
     brokerName: "Khadra Ahmed",
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80",
-    specs: { make: "Hyundai", model: "Elantra", year: 2021, fuel: "Petrol", transmission: "Automatic" }
+    image:
+      "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80",
+    specs: {
+      make: "Hyundai",
+      model: "Elantra",
+      year: 2021,
+      fuel: "Petrol",
+      transmission: "Automatic",
+    },
   },
   {
     id: "veh-3",
@@ -109,16 +142,28 @@ const mockListings: ListingItem[] = [
     location: "Kismayo, Jubaland",
     isVerified: false,
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
     brokerName: "Faisal Yusuf",
-    image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&w=800&q=80",
-    specs: { make: "Suzuki", model: "Alto", year: 2019, fuel: "Petrol", transmission: "Manual" }
-  }
+    image:
+      "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&w=800&q=80",
+    specs: {
+      make: "Suzuki",
+      model: "Alto",
+      year: 2019,
+      fuel: "Petrol",
+      transmission: "Manual",
+    },
+  },
 ];
 
 export default function ListingsGrid() {
-  const [filterType, setFilterType] = useState<"all" | "property" | "vehicle">("all");
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "FOR_SALE" | "FOR_RENT">("ALL");
+  const [filterType, setFilterType] = useState<"all" | "property" | "vehicle">(
+    "all",
+  );
+  const [filterStatus, setFilterStatus] = useState<
+    "ALL" | "FOR_SALE" | "FOR_RENT"
+  >("ALL");
 
   const filtered = mockListings.filter((item) => {
     const typeMatch = filterType === "all" || item.type === filterType;
@@ -215,7 +260,7 @@ export default function ListingsGrid() {
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="group relative bg-white dark:bg-zinc-900 rounded-[5px] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-zinc-300 dark:hover:border-zinc-700"
+            className="group relative bg-white dark:bg-zinc-900 rounded-[10px] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-zinc-300 dark:hover:border-zinc-700"
           >
             {/* Listing Image */}
             <div className="relative aspect-video w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
@@ -227,9 +272,11 @@ export default function ListingsGrid() {
               />
 
               {/* Status Badge */}
-              <span className={`absolute left-3.5 top-3.5 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase text-white shadow-sm ${
-                item.status === "FOR_SALE" ? "bg-amber-600" : "bg-sky-600"
-              }`}>
+              <span
+                className={`absolute left-3.5 top-3.5 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase text-white shadow-sm ${
+                  item.status === "FOR_SALE" ? "bg-amber-600" : "bg-sky-600"
+                }`}
+              >
                 {item.status === "FOR_SALE" ? "For Sale" : "For Rent"}
               </span>
 
@@ -293,7 +340,9 @@ export default function ListingsGrid() {
                       <Settings2 className="w-4 h-4 text-zinc-400" />
                       <span>{item.specs.transmission}</span>
                     </span>
-                    <span className="text-zinc-500 font-semibold">{item.specs.year}</span>
+                    <span className="text-zinc-500 font-semibold">
+                      {item.specs.year}
+                    </span>
                   </>
                 )}
               </div>

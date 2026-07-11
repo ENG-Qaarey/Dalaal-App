@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import useAuth from '../../hooks/useAuth';
@@ -198,7 +198,7 @@ export default function Profile() {
               label: 'Analyse',
               icon: 'analytics-outline',
               value: '',
-              onPress: () => router.push('/agent/dashboard'),
+              onPress: () => router.push('/pages/broker/dashboard'),
             },
           ]
         : []),

@@ -4,9 +4,9 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
-import { useAppTheme } from '../../context/theme-context';
+import Colors from '../../../constants/theme';
+import OnboardingBackground from '../../../components/common/OnboardingBackground';
+import { useAppTheme } from '../../../context/theme-context';
 
 export const options = { headerShown: false };
 
@@ -63,7 +63,6 @@ export default function CreateListing() {
     }
     
     setIsPublishing(true);
-    // Simulate network request
     setTimeout(() => {
       setIsPublishing(false);
       Alert.alert('Success', 'Listing published successfully!', [

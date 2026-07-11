@@ -148,7 +148,7 @@ export default function Home() {
         <FAQAccordion />
 
         {/* Bottom CTA Banner */}
-        <section className="py-16 my-16 rounded-3xl bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-8 sm:p-12 relative overflow-hidden shadow-2xl">
+        <section className="py-16 my-16 rounded-[15px] bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-8 sm:p-12 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 max-w-2xl space-y-6">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider backdrop-blur-md">

@@ -3,7 +3,7 @@ import { Dimensions, FlatList, Image, Modal, Share, StyleSheet, Text, TouchableO
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import OnboardingBackground from '../OnboardingBackground';
+import OnboardingBackground from '../common/OnboardingBackground';
 
 type Props = {
   visible: boolean;

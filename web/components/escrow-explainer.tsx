@@ -70,7 +70,7 @@ export default function EscrowExplainer() {
               <button
                 key={step.id}
                 onClick={() => setActiveStep(idx)}
-                className={`p-6 text-left rounded-2xl border transition-all duration-300 ${
+                className={`p-6 text-left rounded-[5px] border transition-all duration-300 ${
                   isSelected
                     ? "bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 shadow-lg scale-[1.02]"
                     : "bg-white/40 dark:bg-zinc-900/20 border-zinc-200/60 dark:border-zinc-800/40 hover:bg-white/70 dark:hover:bg-zinc-900/40"

@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image,
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../constants/theme';
-import OnboardingBackground from '../components/OnboardingBackground';
-import { useFavorites } from '../context/favorites-context';
-import { useAppTheme } from '../context/theme-context';
-import ScreenSkeleton from '../components/ui/ScreenSkeleton';
+import Colors from '../../constants/theme';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
+import { useFavorites } from '../../context/favorites-context';
+import { useAppTheme } from '../../context/theme-context';
+import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 
 export const options = { headerShown: false };
 

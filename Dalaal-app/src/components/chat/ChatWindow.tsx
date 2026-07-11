@@ -5,13 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 // Sub-components
-import MessageSystem from './ChatComponents/MessageSystem';
-import MessageText from './ChatComponents/MessageText';
-import MessageMedia from './ChatComponents/MessageMedia';
-import MessageAudio from './ChatComponents/MessageAudio';
-import MessageFile from './ChatComponents/MessageFile';
-import MessageMenu from './ChatComponents/MessageMenu';
-import MediaViewer from './ChatComponents/MediaViewer';
+import MessageSystem from './messages/MessageSystem';
+import MessageText from './messages/MessageText';
+import MessageMedia from './messages/MessageMedia';
+import MessageAudio from './messages/MessageAudio';
+import MessageFile from './messages/MessageFile';
+import MessageMenu from './messages/MessageMenu';
+import MediaViewer from './messages/MediaViewer';
 
 const SENT_BUBBLE_COLOR = '#60A5FA';
 const SENT_BUBBLE_BORDER_COLOR = '#3B82F6';
@@ -186,7 +186,7 @@ export default function ChatWindow({
       const linkText = match[1]; const url = match[2];
       parts.push(
         <Text key={match.index} style={{ textDecorationLine: 'underline', fontWeight: '900', color: isMine ? '#fff' : colors.brandBlue }}
-          onPress={() => { if (url.startsWith('listing:')) { const id = url.replace('listing:', ''); router.push(`/listings-detail?id=${id}`); } }}>
+          onPress={() => { if (url.startsWith('listing:')) { const id = url.replace('listing:', ''); router.push(`/listings/detail?id=${id}`); } }}>
           {linkText}
         </Text>
       );

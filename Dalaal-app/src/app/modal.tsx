@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '../constants/theme';
-import OnboardingBackground from '../components/OnboardingBackground';
+import OnboardingBackground from '../components/common/OnboardingBackground';
 import { useAppTheme } from '../context/theme-context';
 
 export default function ModalScreen() {

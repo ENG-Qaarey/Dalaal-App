@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppTheme } from '../../context/theme-context';
 import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useChatStore } from '../../store/chatStore';
 
 const { width } = Dimensions.get('window');

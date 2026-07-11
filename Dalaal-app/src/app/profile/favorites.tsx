@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useFavorites } from '../../context/favorites-context';
 import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
@@ -73,7 +73,7 @@ export default function Favorites() {
               activeOpacity={0.9}
               onPress={() =>
                 router.push({
-                  pathname: '/listings-detail',
+                  pathname: '/listings/detail',
                   params: {
                     id: item.id,
                     type: item.type ?? '',

@@ -30,7 +30,7 @@ export default function MortgageCalculator() {
 
   return (
     <section className="py-20 border-t border-zinc-100 dark:border-zinc-900">
-      <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/60 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/60 rounded-[15px] p-6 sm:p-10 shadow-xl relative overflow-hidden">
         {/* Decorative Grid Backdrop */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -50,10 +50,10 @@ export default function MortgageCalculator() {
           </div>
 
           {/* Tab switches */}
-          <div className="flex bg-zinc-100 dark:bg-zinc-850 p-1 rounded-xl shrink-0">
+          <div className="flex bg-zinc-100 dark:bg-zinc-850 p-1 rounded-[5px] shrink-0">
             <button
               onClick={() => setActiveTab("buy")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-[5px] text-xs font-bold transition-all ${
                 activeTab === "buy"
                   ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-white shadow-sm"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
@@ -63,7 +63,7 @@ export default function MortgageCalculator() {
             </button>
             <button
               onClick={() => setActiveTab("rent")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-[5px] text-xs font-bold transition-all ${
                 activeTab === "rent"
                   ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-white shadow-sm"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"

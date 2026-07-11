@@ -98,13 +98,13 @@
   --chart-4: oklch(0.6450 0.2154 16.4393);
   --chart-5: oklch(0.7049 0.1867 47.6044);
   --radius: 1.25rem;
-  --sidebar: oklch(0.9387 0.0262 264.4409);
-  --sidebar-foreground: oklch(0.2138 0.0755 259.0572);
+  --sidebar: oklch(0.985 0.002 270);
+  --sidebar-foreground: oklch(0.200 0.010 270);
   --sidebar-primary: oklch(0.9924 0.0028 308.4292);
   --sidebar-primary-foreground: oklch(0.2108 0.0426 270.3694);
-  --sidebar-accent: oklch(0.2506 0.0689 276.7216);
-  --sidebar-accent-foreground: oklch(1.0000 0 0);
-  --sidebar-border: oklch(0.2445 0.0736 280.5871);
+  --sidebar-accent: oklch(0.945 0.008 270);
+  --sidebar-accent-foreground: oklch(0.180 0.012 270);
+  --sidebar-border: oklch(0.915 0.006 270);
   --sidebar-ring: oklch(0.3447 0.1522 272.4233);
   --destructive-foreground: oklch(1.0000 0 0);
   --font-sans: Bricolage Grotesque, ui-sans-serif, sans-serif, system-ui;
@@ -153,13 +153,13 @@
   --chart-3: oklch(0.6450 0.2154 16.4393);
   --chart-4: oklch(0.7049 0.1867 47.6044);
   --chart-5: oklch(0.3395 0.1557 273.0758);
-  --sidebar: oklch(0.1692 0.0341 271.7324);
-  --sidebar-foreground: oklch(0.6170 0.0377 281.6233);
+  --sidebar: oklch(0.135 0.015 270);
+  --sidebar-foreground: oklch(0.720 0.010 270);
   --sidebar-primary: oklch(0.9924 0.0028 308.4292);
   --sidebar-primary-foreground: oklch(0.1664 0.0359 274.2998);
-  --sidebar-accent: oklch(0.2002 0.0495 277.4898);
-  --sidebar-accent-foreground: oklch(0.9924 0.0028 308.4292);
-  --sidebar-border: oklch(0.1977 0.0513 278.9472);
+  --sidebar-accent: oklch(0.185 0.020 270);
+  --sidebar-accent-foreground: oklch(0.970 0.003 270);
+  --sidebar-border: oklch(0.210 0.020 270);
   --sidebar-ring: oklch(0.3447 0.1522 272.4233);
   --destructive-foreground: oklch(1.0000 0 0);
   --radius: 1.25rem;
@@ -195,4 +195,24 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── Custom Scrollbar for Sidebar ── */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 160, 170, 0.4) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(160, 160, 170, 0.35);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 160, 170, 0.55);
 }

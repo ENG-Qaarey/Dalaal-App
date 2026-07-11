@@ -50,7 +50,7 @@ export default function TabsLayout() {
         listeners={() => ({
           tabPress: (e) => {
             e.preventDefault();
-            router.push('/agent/create-listing');
+            router.push('/pages/broker/create-listing');
           },
         })}
         options={{
