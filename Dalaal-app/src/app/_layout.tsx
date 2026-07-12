@@ -164,7 +164,6 @@ function RootStack() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pages" />
-        <Stack.Screen name="modal" />
       </Stack>
     </>
   );

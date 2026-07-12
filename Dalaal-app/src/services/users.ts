@@ -1,11 +1,4 @@
-import { api } from './api';
-
-function unwrapResponse<T>(payload: any): T {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
-  }
-  return payload as T;
-}
+import { api, unwrapResponse } from './api';
 
 export const userService = {
   async searchUsers(query: string = '', page: number = 1, limit: number = 20) {

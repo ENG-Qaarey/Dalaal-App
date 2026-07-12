@@ -115,7 +115,7 @@ class WebRTCService {
         }
       };
 
-      await this.getLocalStream(mode, mediaDevices);
+      await this.initLocalStream(mode, mediaDevices);
 
       if (this.localStream) {
         this.localStream.getTracks().forEach((track: any) => {
@@ -131,7 +131,7 @@ class WebRTCService {
     }
   }
 
-  private async getLocalStream(mode: 'audio' | 'video', mediaDevices: any) {
+  private async initLocalStream(mode: 'audio' | 'video', mediaDevices: any) {
     const constraints: any = {
       audio: true,
       video: mode === 'video' ? { facingMode: 'user' } : false,

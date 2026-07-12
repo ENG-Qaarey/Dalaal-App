@@ -19,7 +19,7 @@ export default function CallVideoView({
 }: Props) {
   if (!RTCView) {
     return (
-      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#18181B', alignItems: 'center', justifyContent: 'center' }]}>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#18181B', alignItems: 'center', justifyContent: 'center' }]}>
         <Ionicons name="person" size={120} color="#3F3F46" />
         <Text style={{ color: '#A1A1AA', marginTop: 16, fontSize: 16, textAlign: 'center', paddingHorizontal: 40 }}>
           Video not supported in Expo Go. Please use a Development Build.
@@ -33,12 +33,12 @@ export default function CallVideoView({
       {remoteStream ? (
         <RTCView
           streamURL={remoteStream.toURL()}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           objectFit="cover"
           mirror={false}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#18181B', alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#18181B', alignItems: 'center', justifyContent: 'center' }]}>
           <Ionicons name="person" size={120} color="#3F3F46" />
           <Text style={{ color: '#A1A1AA', marginTop: 16, fontSize: 16 }}>Waiting for remote video...</Text>
         </View>

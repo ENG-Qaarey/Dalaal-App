@@ -1,8 +1,7 @@
 import React from 'react';
-import { Tabs, useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import Colors from '../../constants/theme';
-import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/authStore';
 
@@ -16,88 +15,58 @@ export default function TabsLayout() {
   const canCreate = CREATOR_ROLES.has(user?.role);
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#2F7CF6',
-        tabBarInactiveTintColor: scheme === 'dark' ? '#f8f6f6' : '#1a1919',
-        tabBarStyle: {
-          backgroundColor: scheme === 'dark' ? '#020114f5' : '#FFFFFF',
-          borderTopColor: scheme === 'dark' ? '#8b8888' : '#EEE',
-        },
+    <NativeTabs
+      tintColor="#2F7CF6"
+      backgroundColor={scheme === 'dark' ? '#020114f5' : '#FFFFFF'}
+      labelStyle={{
+        color: scheme === 'dark' ? '#f8f6f6' : '#1a1919',
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'search' : 'search-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'house', selected: 'house.fill' }}
+          md={{ default: 'home', selected: 'home' }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="search">
+        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'magnifyingglass', selected: 'magnifyingglass' }}
+          md={{ default: 'search', selected: 'search' }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
         name="create"
-        listeners={() => ({
-          tabPress: (e) => {
+        hidden={!canCreate}
+        listeners={{
+          tabPress: (e: any) => {
             e.preventDefault();
             router.push('/pages/broker/create-listing');
           },
-        })}
-        options={{
-          title: '',
-          tabBarLabel: '',
-          tabBarShowLabel: false,
-          href: canCreate ? undefined : null,
-          tabBarIcon: () => (
-            <View style={{
-              width: 50,
-              height: 50,
-              borderRadius: 25,
-              backgroundColor: C.brandBlue,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: -10,
-            }}>
-              <Ionicons name="add" size={32} color="#fff" />
-            </View>
-          ),
         }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          href: null,
-        }}
-      />
-      
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <NativeTabs.Trigger.Label hidden />
+        <NativeTabs.Trigger.Icon sf="plus.circle.fill" md="add_circle" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="chat">
+        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }}
+          md={{ default: 'chat_bubble', selected: 'chat_bubble' }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="profile">
+        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person', selected: 'person.fill' }}
+          md={{ default: 'person', selected: 'person' }}
+        />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

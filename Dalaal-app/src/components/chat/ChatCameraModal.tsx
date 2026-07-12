@@ -61,7 +61,7 @@ export default function ChatCameraModal({ visible, colors, onClose, onCapture }:
           </View>
         ) : (
           <View style={styles.cameraStage}>
-            <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={cameraType} flash={flash} />
+            <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={cameraType} flash={flash} />
             <View style={styles.cameraOverlay}>
               <View style={styles.topBar}>
                 <TouchableOpacity style={styles.topBtn} onPress={onClose}>
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   cameraStage: { flex: 1 },
   cameraOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },

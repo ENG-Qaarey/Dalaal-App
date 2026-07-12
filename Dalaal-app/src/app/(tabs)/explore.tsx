@@ -54,7 +54,7 @@ export default function ExploreTab() {
     
     try {
       const response = await userService.searchUsers(query, currentPage, 20);
-      const newUsers = Array.isArray(response) ? response : (response.data || []);
+      const newUsers: User[] = Array.isArray(response) ? response : ((response as any).data || []);
       const filteredUsers = currentUserId
         ? newUsers.filter((item: User) => item.id !== currentUserId)
         : newUsers;

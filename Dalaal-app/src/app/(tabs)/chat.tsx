@@ -66,7 +66,7 @@ export default function Chat() {
           <TouchableOpacity
             activeOpacity={0.85}
             style={[styles.headerIcon, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}
-            onPress={() => router.push('/explore')}
+            onPress={() => router.push('/(tabs)/search' as any)}
           >
             <Ionicons name="create-outline" size={16} color={C.brandBlue} />
           </TouchableOpacity>

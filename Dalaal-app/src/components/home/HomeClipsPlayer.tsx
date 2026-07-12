@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Dimensions, FlatList, Image, Modal, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer, type VideoPlayer } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingBackground from '../common/OnboardingBackground';
 
@@ -25,6 +25,52 @@ type Props = {
   insets: any;
   userAvatar?: string;
 };
+
+function ClipPlayer({
+  item,
+  isSelected,
+  isPaused,
+  isMuted,
+  onPlaybackStatusUpdate,
+}: {
+  item: any;
+  isSelected: boolean;
+  isPaused: boolean;
+  isMuted: boolean;
+  onPlaybackStatusUpdate: (status: any) => void;
+}) {
+  const player = useVideoPlayer(item.video, (p) => {
+    p.loop = true;
+    p.muted = isMuted;
+    if (isSelected && !isPaused) {
+      p.play();
+    }
+  });
+
+  useEffect(() => {
+    if (!player) return;
+    player.muted = isMuted;
+    if (isSelected && !isPaused) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [player, isPaused, isMuted, isSelected]);
+
+  useEffect(() => {
+    if (!player || !isSelected) return;
+    const sub = player.addListener('statusChange', () => {
+      onPlaybackStatusUpdate({
+        isLoaded: player.status === 'readyToPlay',
+        positionMillis: player.currentTime ? player.currentTime * 1000 : 0,
+        durationMillis: player.duration ? player.duration * 1000 : 0,
+      });
+    });
+    return () => sub.remove();
+  }, [player, isSelected]);
+
+  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" />;
+}
 
 export default function HomeClipsPlayer({
   visible,
@@ -74,13 +120,11 @@ export default function HomeClipsPlayer({
           }}
           renderItem={({ item }) => (
             <View style={{ height: window.height, width: window.width }}>
-              <Video
-                source={{ uri: item.video }}
-                style={StyleSheet.absoluteFill}
-                isLooping
-                shouldPlay={selectedClip.id === item.id && !isModalPaused}
+              <ClipPlayer
+                item={item}
+                isSelected={selectedClip.id === item.id}
+                isPaused={isModalPaused}
                 isMuted={isFullMuted}
-                resizeMode={ResizeMode.CONTAIN}
                 onPlaybackStatusUpdate={(status) => {
                   if (selectedClip.id === item.id) setPlaybackStatus(status);
                 }}
@@ -155,9 +199,9 @@ export default function HomeClipsPlayer({
 
                 {selectedClip.id === item.id && (
                   <View style={[styles.modalProgressWrap, { marginTop: 12 }]}>
-                    <div style={styles.modalProgressBar}>
+                    <View style={styles.modalProgressBar}>
                       <View style={[styles.modalProgressFill, { width: playbackStatus.isLoaded && playbackStatus.durationMillis ? `${(playbackStatus.positionMillis / playbackStatus.durationMillis) * 100}%` : '0%' }]} />
-                    </div>
+                    </View>
                   </View>
                 )}
               </View>
@@ -181,7 +225,7 @@ export default function HomeClipsPlayer({
 }
 
 const styles = StyleSheet.create({
-  modalFull: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000' },
+  modalFull: { ...StyleSheet.absoluteFill, backgroundColor: '#000' },
   modalTopNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10 },
   modalBackBtn: { flexDirection: 'row', alignItems: 'center' },
   modalBackText: { color: '#fff', fontSize: 18, fontWeight: '600', marginLeft: 10 },
@@ -202,7 +246,7 @@ const styles = StyleSheet.create({
   modalProgressWrap: { width: '100%' },
   modalProgressBar: { height: 3, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, overflow: 'hidden' },
   modalProgressFill: { height: '100%', backgroundColor: '#fff', borderRadius: 2 },
-  modalCenterPlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.1)' },
+  modalCenterPlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.1)' },
   modalCenterPlayInner: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
   modalActionRow: { flexDirection: 'row', alignItems: 'center' },
   modalMiniPlay: { backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },

@@ -145,7 +145,7 @@ export default function OnboardingBackground({
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   blob: {
     position: 'absolute',

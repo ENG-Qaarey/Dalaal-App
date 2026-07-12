@@ -31,7 +31,7 @@ const safeGetItem = async (key: string) => {
   }
 };
 
-const safeSetItem = async (key: string, value: string) => {
+export const safeSetItem = async (key: string, value: string) => {
   try {
     await SecureStore.setItemAsync(key, value);
   } catch {
@@ -39,7 +39,7 @@ const safeSetItem = async (key: string, value: string) => {
   }
 };
 
-const safeDeleteItem = async (key: string) => {
+export const safeDeleteItem = async (key: string) => {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {
@@ -303,3 +303,10 @@ export const api = {
 };
 
 export { getApiBaseUrl };
+
+export function unwrapResponse<T>(payload: any): T {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data as T;
+  }
+  return payload as T;
+}

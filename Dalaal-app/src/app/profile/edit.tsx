@@ -4,19 +4,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/theme';
+import { CITY_OPTIONS, COUNTRY_OPTIONS } from '../../constants/locations';
 import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useAppTheme } from '../../context/theme-context';
 import useAuth from '../../hooks/useAuth';
 import { authService } from '../../services/auth';
-
-const CITY_OPTIONS = ['Mogadishu', 'Hargeisa', 'Garowe', 'Kismayo', 'Baidoa', 'Bosaso', 'Beledweyne'];
-const COUNTRY_OPTIONS = [
-  { label: 'Somalia', value: 'SO' },
-  { label: 'Kenya', value: 'KE' },
-  { label: 'Ethiopia', value: 'ET' },
-  { label: 'Djibouti', value: 'DJ' },
-  { label: 'Uganda', value: 'UG' },
-];
 
 export default function EditProfile() {
   const router = useRouter();

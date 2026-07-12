@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 
 type Clip = {
@@ -19,6 +19,20 @@ type Props = {
   onClipPress: (clip: Clip) => void;
   colors: any;
 };
+
+function ClipVideo({ uri, shouldPlay }: { uri: string; shouldPlay: boolean }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    if (shouldPlay) {
+      p.play();
+    } else {
+      p.pause();
+    }
+  });
+
+  return <VideoView player={player} style={styles.clipVideo} contentFit="cover" />;
+}
 
 export default function HomeClips({ clips, playingClipId, onClipPress, colors }: Props) {
   return (
@@ -46,14 +60,7 @@ export default function HomeClips({ clips, playingClipId, onClipPress, colors }:
             style={styles.clipCard}
             onPress={() => onClipPress(clip)}
           >
-            <Video
-              source={{ uri: clip.video }}
-              style={styles.clipVideo}
-              isLooping
-              isMuted={true}
-              shouldPlay={playingClipId === clip.id}
-              resizeMode={ResizeMode.COVER}
-            />
+            <ClipVideo uri={clip.video} shouldPlay={playingClipId === clip.id} />
             
             <View style={styles.clipTagTopLeft}>
               <View style={styles.liveDot} />
@@ -119,6 +126,6 @@ const styles = StyleSheet.create({
   clipViewsText: { color: '#fff', fontSize: 10, fontWeight: '600', marginLeft: 3 },
   clipName: { color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 0 },
   clipLoc: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '500', marginTop: 1 },
-  clipPlayOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' },
+  clipPlayOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' },
   clipPlayBtnInner: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
 });

@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
@@ -22,6 +23,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
@@ -90,7 +93,7 @@ export class AuthService {
         ...tokens,
       };
     } catch (error) {
-      console.error('Error in register:', error);
+      this.logger.error('Error in register:', error);
       if (error instanceof ConflictException) {
         throw error;
       }
@@ -106,13 +109,6 @@ export class AuthService {
     await this.authRepository.deleteUserVerificationCodes(user.id);
     await this.authRepository.createVerificationCode(user.id, code, expiresAt);
 
-    // Log code to console for development
-    console.log('\n========================================');
-    console.log('📧 VERIFICATION CODE');
-    console.log('Email:', user.email);
-    console.log('Code:', code);
-    console.log('========================================\n');
-
     // Send email to user
     try {
       const appName = this.configService.get<string>('email.appName') || 'Dalaal-App';
@@ -122,9 +118,9 @@ export class AuthService {
         buildVerificationEmailHtml({ kind: 'email-verification', code, appName }),
         { code },
       );
-      console.log('✅ Verification email sent to:', user.email);
+      this.logger.log(`Verification email sent to: ${user.email}`);
     } catch (emailError) {
-      console.log('⚠️ Failed to send email:', emailError.message);
+      this.logger.warn(`Failed to send email: ${emailError.message}`);
     }
   }
 
@@ -210,7 +206,7 @@ export class AuthService {
 
       return { message: 'OTP sent successfully' };
     } catch (error) {
-      console.error('Error in sendOtp:', error);
+      this.logger.error('Error in sendOtp:', error);
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }

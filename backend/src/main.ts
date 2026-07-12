@@ -200,13 +200,15 @@ async function bootstrap() {
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3005',
     'http://127.0.0.1:8081',
+    'http://10.60.130.7:3005',
+    'http://10.60.130.7:8081',
   ];
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,

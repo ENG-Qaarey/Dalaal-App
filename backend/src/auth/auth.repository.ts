@@ -20,19 +20,6 @@ export class AuthRepository {
     });
   }
 
-  async findByUsername(username: string) {
-    if (!username) return null;
-    return this.prisma.user.findFirst({
-      where: { 
-        username: {
-          equals: username,
-          mode: 'insensitive',
-        },
-      },
-      include: { profile: true },
-    });
-  }
-
   async findByIdentifier(identifier: string) {
     const trimmed = identifier.trim().replace(/\s+/g, '');
     return this.prisma.user.findFirst({
@@ -68,43 +55,6 @@ export class AuthRepository {
       where: { id },
       data,
       include: { profile: true },
-    });
-  }
-
-  async updateLastLogin(id: string) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { lastLoginAt: new Date() },
-      include: { profile: true },
-    });
-  }
-
-  async createPasswordResetToken(userId: string, token: string, expiresAt: Date) {
-    return this.prisma.passwordResetToken.create({
-      data: {
-        userId,
-        token,
-        expiresAt,
-      },
-    });
-  }
-
-  async findPasswordResetToken(token: string) {
-    return this.prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
-  }
-
-  async deletePasswordResetToken(token: string) {
-    return this.prisma.passwordResetToken.delete({
-      where: { token },
-    });
-  }
-
-  async deleteUserPasswordResetTokens(userId: string) {
-    return this.prisma.passwordResetToken.deleteMany({
-      where: { userId },
     });
   }
 

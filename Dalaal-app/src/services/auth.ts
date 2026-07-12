@@ -1,28 +1,4 @@
-import { api } from './api';
-import * as SecureStore from 'expo-secure-store';
-
-function unwrapResponse<T>(payload: any): T {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
-  }
-  return payload as T;
-}
-
-const safeSetItem = async (key: string, value: string) => {
-  try {
-    await SecureStore.setItemAsync(key, value);
-  } catch {
-    // ignore secure store errors
-  }
-};
-
-const safeDeleteItem = async (key: string) => {
-  try {
-    await SecureStore.deleteItemAsync(key);
-  } catch {
-    // ignore secure store errors
-  }
-};
+import { api, unwrapResponse, safeSetItem, safeDeleteItem } from './api';
 
 async function persistTokens(tokens: { accessToken?: string; refreshToken?: string }) {
   if (tokens.accessToken) {
@@ -54,7 +30,7 @@ export const authService = {
       } else if (error.message) {
         message = error.message;
       }
-      const err = new Error(message);
+      const err = new Error(message) as any;
       err.response = error.response;
       throw err;
     }
@@ -76,7 +52,7 @@ export const authService = {
       } else if (error.message) {
         message = error.message;
       }
-      const err = new Error(message);
+      const err = new Error(message) as any;
       err.response = error.response;
       throw err;
     }
@@ -114,7 +90,7 @@ export const authService = {
       } else if (error.message) {
         message = error.message;
       }
-      const err = new Error(message);
+      const err = new Error(message) as any;
       err.response = error.response;
       throw err;
     }

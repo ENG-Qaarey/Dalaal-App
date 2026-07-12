@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ResizeMode, Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 type Props = {
   visible: boolean;
@@ -10,6 +10,14 @@ type Props = {
   onClose: () => void;
   onIndexChange: (index: number) => void;
 };
+
+function ViewerVideo({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+    p.play();
+  });
+  return     <VideoView player={player} style={styles.viewerImage} contentFit="contain" nativeControls />;
+}
 
 export default function MediaViewer({
   visible,
@@ -65,7 +73,7 @@ export default function MediaViewer({
                   <Image source={{ uri: item.uri }} style={styles.viewerImage} resizeMode="contain" />
                 </ScrollView>
               ) : (
-                <Video source={{ uri: item.uri }} style={styles.viewerImage} useNativeControls resizeMode={ResizeMode.CONTAIN} shouldPlay />
+                <ViewerVideo uri={item.uri} />
               )}
             </View>
           ))}

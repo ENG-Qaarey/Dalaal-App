@@ -1,22 +1,10 @@
-import { api } from './api';
+import { api, unwrapResponse } from './api';
 import type { AgentLead, AgentStats, AnalyticsPeriod } from '../types/analytics';
-
-function unwrapResponse<T>(payload: any): T {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
-  }
-  return payload as T;
-}
 
 export const analyticsService = {
   async getAgentStats(period: AnalyticsPeriod = '30d'): Promise<AgentStats> {
     const response = await api.get(`agents/me/stats?period=${period}`);
     return unwrapResponse<AgentStats>(response.data);
-  },
-
-  async getAgentLeads(limit = 10): Promise<AgentLead[]> {
-    const response = await api.get(`agents/me/leads?limit=${limit}`);
-    return unwrapResponse<AgentLead[]>(response.data);
   },
 };
 

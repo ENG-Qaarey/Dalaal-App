@@ -1,13 +1,9 @@
-export const generateSlug = (text: string): string => {
+export function generateSlug(text: string): string {
   return text
     .toLowerCase()
+    .trim()
     .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-    .trim();
-};
-
-export const generateUniqueSlug = (text: string, uniqueId?: string): string => {
-  const slug = generateSlug(text);
-  return uniqueId ? `${slug}-${uniqueId}` : slug;
-};
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}

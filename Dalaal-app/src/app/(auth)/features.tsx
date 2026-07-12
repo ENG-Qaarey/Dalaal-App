@@ -361,7 +361,7 @@ export default function Features() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   heroContainer: { width: '100%', height: '52%' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
+  heroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.35)' },
   skipBtn: {
     alignSelf: 'flex-end',
     marginRight: 16,
