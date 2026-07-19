@@ -1,5 +1,10 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ThemePalette } from '../../constants/theme';
+import { sectionStyles } from './sectionStyles';
+import { spacing, radius, fontSize } from '../../constants/tokens';
+import { useWebLayout } from '../../hooks/useWebLayout';
 
 type VehicleItem = {
   id: string;
@@ -16,37 +21,55 @@ type Props = {
   items: VehicleItem[];
   onPress: (item: VehicleItem) => void;
   onSeeAll: () => void;
-  colors: any;
+  colors: ThemePalette;
   scheme: 'light' | 'dark';
 };
 
-export default function HomeVehicles({ items, onPress, onSeeAll, colors, scheme }: Props) {
+export default function HomeVehicles({ items, onPress, onSeeAll, colors }: Props) {
+  const { isWideScreen } = useWebLayout();
+  const cardWidth = isWideScreen ? 180 : 140;
+
   return (
     <>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.textMain }]}>Popular Vehicles</Text>
-        <TouchableOpacity onPress={onSeeAll}>
-          <Text style={[styles.seeAll, { color: colors.brandBlue }]}>See all</Text>
+      <View style={sectionStyles.sectionHeader}>
+        <Text style={[sectionStyles.sectionTitle, { color: colors.textMain }]}>Popular Vehicles</Text>
+        <TouchableOpacity onPress={onSeeAll} accessibilityRole="button">
+          <Text style={[sectionStyles.seeAll, { color: colors.brandBlue }]}>See all</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 4 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ paddingVertical: spacing.xs }}
+        contentContainerStyle={isWideScreen ? { paddingRight: spacing.lg } : undefined}
+      >
         {items.map((v) => (
           <TouchableOpacity
             key={v.id}
             activeOpacity={0.92}
             onPress={() => onPress(v)}
+            accessibilityRole="button"
+            accessibilityLabel={`View details for ${v.title}`}
             style={[
               styles.vehicleCard,
               {
-                backgroundColor: scheme === 'dark' ? 'rgba(30,30,30,0.6)' : 'rgba(255,255,255,0.85)',
-                borderColor: colors.brandBorder
-              }
+                width: cardWidth,
+                backgroundColor: colors.cardBg,
+                borderColor: colors.brandBorder,
+                ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as object) : null),
+              },
             ]}
           >
-            <Image source={{ uri: v.image }} style={styles.smallThumb} />
-            <Text style={[styles.vehicleTitle, { color: colors.textMain }]}>{v.title}</Text>
+            <Image source={{ uri: v.image }} style={[styles.smallThumb, { height: isWideScreen ? 90 : 64 }]} />
+            <Text style={[styles.vehicleTitle, { color: colors.textMain }]} numberOfLines={1}>
+              {v.title}
+            </Text>
             <Text style={[styles.vehiclePrice, { color: colors.textMuted }]}>{v.price}</Text>
+            <View style={[styles.viewRow, { backgroundColor: colors.brandBlueSoft }]}>
+              <Text style={[styles.viewText, { color: colors.brandBlue }]}>View Details</Text>
+              <Ionicons name="arrow-forward" size={12} color={colors.brandBlue} />
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -55,11 +78,27 @@ export default function HomeVehicles({ items, onPress, onSeeAll, colors, scheme 
 }
 
 const styles = StyleSheet.create({
-  sectionHeader: { marginTop: 6, paddingHorizontal: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 15, fontWeight: '800' },
-  seeAll: { fontWeight: '600' },
-  vehicleCard: { width: 110, height: 96, borderRadius: 10, marginLeft: 14, padding: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  smallThumb: { width: 80, height: 46, borderRadius: 8, marginBottom: 4 },
-  vehicleTitle: { fontWeight: '700', fontSize: 11 },
-  vehiclePrice: { fontSize: 10 },
+  vehicleCard: {
+    borderRadius: radius.lg,
+    marginLeft: spacing.lg,
+    padding: spacing.sm,
+    borderWidth: 1,
+  },
+  smallThumb: {
+    width: '100%',
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+  },
+  vehicleTitle: { fontWeight: '800', fontSize: fontSize.small },
+  vehiclePrice: { fontSize: fontSize.caption, marginTop: 2 },
+  viewRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+  },
+  viewText: { fontSize: 11, fontWeight: '800' },
 });

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
+import { deleteItemAsync } from '../utils/storage';
 
 interface AuthState {
   user: any | null;
@@ -20,10 +20,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (status) => set({ isLoading: status }),
   logout: async () => {
     try {
-      await SecureStore.deleteItemAsync('accessToken');
+      await deleteItemAsync('accessToken');
     } catch {}
     try {
-      await SecureStore.deleteItemAsync('refreshToken');
+      await deleteItemAsync('refreshToken');
     } catch {}
     
     // Completely wipe persistent chat storage to prevent cross-user data leakage

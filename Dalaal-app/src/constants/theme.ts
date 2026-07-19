@@ -11,6 +11,7 @@ export type ThemePalette = {
   textMuted: string;
   tableRow: string;
   tableRowHover: string;
+  cardBg: string;
   // convenience aliases
   background?: string;
 };
@@ -28,6 +29,7 @@ const light: ThemePalette = {
   textMuted: '#5b6b86',
   tableRow: '#f3f8ff',
   tableRowHover: '#e7f1ff',
+  cardBg: 'rgba(255,255,255,0.85)',
   background: '#ffffff',
 };
 
@@ -44,6 +46,7 @@ const dark: ThemePalette = {
   textMuted: '#b0bdd1',
   tableRow: '#0a101a',
   tableRowHover: '#070b0f',
+  cardBg: 'rgba(30,30,30,0.6)',
   background: '#030407',
 };
 

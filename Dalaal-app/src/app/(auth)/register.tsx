@@ -79,184 +79,201 @@ export default function Register() {
 
 	const canContinue = fullName.trim().length > 2 && isValidEmail(email) && password.length >= 8 && password === confirmPassword && agreedTerms;
 
+	const renderForm = () => (
+		<>
+			<FadeIn style={styles.header}>
+				<View style={styles.brandRow}>
+					<Image
+						source={require('../../assets/images/AppLogo.png')}
+						style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
+						resizeMode="contain"
+					/>
+					<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
+				</View>
+				<Text style={[styles.title, { color: C.textMain }]}>Create Account</Text>
+				<Text style={[styles.subtitle, { color: C.textMuted }]}>Join Dalaal App today</Text>
+			</FadeIn>
+
+			<View style={styles.form}>
+				<FadeIn delay={100}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Full Name</Text>
+					<TextInput
+						style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+						placeholder="Full Name"
+						placeholderTextColor={C.textMuted}
+						value={fullName}
+						onChangeText={setFullName}
+						autoCapitalize="words"
+						returnKeyType="next"
+					/>
+				</FadeIn>
+
+				<FadeIn delay={110}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Username</Text>
+					<TextInput
+						style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+						placeholder="Username"
+						placeholderTextColor={C.textMuted}
+						value={username}
+						onChangeText={setUsername}
+						autoCapitalize="none"
+						returnKeyType="next"
+					/>
+				</FadeIn>
+
+				<FadeIn delay={120}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Phone Number</Text>
+					<TextInput
+						style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+						placeholder="+252 61XXXXXXX"
+						placeholderTextColor={C.textMuted}
+						value={phone}
+						onChangeText={setPhone}
+						keyboardType="phone-pad"
+						returnKeyType="next"
+					/>
+				</FadeIn>
+
+				<FadeIn delay={150}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Email Address</Text>
+					<TextInput
+						style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+						placeholder="example@email.com"
+						placeholderTextColor={C.textMuted}
+						value={email}
+						onChangeText={setEmail}
+						autoCapitalize="none"
+						keyboardType="email-address"
+						returnKeyType="next"
+					/>
+				</FadeIn>
+
+				<FadeIn delay={180}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
+					<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+						<TextInput
+							style={[styles.passwordInput, { color: C.textMain }]}
+							placeholder="••••••••"
+							placeholderTextColor={C.textMuted}
+							value={password}
+							onChangeText={setPassword}
+							secureTextEntry={!showPassword}
+							returnKeyType="next"
+						/>
+						<TouchableOpacity
+							style={styles.eyeIcon}
+							onPress={() => setShowPassword(!showPassword)}
+						>
+							<Ionicons
+								name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+								size={20}
+								color={C.textMuted}
+							/>
+						</TouchableOpacity>
+					</View>
+				</FadeIn>
+
+				<FadeIn delay={200}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Confirm Password</Text>
+					<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+						<TextInput
+							style={[styles.passwordInput, { color: C.textMain }]}
+							placeholder="••••••••"
+							placeholderTextColor={C.textMuted}
+							value={confirmPassword}
+							onChangeText={setConfirmPassword}
+							secureTextEntry={!showPassword}
+							returnKeyType="done"
+							onSubmitEditing={onRegisterPress}
+						/>
+						<TouchableOpacity
+							style={styles.eyeIcon}
+							onPress={() => setShowPassword(!showPassword)}
+						>
+							<Ionicons
+								name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+								size={20}
+								color={C.textMuted}
+							/>
+						</TouchableOpacity>
+					</View>
+					{confirmPassword.length > 0 && password !== confirmPassword && (
+						<Text style={{ fontSize: 12, color: '#ef4444', marginTop: 4, fontWeight: '600' }}>Passwords do not match</Text>
+					)}
+				</FadeIn>
+
+				<FadeIn delay={220}>
+					<TouchableOpacity
+						onPress={() => setAgreedTerms(!agreedTerms)}
+						style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 }}
+					>
+						<View style={[{
+							width: 20, height: 20, borderRadius: 6, borderWidth: 1.5,
+							alignItems: 'center', justifyContent: 'center', marginTop: 1,
+						}, { borderColor: agreedTerms ? C.brandBlue : C.brandBorder, backgroundColor: agreedTerms ? C.brandBlue : 'transparent' }]}>
+							{agreedTerms && <Ionicons name="checkmark" size={12} color="#fff" />}
+						</View>
+						<Text style={{ fontSize: 13, color: C.textMuted, lineHeight: 18, flex: 1 }}>
+							I agree to the Terms of Service and Privacy Policy
+						</Text>
+					</TouchableOpacity>
+				</FadeIn>
+				</View>
+
+				<View style={{ flex: 1, minHeight: 40 }} />
+
+				<FadeIn delay={250}>
+					<View style={styles.footer}>
+						<TouchableOpacity
+							disabled={!canContinue || loading || authLoading}
+							onPress={onRegisterPress}
+							style={[styles.primaryBtn, { backgroundColor: canContinue ? C.brandBlue : C.brandBorder }]}
+						>
+							{loading || authLoading ? (
+								<ActivityIndicator color={C.surface} />
+							) : (
+								<Text style={[styles.primaryText, { color: C.surface }]}>Register</Text>
+							)}
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							onPress={() => router.replace({ pathname: '/login', params: { lang: params.lang } })}
+							style={[styles.linkBtn, { borderColor: C.brandBorder }]}
+						>
+							<Text style={[styles.linkText, { color: C.brandBlue }]}>Already have an account? Login</Text>
+						</TouchableOpacity>
+					</View>
+				</FadeIn>
+		</>
+	);
+
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
 			<OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
-			<KeyboardAvoidingView
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={{ flex: 1 }}
-				keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
-			>
+
+			{Platform.OS === 'web' ? (
 				<ScrollView
 					contentContainerStyle={styles.scrollContent}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
 				>
-					<FadeIn style={styles.header}>
-						<View style={styles.brandRow}>
-							<Image
-								source={require('../../assets/images/AppLogo.png')}
-								style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
-								resizeMode="contain"
-							/>
-							<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
-						</View>
-						<Text style={[styles.title, { color: C.textMain }]}>Create Account</Text>
-						<Text style={[styles.subtitle, { color: C.textMuted }]}>Join Dalaal App today</Text>
-					</FadeIn>
-
-					<View style={styles.form}>
-						<FadeIn delay={100}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Full Name</Text>
-							<TextInput
-								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="Full Name"
-								placeholderTextColor={C.textMuted}
-								value={fullName}
-								onChangeText={setFullName}
-								autoCapitalize="words"
-								returnKeyType="next"
-							/>
-						</FadeIn>
-
-						<FadeIn delay={110}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Username</Text>
-							<TextInput
-								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="Username"
-								placeholderTextColor={C.textMuted}
-								value={username}
-								onChangeText={setUsername}
-								autoCapitalize="none"
-								returnKeyType="next"
-							/>
-						</FadeIn>
-
-						<FadeIn delay={120}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Phone Number</Text>
-							<TextInput
-								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="+252 61XXXXXXX"
-								placeholderTextColor={C.textMuted}
-								value={phone}
-								onChangeText={setPhone}
-								keyboardType="phone-pad"
-								returnKeyType="next"
-							/>
-						</FadeIn>
-
-						<FadeIn delay={150}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Email Address</Text>
-							<TextInput
-								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="example@email.com"
-								placeholderTextColor={C.textMuted}
-								value={email}
-								onChangeText={setEmail}
-								autoCapitalize="none"
-								keyboardType="email-address"
-								returnKeyType="next"
-							/>
-						</FadeIn>
-
-					<FadeIn delay={180}>
-						<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
-						<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
-							<TextInput
-								style={[styles.passwordInput, { color: C.textMain }]}
-								placeholder="••••••••"
-								placeholderTextColor={C.textMuted}
-								value={password}
-								onChangeText={setPassword}
-								secureTextEntry={!showPassword}
-								returnKeyType="next"
-							/>
-							<TouchableOpacity
-								style={styles.eyeIcon}
-								onPress={() => setShowPassword(!showPassword)}
-							>
-								<Ionicons
-									name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-									size={20}
-									color={C.textMuted}
-								/>
-							</TouchableOpacity>
-						</View>
-					</FadeIn>
-
-					<FadeIn delay={200}>
-						<Text style={[styles.label, { color: C.textMuted }]}>Confirm Password</Text>
-						<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
-							<TextInput
-								style={[styles.passwordInput, { color: C.textMain }]}
-								placeholder="••••••••"
-								placeholderTextColor={C.textMuted}
-								value={confirmPassword}
-								onChangeText={setConfirmPassword}
-								secureTextEntry={!showPassword}
-								returnKeyType="done"
-								onSubmitEditing={onRegisterPress}
-							/>
-							<TouchableOpacity
-								style={styles.eyeIcon}
-								onPress={() => setShowPassword(!showPassword)}
-							>
-								<Ionicons
-									name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-									size={20}
-									color={C.textMuted}
-								/>
-							</TouchableOpacity>
-						</View>
-						{confirmPassword.length > 0 && password !== confirmPassword && (
-							<Text style={{ fontSize: 12, color: '#ef4444', marginTop: 4, fontWeight: '600' }}>Passwords do not match</Text>
-						)}
-					</FadeIn>
-
-					<FadeIn delay={220}>
-						<TouchableOpacity
-							onPress={() => setAgreedTerms(!agreedTerms)}
-							style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 }}
-						>
-							<View style={[{
-								width: 20, height: 20, borderRadius: 6, borderWidth: 1.5,
-								alignItems: 'center', justifyContent: 'center', marginTop: 1,
-							}, { borderColor: agreedTerms ? C.brandBlue : C.brandBorder, backgroundColor: agreedTerms ? C.brandBlue : 'transparent' }]}>
-								{agreedTerms && <Ionicons name="checkmark" size={12} color="#fff" />}
-							</View>
-							<Text style={{ fontSize: 13, color: C.textMuted, lineHeight: 18, flex: 1 }}>
-								I agree to the Terms of Service and Privacy Policy
-							</Text>
-						</TouchableOpacity>
-					</FadeIn>
-					</View>
-
-					<View style={{ flex: 1, minHeight: 40 }} />
-
-					<FadeIn delay={250}>
-						<View style={styles.footer}>
-							<TouchableOpacity
-								disabled={!canContinue || loading || authLoading}
-								onPress={onRegisterPress}
-								style={[styles.primaryBtn, { backgroundColor: canContinue ? C.brandBlue : C.brandBorder }]}
-							>
-								{loading || authLoading ? (
-									<ActivityIndicator color={C.surface} />
-								) : (
-									<Text style={[styles.primaryText, { color: C.surface }]}>Register</Text>
-								)}
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								onPress={() => router.replace({ pathname: '/login', params: { lang: params.lang } })}
-								style={[styles.linkBtn, { borderColor: C.brandBorder }]}
-							>
-								<Text style={[styles.linkText, { color: C.brandBlue }]}>Already have an account? Login</Text>
-							</TouchableOpacity>
-						</View>
-					</FadeIn>
+					{renderForm()}
 				</ScrollView>
-			</KeyboardAvoidingView>
+			) : (
+				<KeyboardAvoidingView
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					style={{ flex: 1 }}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+				>
+					<ScrollView
+						contentContainerStyle={styles.scrollContent}
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
+					>
+						{renderForm()}
+					</ScrollView>
+				</KeyboardAvoidingView>
+			)}
 		</SafeAreaView>
 	);
 }

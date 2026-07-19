@@ -80,7 +80,7 @@ export default function Chat() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: 110 + insets.bottom }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.searchRow, { backgroundColor: C.tableRow, borderColor: C.brandBorder }]}

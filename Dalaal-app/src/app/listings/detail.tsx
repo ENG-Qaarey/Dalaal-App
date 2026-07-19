@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Modal, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import OnboardingBackground from '../../components/common/OnboardingBackground';
 import { useFavorites } from '../../context/favorites-context';
 import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
+import ResponsiveContainer from '../../components/ui/ResponsiveContainer';
+import { useWebLayout } from '../../hooks/useWebLayout';
 
 export const options = { headerShown: false };
 
@@ -34,6 +36,7 @@ export default function ListingsDetail() {
   const { scheme } = useAppTheme();
   const C = Colors[scheme];
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { isWideScreen } = useWebLayout();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Calculator State
@@ -43,25 +46,33 @@ export default function ListingsDetail() {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
   const windowWidth = Dimensions.get('window').width;
+  const mediaHeight = isWideScreen ? 360 : 220;
 
   const detail = useMemo(() => {
     const type = (params.type === 'vehicle' || params.type === 'property') ? params.type : undefined;
     const posterVerified = params.posterVerified === '1' || params.posterVerified === 'true';
     const rating = (params.posterRating ?? '').trim();
+    const rawImage = Array.isArray(params.image) ? params.image[0] : params.image;
+    let image = (rawImage ?? '').trim();
+    try {
+      if (image.includes('%')) image = decodeURIComponent(image);
+    } catch {
+      // keep raw image if decode fails
+    }
 
     return {
-      id: params.id ?? '',
+      id: Array.isArray(params.id) ? params.id[0] : (params.id ?? ''),
       type,
-      title: params.title ?? 'Listing',
-      location: params.location ?? '—',
-      price: params.price ?? '—',
-      category: params.category ?? '—',
-      image: params.image ?? '',
+      title: (Array.isArray(params.title) ? params.title[0] : params.title) ?? 'Listing',
+      location: (Array.isArray(params.location) ? params.location[0] : params.location) ?? '—',
+      price: (Array.isArray(params.price) ? params.price[0] : params.price) ?? '—',
+      category: (Array.isArray(params.category) ? params.category[0] : params.category) ?? '—',
+      image,
       poster: {
-        name: (params.posterName ?? '').trim(),
-        role: (params.posterRole ?? '').trim(),
-        phone: (params.posterPhone ?? '').trim(),
-        email: (params.posterEmail ?? '').trim(),
+        name: ((Array.isArray(params.posterName) ? params.posterName[0] : params.posterName) ?? '').trim(),
+        role: ((Array.isArray(params.posterRole) ? params.posterRole[0] : params.posterRole) ?? '').trim(),
+        phone: ((Array.isArray(params.posterPhone) ? params.posterPhone[0] : params.posterPhone) ?? '').trim(),
+        email: ((Array.isArray(params.posterEmail) ? params.posterEmail[0] : params.posterEmail) ?? '').trim(),
         verified: posterVerified,
         rating,
       },
@@ -77,6 +88,7 @@ export default function ListingsDetail() {
     params.posterRole,
     params.posterVerified,
     params.price,
+    params.image,
     params.title,
     params.type,
   ]);
@@ -87,16 +99,16 @@ export default function ListingsDetail() {
 
   const mediaItems = useMemo(() => {
     const mainImg = detail.image || (detail.type === 'vehicle' 
-      ? 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80' 
-      : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80');
+      ? 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80' 
+      : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80');
     
     // Add extra mock images for realistic UX
     const extra1 = detail.type === 'vehicle' 
-      ? 'https://images.unsplash.com/photo-1502877338535-3425a819f727?auto=format&fit=crop&w=800&q=80'
-      : 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
+      ? 'https://images.unsplash.com/photo-1502877338535-3425a819f727?auto=format&fit=crop&w=1200&q=80'
+      : 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80';
     const extra2 = detail.type === 'vehicle'
-      ? 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80'
-      : 'https://images.unsplash.com/photo-1502672260266-1c1e5250ff51?auto=format&fit=crop&w=800&q=80';
+      ? 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=1200&q=80'
+      : 'https://images.unsplash.com/photo-1502672260266-1c1e5250ff51?auto=format&fit=crop&w=1200&q=80';
       
     return [
       { id: '1', type: 'image', uri: mainImg },
@@ -122,6 +134,7 @@ export default function ListingsDetail() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <ResponsiveContainer>
 
       <View style={[styles.header, { paddingTop: insets.top }]}
       >
@@ -200,25 +213,41 @@ export default function ListingsDetail() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 22 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         
         {/* Media Header */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.mediaContainer} onPress={() => setIsViewerOpen(true)}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[styles.mediaContainer, { height: mediaHeight }]}
+          onPress={() => setIsViewerOpen(true)}
+        >
           <Image 
             source={{ uri: mediaItems[0].uri }} 
             style={styles.mediaImage}
             resizeMode="cover"
           />
-          <View style={styles.mediaPill}>
-            <Ionicons name="images-outline" size={14} color="#fff" />
-            <Text style={styles.mediaPillText}>View Media</Text>
+          <View style={styles.mediaGradient} />
+          <View style={styles.mediaBottom}>
+            <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+              <Text style={[styles.badgeText, { color: C.surface }]}>{badgeLabel}</Text>
+            </View>
+            <View style={styles.mediaPill}>
+              <Ionicons name="images-outline" size={14} color="#fff" />
+              <Text style={styles.mediaPillText}>View Media</Text>
+            </View>
           </View>
         </TouchableOpacity>
 
         <View style={[styles.hero, { borderColor: C.brandBorder, backgroundColor: C.tableRow }]}>
-          <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-            <Text style={[styles.badgeText, { color: C.surface }]}>{badgeLabel}</Text>
-          </View>
           <Text style={[styles.price, { color: C.textMain }]}>{detail.price}</Text>
-          <Text style={[styles.meta, { color: C.textMuted }]}>Category: {detail.category}</Text>
-          {detail.id ? <Text style={[styles.meta, { color: C.textMuted }]}>ID: {detail.id}</Text> : null}
+          <Text style={[styles.heroTitle, { color: C.textMain }]}>{detail.title}</Text>
+          <View style={styles.heroMetaRow}>
+            <Ionicons name="location-outline" size={14} color={C.textMuted} />
+            <Text style={[styles.meta, { color: C.textMuted, marginTop: 0 }]}>{detail.location}</Text>
+            {detail.category && detail.category !== '—' ? (
+              <>
+                <Text style={[styles.meta, { color: C.textMuted, marginTop: 0 }]}>•</Text>
+                <Text style={[styles.meta, { color: C.textMuted, marginTop: 0 }]}>{detail.category}</Text>
+              </>
+            ) : null}
+          </View>
         </View>
 
         <View style={[styles.section, { borderColor: C.brandBorder, backgroundColor: C.surface }]}
@@ -404,36 +433,75 @@ export default function ListingsDetail() {
           <Text style={styles.viewerCount}>
             {mediaItems.length > 0 ? `${viewerIndex + 1}/${mediaItems.length}` : '0/0'}
           </Text>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) => {
-              const width = event.nativeEvent.layoutMeasurement.width || 1;
-              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-              setViewerIndex(nextIndex);
-            }}
-          >
-            {mediaItems.map((item) => (
-              <View key={item.id} style={[styles.viewerSlide, { width: windowWidth }]}>
-                <ScrollView
-                  style={styles.zoomWrap}
-                  contentContainerStyle={styles.zoomContent}
-                  minimumZoomScale={1}
-                  maximumZoomScale={4}
-                  bouncesZoom={false}
-                  showsHorizontalScrollIndicator={false}
-                  showsVerticalScrollIndicator={false}
-                  centerContent
-                >
-                  <Image source={{ uri: item.uri }} style={styles.viewerImage} resizeMode="contain" />
-                </ScrollView>
+
+          {Platform.OS === 'web' ? (
+            <>
+              <View style={styles.webViewerContainer}>
+                {viewerIndex > 0 && (
+                  <TouchableOpacity
+                    style={[styles.webArrow, styles.webArrowLeft]}
+                    onPress={() => setViewerIndex((i) => Math.max(0, i - 1))}
+                  >
+                    <Ionicons name="chevron-back" size={28} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                <Image
+                  source={{ uri: mediaItems[viewerIndex]?.uri }}
+                  style={styles.webViewerImage}
+                  resizeMode="contain"
+                />
+                {viewerIndex < mediaItems.length - 1 && (
+                  <TouchableOpacity
+                    style={[styles.webArrow, styles.webArrowRight]}
+                    onPress={() => setViewerIndex((i) => Math.min(mediaItems.length - 1, i + 1))}
+                  >
+                    <Ionicons name="chevron-forward" size={28} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
-            ))}
-          </ScrollView>
+              <View style={styles.webDotsRow}>
+                {mediaItems.map((_, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => setViewerIndex(idx)}
+                    style={[styles.webDot, idx === viewerIndex && styles.webDotActive]}
+                  />
+                ))}
+              </View>
+            </>
+          ) : (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(event) => {
+                const width = event.nativeEvent.layoutMeasurement.width || 1;
+                const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+                setViewerIndex(nextIndex);
+              }}
+            >
+              {mediaItems.map((item) => (
+                <View key={item.id} style={[styles.viewerSlide, { width: windowWidth }]}>
+                  <ScrollView
+                    style={styles.zoomWrap}
+                    contentContainerStyle={styles.zoomContent}
+                    minimumZoomScale={1}
+                    maximumZoomScale={4}
+                    bouncesZoom={false}
+                    showsHorizontalScrollIndicator={false}
+                    showsVerticalScrollIndicator={false}
+                    centerContent
+                  >
+                    <Image source={{ uri: item.uri }} style={styles.viewerImage} resizeMode="contain" />
+                  </ScrollView>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </Modal>
 
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
@@ -452,12 +520,27 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 12 },
   mediaContainer: { width: '100%', height: 220, borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
   mediaImage: { width: '100%', height: '100%' },
-  mediaPill: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, flexDirection: 'row', alignItems: 'center' },
+  mediaGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 18, 32, 0.22)',
+  },
+  mediaBottom: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mediaPill: { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, flexDirection: 'row', alignItems: 'center' },
   mediaPillText: { color: '#fff', fontSize: 11, fontWeight: '800', marginLeft: 6 },
-  hero: { borderWidth: 1, borderRadius: 12, padding: 12 },
-  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, marginBottom: 10 },
+  hero: { borderWidth: 1, borderRadius: 12, padding: 14 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, marginBottom: 0 },
   badgeText: { fontSize: 11, fontWeight: '800' },
-  price: { fontSize: 18, fontWeight: '900' },
+  price: { fontSize: 22, fontWeight: '900' },
+  heroTitle: { marginTop: 6, fontSize: 16, fontWeight: '800' },
+  heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   meta: { marginTop: 6, fontSize: 12 },
   section: { marginTop: 10, borderRadius: 12, borderWidth: 1, padding: 12 },
   sectionTitle: { fontSize: 14, fontWeight: '900', marginBottom: 8 },
@@ -520,5 +603,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
+  },
+  webViewerContainer: {
+    flex: 1,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webViewerImage: {
+    width: '80%',
+    height: '80%',
+  },
+  webArrow: {
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateY: -20 }],
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  webArrowLeft: { left: 16 },
+  webArrowRight: { right: 16 },
+  webDotsRow: {
+    position: 'absolute',
+    bottom: 40,
+    flexDirection: 'row',
+    alignSelf: 'center',
+    gap: 8,
+  },
+  webDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  webDotActive: {
+    backgroundColor: '#fff',
+    width: 20,
   },
 });

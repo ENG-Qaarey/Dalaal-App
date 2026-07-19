@@ -1,6 +1,9 @@
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { ThemePalette } from '../../constants/theme';
+import { sectionStyles } from './sectionStyles';
+import { spacing, radius, fontSize } from '../../constants/tokens';
 
 type BrokerItem = {
   id: string;
@@ -18,7 +21,7 @@ type Props = {
   onPress: (name: string) => void;
   onContactPress: () => void;
   onSeeAll: () => void;
-  colors: any;
+  colors: ThemePalette;
   scheme: 'light' | 'dark';
 };
 
@@ -32,14 +35,14 @@ export default function HomeBrokers({
 }: Props) {
   return (
     <>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.textMain }]}>Top Brokers</Text>
+      <View style={sectionStyles.sectionHeader}>
+        <Text style={[sectionStyles.sectionTitle, { color: colors.textMain }]}>Top Brokers</Text>
         <TouchableOpacity onPress={onSeeAll}>
-          <Text style={[styles.seeAll, { color: colors.brandBlue }]}>See all</Text>
+          <Text style={[sectionStyles.seeAll, { color: colors.brandBlue }]}>See all</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 4 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: spacing.xs }}>
         {items.map((b) => (
           <TouchableOpacity
             key={b.id}
@@ -48,7 +51,7 @@ export default function HomeBrokers({
             style={[
               styles.brokerCard,
               {
-                backgroundColor: scheme === 'dark' ? 'rgba(30,30,30,0.6)' : 'rgba(255,255,255,0.85)',
+                backgroundColor: colors.cardBg,
                 borderColor: colors.brandBorder,
                 shadowColor: b.accent,
               },
@@ -57,10 +60,10 @@ export default function HomeBrokers({
             <View style={styles.brokerTopRow}>
               <View style={styles.brokerAvatarWrap}>
                 <Image source={{ uri: b.avatar }} style={styles.brokerAvatar} />
-                <View style={[styles.brokerStatusDot, { backgroundColor: b.accent }]} />
+                <View style={[styles.brokerStatusDot, { backgroundColor: b.accent, borderColor: colors.surface }]} />
               </View>
               <View style={[styles.brokerRankPill, { backgroundColor: colors.tableRow, borderColor: colors.brandBorder }]}>
-                <Ionicons name="star" size={11} color={b.accent} />
+                <Ionicons name="star" size={fontSize.caption} color={b.accent} />
                 <Text style={[styles.brokerRankText, { color: colors.textMain }]}>{b.stat}</Text>
               </View>
             </View>
@@ -81,7 +84,7 @@ export default function HomeBrokers({
               style={[styles.brokerAction, { backgroundColor: b.accent }]}
             >
               <Text style={[styles.brokerActionText, { color: colors.surface }]}>Contact</Text>
-              <Ionicons name="chatbubbles" size={12} color={colors.surface} />
+              <Ionicons name="chatbubbles" size={fontSize.caption} color={colors.surface} />
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
@@ -91,30 +94,27 @@ export default function HomeBrokers({
 }
 
 const styles = StyleSheet.create({
-  sectionHeader: { marginTop: 6, paddingHorizontal: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 15, fontWeight: '800' },
-  seeAll: { fontWeight: '600' },
   brokerCard: {
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 11,
-    marginTop: 8,
-    marginRight: 10,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    marginRight: spacing.sm,
     shadowOpacity: 0.09,
     elevation: 3,
     width: 140,
   },
-  brokerTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 },
-  brokerAvatarWrap: { width: 42, height: 42, borderRadius: 13, overflow: 'hidden', position: 'relative' },
+  brokerTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  brokerAvatarWrap: { width: spacing.massive, height: spacing.massive, borderRadius: radius.md, overflow: 'hidden', position: 'relative' },
   brokerAvatar: { width: '100%', height: '100%' },
-  brokerStatusDot: { position: 'absolute', right: 2, bottom: 2, width: 9, height: 9, borderRadius: 999, borderWidth: 2, borderColor: '#fff' },
-  brokerRankPill: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, height: 22 },
-  brokerRankText: { marginLeft: 4, fontSize: 10, fontWeight: '900' },
-  brokerName: { fontWeight: '900', fontSize: 14, marginTop: 2 },
-  brokerRole: { fontSize: 10, fontWeight: '700', marginTop: 2 },
-  brokerMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  brokerMetaText: { fontSize: 10, fontWeight: '600', flexShrink: 1 },
-  brokerMetaDot: { marginHorizontal: 5, fontSize: 10 },
-  brokerAction: { marginTop: 10, height: 28, borderRadius: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  brokerActionText: { fontSize: 10, fontWeight: '900', marginRight: 6 },
+  brokerStatusDot: { position: 'absolute', right: spacing.xs, bottom: spacing.xs, width: spacing.sm, height: spacing.sm, borderRadius: radius.full, borderWidth: 2 },
+  brokerRankPill: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.full, borderWidth: 1, paddingHorizontal: spacing.sm, height: spacing.xl },
+  brokerRankText: { marginLeft: spacing.xs, fontSize: fontSize.caption, fontWeight: '900' },
+  brokerName: { fontWeight: '900', fontSize: fontSize.small, marginTop: spacing.xs },
+  brokerRole: { fontSize: fontSize.caption, fontWeight: '700', marginTop: spacing.xs },
+  brokerMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs + 1 },
+  brokerMetaText: { fontSize: fontSize.caption, fontWeight: '600', flexShrink: 1 },
+  brokerMetaDot: { marginHorizontal: spacing.xs + 1, fontSize: fontSize.caption },
+  brokerAction: { marginTop: spacing.sm, height: spacing.md + spacing.sm + spacing.xs, borderRadius: radius.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  brokerActionText: { fontSize: fontSize.caption, fontWeight: '900', marginRight: spacing.sm },
 });

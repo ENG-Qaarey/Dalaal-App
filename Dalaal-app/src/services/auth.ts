@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { api, unwrapResponse, safeSetItem, safeDeleteItem } from './api';
 
 async function persistTokens(tokens: { accessToken?: string; refreshToken?: string }) {
@@ -137,15 +138,20 @@ export const authService = {
     const ext = match?.[1]?.toLowerCase() || 'jpg';
     const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
 
-    formData.append('file', {
-      uri: imageUri,
-      name: filename,
-      type: mimeType,
-    } as any);
+    if (Platform.OS === 'web' && imageUri.startsWith('blob:')) {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: mimeType });
+      formData.append('file', file);
+    } else {
+      formData.append('file', {
+        uri: imageUri,
+        name: filename,
+        type: mimeType,
+      } as any);
+    }
 
-    const uploadResponse = await api.post('uploads/image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const uploadResponse = await api.post('uploads/image', formData);
     const uploadResult = unwrapResponse<any>(uploadResponse.data);
     const avatarUrl = uploadResult?.url;
 

@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync, setItemAsync, deleteItemAsync } from '../utils/storage';
 import { useAuthStore } from '../store/authStore';
 import { getApiBaseUrl, getNetworkHelpMessage } from '../utils/network-config';
 
@@ -25,7 +25,7 @@ function buildUrlWithParams(base: string, endpoint: string, params?: Record<stri
 
 const safeGetItem = async (key: string) => {
   try {
-    return await SecureStore.getItemAsync(key);
+    return await getItemAsync(key);
   } catch {
     return null;
   }
@@ -33,17 +33,17 @@ const safeGetItem = async (key: string) => {
 
 export const safeSetItem = async (key: string, value: string) => {
   try {
-    await SecureStore.setItemAsync(key, value);
+    await setItemAsync(key, value);
   } catch {
-    // ignore secure store errors
+    // ignore storage errors
   }
 };
 
 export const safeDeleteItem = async (key: string) => {
   try {
-    await SecureStore.deleteItemAsync(key);
+    await deleteItemAsync(key);
   } catch {
-    // ignore secure store errors
+    // ignore storage errors
   }
 };
 
@@ -79,11 +79,10 @@ function uniqueUrls(urls: Array<string | null | undefined>): string[] {
 
 async function probeHealth(baseUrl: string): Promise<boolean> {
   try {
+    // baseUrl already contains /api, so health is at baseUrl + /health
     const res = await fetchWithTimeout(buildUrl(baseUrl, 'health'), { method: 'GET' });
-    if (!res.ok) return false;
-    const json = await res.json().catch(() => null);
-    const payload = json?.data ?? json;
-    return payload?.ok === true || payload?.database === 'connected';
+    // Any 2xx response means the backend is reachable
+    return res.ok;
   } catch {
     return false;
   }

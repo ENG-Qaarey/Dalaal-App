@@ -1,12 +1,14 @@
 import React from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { ThemePalette } from '../../constants/theme';
+import { spacing, radius, fontSize } from '../../constants/tokens';
 
 type Props = {
   query: string;
   setQuery: (q: string) => void;
   onClear: () => void;
-  colors: any;
+  colors: ThemePalette;
   scheme: 'light' | 'dark';
 };
 
@@ -19,7 +21,7 @@ export default function HomeSearch({ query, setQuery, onClear, colors, scheme }:
         borderColor: colors.brandBorder
       }
     ]}>
-      <Ionicons name="search" size={15} color={colors.textMuted} style={{ marginRight: 7 }} />
+      <Ionicons name="search" size={fontSize.small} color={colors.textMuted} style={{ marginRight: spacing.sm }} />
       <TextInput
         value={query}
         onChangeText={setQuery}
@@ -30,7 +32,7 @@ export default function HomeSearch({ query, setQuery, onClear, colors, scheme }:
       />
       {query.length > 0 ? (
         <TouchableOpacity onPress={onClear} activeOpacity={0.85} style={styles.searchGo}>
-          <Ionicons name="close" size={14} color={colors.brandBlue} />
+          <Ionicons name="close" size={fontSize.caption} color={colors.brandBlue} />
         </TouchableOpacity>
       ) : (
         <View style={styles.searchGo} />
@@ -40,7 +42,7 @@ export default function HomeSearch({ query, setQuery, onClear, colors, scheme }:
 }
 
 const styles = StyleSheet.create({
-  searchRow: { marginHorizontal: 14, marginTop: 7, marginBottom: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
-  searchInput: { flex: 1, paddingVertical: 0, fontSize: 11 },
-  searchGo: { height: 22, width: 22, alignItems: 'center', justifyContent: 'center' },
+  searchRow: { marginHorizontal: spacing.lg, marginTop: spacing.sm, marginBottom: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, borderRadius: radius.input, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
+  searchInput: { flex: 1, paddingVertical: 0, fontSize: fontSize.small },
+  searchGo: { height: spacing.xl, width: spacing.xl, alignItems: 'center', justifyContent: 'center' },
 });

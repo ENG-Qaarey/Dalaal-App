@@ -13,8 +13,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/theme';
 import OnboardingBackground from '../../components/common/OnboardingBackground';
+import ResponsiveContainer from '../../components/ui/ResponsiveContainer';
 import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
+import { listingDetailHref } from '../../utils/listing-nav';
 
 type SearchItem = {
   id: string;
@@ -222,9 +224,8 @@ export default function Search() {
   };
 
   const openItem = (it: SearchItem) => {
-    router.push({
-      pathname: '/listings/detail',
-      params: {
+    router.push(
+      listingDetailHref({
         id: it.id,
         type: it.type,
         title: it.title,
@@ -235,10 +236,10 @@ export default function Search() {
         posterRole: it.posterRole ?? '',
         posterPhone: it.posterPhone ?? '',
         posterEmail: it.posterEmail ?? '',
-        posterVerified: it.posterVerified ? '1' : '0',
+        posterVerified: it.posterVerified,
         posterRating: it.posterRating ?? '',
-      },
-    });
+      }) as any
+    );
   };
 
   if (isInitialLoading) {
@@ -253,6 +254,7 @@ export default function Search() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: C.surface }]} edges={['left', 'right']}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <ResponsiveContainer>
 
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerTop}>
@@ -292,7 +294,7 @@ export default function Search() {
         data={visibleItems}
         keyExtractor={(i) => i.id}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 18 + insets.bottom, paddingHorizontal: 10, paddingTop: 8 }}
+        contentContainerStyle={{ paddingBottom: 24 + insets.bottom, paddingHorizontal: 10, paddingTop: 8 }}
         ItemSeparatorComponent={() => <View style={{ height: 9 }} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.35}
@@ -350,6 +352,7 @@ export default function Search() {
           </TouchableOpacity>
         )}
       />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

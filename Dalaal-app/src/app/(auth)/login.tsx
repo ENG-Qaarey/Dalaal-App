@@ -52,111 +52,127 @@ export default function Login() {
 
 	const canContinue = identifier.length >= 3 && password.length >= 8;
 
+	const renderForm = () => (
+		<>
+			<FadeIn style={styles.header}>
+				<View style={styles.brandRow}>
+					<Image
+						source={require('../../assets/images/AppLogo.png')}
+						style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
+						resizeMode="contain"
+					/>
+					<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
+				</View>
+				<Text style={[styles.title, { color: C.textMain }]}>Welcome Back</Text>
+				<Text style={[styles.subtitle, { color: C.textMuted }]}>Enter your credentials to continue</Text>
+			</FadeIn>
+
+			<View style={styles.form}>
+				<FadeIn delay={100}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Username, Email or Phone</Text>
+					<TextInput
+						style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
+						placeholder="Username, Email or Phone"
+						placeholderTextColor={C.textMuted}
+						value={identifier}
+						onChangeText={setIdentifier}
+						autoCapitalize="none"
+						keyboardType="default"
+						returnKeyType="next"
+					/>
+				</FadeIn>
+
+				<FadeIn delay={150}>
+					<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
+					<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
+						<TextInput
+							style={[styles.passwordInput, { color: C.textMain }]}
+							placeholder="••••••••"
+							placeholderTextColor={C.textMuted}
+							value={password}
+							onChangeText={setPassword}
+							secureTextEntry={!showPassword}
+							autoCapitalize="none"
+							returnKeyType="done"
+							onSubmitEditing={onLoginPress}
+						/>
+						<TouchableOpacity
+							style={styles.eyeIcon}
+							onPress={() => setShowPassword(!showPassword)}
+						>
+							<Ionicons
+								name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+								size={20}
+								color={C.textMuted}
+							/>
+						</TouchableOpacity>
+					</View>
+				</FadeIn>
+
+				<FadeIn delay={180}>
+					<TouchableOpacity
+						onPress={() => router.push('/forgot-password')}
+						style={styles.forgotBtn}
+					>
+						<Text style={[styles.forgotText, { color: C.brandBlue }]}>Forgot Password?</Text>
+					</TouchableOpacity>
+				</FadeIn>
+			</View>
+
+			<View style={{ flex: 1, minHeight: 40 }} />
+
+			<FadeIn delay={220}>
+				<View style={styles.footer}>
+					<TouchableOpacity
+						disabled={!canContinue || loading || authLoading}
+						onPress={onLoginPress}
+						style={[styles.primaryBtn, { backgroundColor: canContinue ? C.brandBlue : C.brandBorder }]}
+					>
+						{loading || authLoading ? (
+							<ActivityIndicator color={C.surface} />
+						) : (
+							<Text style={[styles.primaryText, { color: C.surface }]}>Login</Text>
+						)}
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						onPress={() => router.replace({ pathname: '/register', params: { lang: params.lang } })}
+						style={[styles.linkBtn, { borderColor: C.brandBorder }]}
+					>
+						<Text style={[styles.linkText, { color: C.brandBlue }]}>Create an account</Text>
+					</TouchableOpacity>
+				</View>
+			</FadeIn>
+		</>
+	);
+
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: C.surface }]}>
 			<OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
 
-			<KeyboardAvoidingView
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				style={{ flex: 1 }}
-				keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
-			>
+			{Platform.OS === 'web' ? (
 				<ScrollView
 					contentContainerStyle={styles.scrollContent}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
 				>
-					<FadeIn style={styles.header}>
-						<View style={styles.brandRow}>
-							<Image
-								source={require('../../assets/images/AppLogo.png')}
-								style={{ width: 36, height: 36, borderRadius: 10, marginRight: 8 }}
-								resizeMode="contain"
-							/>
-							<Text style={[styles.brand, { color: C.brandBlueDark }]}>Dalaal-Prime</Text>
-						</View>
-						<Text style={[styles.title, { color: C.textMain }]}>Welcome Back</Text>
-						<Text style={[styles.subtitle, { color: C.textMuted }]}>Enter your credentials to continue</Text>
-					</FadeIn>
-
-					<View style={styles.form}>
-						<FadeIn delay={100}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Username, Email or Phone</Text>
-							<TextInput
-								style={[styles.input, { color: C.textMain, borderColor: C.brandBorder, backgroundColor: C.surface }]}
-								placeholder="Username, Email or Phone"
-								placeholderTextColor={C.textMuted}
-								value={identifier}
-								onChangeText={setIdentifier}
-								autoCapitalize="none"
-								keyboardType="default"
-								returnKeyType="next"
-							/>
-						</FadeIn>
-
-						<FadeIn delay={150}>
-							<Text style={[styles.label, { color: C.textMuted }]}>Password</Text>
-							<View style={[styles.passwordContainer, { borderColor: C.brandBorder, backgroundColor: C.surface }]}>
-								<TextInput
-									style={[styles.passwordInput, { color: C.textMain }]}
-									placeholder="••••••••"
-									placeholderTextColor={C.textMuted}
-									value={password}
-									onChangeText={setPassword}
-									secureTextEntry={!showPassword}
-									autoCapitalize="none"
-									returnKeyType="done"
-									onSubmitEditing={onLoginPress}
-								/>
-								<TouchableOpacity
-									style={styles.eyeIcon}
-									onPress={() => setShowPassword(!showPassword)}
-								>
-									<Ionicons
-										name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-										size={20}
-										color={C.textMuted}
-									/>
-								</TouchableOpacity>
-							</View>
-						</FadeIn>
-
-						<FadeIn delay={180}>
-							<TouchableOpacity
-								onPress={() => router.push('/forgot-password')}
-								style={styles.forgotBtn}
-							>
-								<Text style={[styles.forgotText, { color: C.brandBlue }]}>Forgot Password?</Text>
-							</TouchableOpacity>
-						</FadeIn>
-					</View>
-
-					<View style={{ flex: 1, minHeight: 40 }} />
-
-					<FadeIn delay={220}>
-						<View style={styles.footer}>
-							<TouchableOpacity
-								disabled={!canContinue || loading || authLoading}
-								onPress={onLoginPress}
-								style={[styles.primaryBtn, { backgroundColor: canContinue ? C.brandBlue : C.brandBorder }]}
-							>
-								{loading || authLoading ? (
-									<ActivityIndicator color={C.surface} />
-								) : (
-									<Text style={[styles.primaryText, { color: C.surface }]}>Login</Text>
-								)}
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								onPress={() => router.replace({ pathname: '/register', params: { lang: params.lang } })}
-								style={[styles.linkBtn, { borderColor: C.brandBorder }]}
-							>
-								<Text style={[styles.linkText, { color: C.brandBlue }]}>Create an account</Text>
-							</TouchableOpacity>
-						</View>
-					</FadeIn>
+					{renderForm()}
 				</ScrollView>
-			</KeyboardAvoidingView>
+			) : (
+				<KeyboardAvoidingView
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					style={{ flex: 1 }}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+				>
+					<ScrollView
+						contentContainerStyle={styles.scrollContent}
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
+					>
+						{renderForm()}
+					</ScrollView>
+				</KeyboardAvoidingView>
+			)}
 		</SafeAreaView>
 	);
 }

@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync } from '../utils/storage';
 import { getSocketBaseUrl } from '../utils/network-config';
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
@@ -45,7 +45,7 @@ class SocketService {
     if (userId) {
       this.setUserId(userId);
     }
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await getItemAsync('accessToken');
     
     // If we are already connected, verify we have the right token/socket
     if (this.socket?.connected) {
@@ -61,11 +61,13 @@ class SocketService {
     try {
       this.socket = io(socketUrl, {
         auth: { token },
-        transports: ['websocket'],
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
+        timeout: 10000,
+        upgrade: true,
       });
 
       this.socket.on('connect', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal, StyleSheet, Vibration, View } from 'react-native';
-import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+import { Modal, Platform, StyleSheet, Vibration, View } from 'react-native';
+import { Audio } from 'expo-av';
 import OnboardingBackground from '../common/OnboardingBackground';
 
 // Sub-components
@@ -87,7 +87,7 @@ export default function CallSessionModal({
   const [speakerOn, setSpeakerOn] = React.useState(true);
   const [videoEnabled, setVideoEnabled] = React.useState(true);
   const [cameraFacing, setCameraFacing] = React.useState<'front' | 'back'>('front');
-  const ringtoneRef = React.useRef<AudioPlayer | null>(null);
+  const ringtoneRef = React.useRef<Audio.Sound | null>(null);
   const vibrationLoopRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const isMutedRef = React.useRef(isMuted);
 
@@ -104,18 +104,18 @@ export default function CallSessionModal({
 
   React.useEffect(() => {
     if (!visible) return;
-    void setAudioModeAsync({
-      playsInSilentMode: true,
-      allowsRecording: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'duckOthers',
-      shouldRouteThroughEarpiece: !speakerOn,
+    void Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      allowsRecordingIOS: true,
+      staysActiveInBackground: true,
+      interruptionModeIOS: 1,
+      playThroughEarpieceAndroid: !speakerOn,
     });
   }, [speakerOn, visible, status]);
 
   React.useEffect(() => {
     if (!ringtoneRef.current) return;
-    ringtoneRef.current.volume = isMuted ? 0 : 1;
+    ringtoneRef.current.setIsMutedAsync(isMuted);
   }, [isMuted]);
 
   React.useEffect(() => {
@@ -124,11 +124,11 @@ export default function CallSessionModal({
         clearInterval(vibrationLoopRef.current);
         vibrationLoopRef.current = null;
       }
-      Vibration.cancel();
+      if (Platform.OS !== 'web') Vibration.cancel();
       if (ringtoneRef.current) {
         try {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.remove();
+          await ringtoneRef.current.pauseAsync();
+          await ringtoneRef.current.unloadAsync();
         } catch { /* ignore */ }
         ringtoneRef.current = null;
       }
@@ -142,15 +142,13 @@ export default function CallSessionModal({
     let cancelled = false;
     const startRing = async () => {
       try {
-        await setAudioModeAsync({ playsInSilentMode: true });
-        const player = createAudioPlayer(RINGTONE_ASSET);
-        player.loop = true;
-        player.volume = isMutedRef.current ? 0 : 1;
-        player.play();
-        if (cancelled) { player.remove(); return; }
-        ringtoneRef.current = player;
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        const { sound } = await Audio.Sound.createAsync(RINGTONE_ASSET, { isLooping: true, isMuted: false, volume: 1.0 });
+        await sound.playAsync();
+        if (cancelled) { await sound.unloadAsync(); return; }
+        ringtoneRef.current = sound;
       } catch {
-        vibrationLoopRef.current = setInterval(() => { Vibration.vibrate([0, 300, 200], false); }, 900);
+        vibrationLoopRef.current = setInterval(() => { if (Platform.OS !== 'web') Vibration.vibrate([0, 300, 200], false); }, 900);
       }
     };
     void startRing();
@@ -265,7 +263,7 @@ export default function CallSessionModal({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#05070B' },
-  darkOverlay: { ...StyleSheet.absoluteFill },
+  darkOverlay: { ...StyleSheet.absoluteFillObject },
   overlay: {
     flex: 1,
     alignItems: 'center',

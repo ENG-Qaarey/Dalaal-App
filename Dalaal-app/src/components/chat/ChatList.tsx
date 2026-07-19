@@ -19,6 +19,7 @@ type Props = {
   chats: ChatItem[];
   colors: any;
   onPressChat: (chat: ChatItem) => void;
+  selectedId?: string;
 };
 
 const initialsFor = (name: string) =>
@@ -37,18 +38,19 @@ const formatLastSeen = (timestamp?: number | null) => {
   return `Last seen ${time}`;
 };
 
-export default function ChatList({ chats, colors, onPressChat }: Props) {
+export default function ChatList({ chats, colors, onPressChat, selectedId }: Props) {
   return (
     <View style={styles.chatList}>
       {chats.map((chat) => {
         const statusText = chat.online ? 'Online' : formatLastSeen(chat.lastSeenAt);
         const roleText = chat.role ? `${chat.role} • ${statusText}` : statusText;
+        const isSelected = selectedId === chat.id;
         return (
         <TouchableOpacity
           key={chat.id}
           activeOpacity={0.9}
           onPress={() => onPressChat(chat)}
-          style={[styles.chatCard, { backgroundColor: colors.surface, borderColor: colors.brandBorder, shadowColor: colors.textMain }]}
+          style={[styles.chatCard, { backgroundColor: isSelected ? colors.brandBlueSoft : colors.surface, borderColor: isSelected ? colors.brandBlue : colors.brandBorder, shadowColor: colors.textMain }]}
         >
           <View style={styles.chatLeft}>
             <View style={[styles.chatAvatar, { backgroundColor: colors.tableRow }]}>
