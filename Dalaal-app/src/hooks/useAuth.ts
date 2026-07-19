@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/auth';
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync } from '../utils/storage';
 
 export default function useAuth() {
   const { 
@@ -20,7 +20,7 @@ export default function useAuth() {
 
   const checkAuth = async () => {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await getItemAsync('accessToken');
       if (token) {
         const userData = await authService.getCurrentUser();
         setUser(userData);

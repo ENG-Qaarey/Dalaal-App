@@ -34,32 +34,10 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen"
-      ],
-      "expo-secure-store",
-      [
-        "expo-image-picker",
-        {
-          "cameraPermission": "Allow Dalaal to use your camera for chat photos and videos."
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Dalaal to use your camera for chat photos and videos."
-        }
-      ],
-      "expo-video",
-      "expo-web-browser",
-      "expo-font",
-      "expo-image",
-      "expo-status-bar",
-      "expo-audio"
+      "expo-video"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }

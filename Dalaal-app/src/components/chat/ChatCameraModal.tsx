@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   cameraStage: { flex: 1 },
   cameraOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },

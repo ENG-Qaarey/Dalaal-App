@@ -1,12 +1,14 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { ThemePalette } from '../../constants/theme';
+import { spacing, radius, fontSize } from '../../constants/tokens';
 
 type Props = {
   userAvatar?: string;
   onProfilePress: () => void;
   onNotificationsPress: () => void;
-  colors: any;
+  colors: ThemePalette;
 };
 
 export default function HomeHeader({
@@ -27,9 +29,9 @@ export default function HomeHeader({
         <TouchableOpacity
           onPress={onNotificationsPress}
           activeOpacity={0.8}
-          style={{ marginRight: 12 }}
+          style={{ marginRight: spacing.md }}
         >
-          <Ionicons name="notifications-outline" size={20} color={colors.textMain} />
+          <Ionicons name="notifications-outline" size={fontSize.body} color={colors.textMain} />
         </TouchableOpacity>
         <TouchableOpacity onPress={onProfilePress} activeOpacity={0.85} style={styles.profileBtn}>
           <Image
@@ -43,10 +45,10 @@ export default function HomeHeader({
 }
 
 const styles = StyleSheet.create({
-  headerRow: { height: 50, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerRow: { height: spacing.massive, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   locationRow: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { marginLeft: 7, fontWeight: '700', fontSize: 13 },
+  locationText: { marginLeft: spacing.sm, fontWeight: '700', fontSize: fontSize.small },
   headerIcons: { flexDirection: 'row', alignItems: 'center' },
-  profileBtn: { width: 30, height: 30, borderRadius: 999, overflow: 'hidden' },
-  profileAvatar: { width: '100%', height: '100%', borderRadius: 999, borderWidth: 1 },
+  profileBtn: { width: spacing.massive, height: spacing.massive, borderRadius: radius.full, overflow: 'hidden' },
+  profileAvatar: { width: '100%', height: '100%', borderRadius: radius.full, borderWidth: 1 },
 });

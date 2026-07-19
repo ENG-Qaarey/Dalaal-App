@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from 'expo-router/react-navigation';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '../../constants/theme';
 import OnboardingBackground from '../../components/common/OnboardingBackground';
+import ResponsiveContainer from '../../components/ui/ResponsiveContainer';
 import { useAppTheme } from '../../context/theme-context';
 import ScreenSkeleton from '../../components/ui/ScreenSkeleton';
 import useAuth from '../../hooks/useAuth';
@@ -275,9 +276,10 @@ export default function Profile() {
   return (
     <View style={[styles.safe, { backgroundColor: C.surface }]}>
       <OnboardingBackground primary={C.brandBlue} secondary={C.brandOrange} soft={C.brandBlueSoft} />
+      <ResponsiveContainer>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: 20 + insets.bottom }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 44) + 10 }]}>
@@ -400,6 +402,7 @@ export default function Profile() {
           <Text style={[styles.logoutText, { color: C.textMain }]}>Sign out</Text>
         </TouchableOpacity>
       </ScrollView>
+      </ResponsiveContainer>
 
       <Modal visible={isAvatarViewerOpen} animationType="fade" transparent onRequestClose={() => setIsAvatarViewerOpen(false)}>
         <View style={styles.viewerOverlay}>

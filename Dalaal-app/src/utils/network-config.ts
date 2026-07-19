@@ -69,16 +69,25 @@ function getEnvSocketUrl(): string | null {
 export function getApiBaseUrl(): string {
   const isWeb = (Platform as any).OS === "web";
 
+  // On web, always use localhost — the browser runs on the same machine as the backend
+  if (isWeb) {
+    const envUrl = getEnvApiUrl();
+    if (envUrl) {
+      const localUrl = envUrl.replace(/\/\/[^:\/]+(:\d+)?/, '//localhost$1');
+      console.log('[Config] Web → localhost:', localUrl);
+      return localUrl;
+    }
+    return `http://localhost:${BACKEND_PORT}/api`;
+  }
+
   const envUrl = getEnvApiUrl();
   if (envUrl) {
     console.log('[Config] Using EXPO_PUBLIC_API_URL:', envUrl);
     return envUrl;
   }
 
-  if (isWeb) return `http://localhost:${BACKEND_PORT}/api`;
-
   const lanHost = getLanHostFromExpo();
-  if (__DEV__ && !isWeb && lanHost) {
+  if (__DEV__ && lanHost) {
     const url = `http://${lanHost}:${BACKEND_PORT}/api`;
     console.log('[Config] API (device → backend):', url);
     return url;
@@ -101,16 +110,21 @@ export function getApiBaseUrl(): string {
 }
 
 export function getSocketBaseUrl(): string {
+  const isWeb = (Platform as any).OS === "web";
+
   const envSocket = getEnvSocketUrl();
   if (envSocket) {
+    // On web, always use localhost
+    if (isWeb) {
+      const localUrl = envSocket.replace(/\/\/[^:\/]+(:\d+)?/, '//localhost$1');
+      console.log('[Config] Web socket → localhost:', localUrl);
+      return localUrl;
+    }
     console.log('[Config] Using EXPO_PUBLIC_SOCKET_URL:', envSocket);
     return envSocket;
   }
 
   const api = getApiBaseUrl();
-  if (api.includes('localhost')) {
-    return api.replace(/\/api$/, '/chat');
-  }
   return api.replace(/\/api$/, '/chat');
 }
 

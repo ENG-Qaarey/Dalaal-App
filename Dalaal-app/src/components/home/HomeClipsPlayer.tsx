@@ -1,75 +1,83 @@
-import React, { useEffect, useRef } from 'react';
-import { Dimensions, FlatList, Image, Modal, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Dimensions,
+  Image,
+  Modal,
+  PanResponder,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { VideoView, useVideoPlayer, type VideoPlayer } from 'expo-video';
-import { LinearGradient } from 'expo-linear-gradient';
-import OnboardingBackground from '../common/OnboardingBackground';
+import { useEventListener } from 'expo';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ThemePalette } from '../../constants/theme';
+
+type Clip = {
+  id: string;
+  price: string;
+  title: string;
+  location: string;
+  tag?: string;
+  video: string;
+  poster?: string;
+};
 
 type Props = {
   visible: boolean;
-  clips: any[];
-  selectedClip: any;
-  setSelectedClip: (clip: any) => void;
-  isModalPaused: boolean;
-  setIsModalPaused: (paused: boolean) => void;
-  isFullMuted: boolean;
-  setIsFullMuted: (muted: boolean) => void;
-  playbackStatus: any;
-  setPlaybackStatus: (status: any) => void;
-  isLiked: boolean;
-  setIsLiked: (liked: boolean) => void;
-  isSaved: boolean;
-  setIsSaved: (saved: boolean) => void;
+  clips: Clip[];
+  selectedClip: Clip | null;
+  setSelectedClip: (clip: Clip) => void;
   onClose: () => void;
-  colors: any;
-  insets: any;
+  colors: ThemePalette;
   userAvatar?: string;
 };
 
-function ClipPlayer({
-  item,
-  isSelected,
+function ClipVideo({
+  uri,
   isPaused,
   isMuted,
-  onPlaybackStatusUpdate,
+  onProgress,
 }: {
-  item: any;
-  isSelected: boolean;
+  uri: string;
   isPaused: boolean;
   isMuted: boolean;
-  onPlaybackStatusUpdate: (status: any) => void;
+  onProgress: (current: number, duration: number) => void;
 }) {
-  const player = useVideoPlayer(item.video, (p) => {
+  const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
     p.muted = isMuted;
-    if (isSelected && !isPaused) {
-      p.play();
-    }
+    p.timeUpdateEventInterval = 0.25;
+    p.play();
   });
 
   useEffect(() => {
-    if (!player) return;
-    player.muted = isMuted;
-    if (isSelected && !isPaused) {
-      player.play();
-    } else {
-      player.pause();
-    }
-  }, [player, isPaused, isMuted, isSelected]);
+    if (isPaused) player.pause();
+    else player.play();
+  }, [isPaused, player]);
 
   useEffect(() => {
-    if (!player || !isSelected) return;
-    const sub = player.addListener('statusChange', () => {
-      onPlaybackStatusUpdate({
-        isLoaded: player.status === 'readyToPlay',
-        positionMillis: player.currentTime ? player.currentTime * 1000 : 0,
-        durationMillis: player.duration ? player.duration * 1000 : 0,
-      });
-    });
-    return () => sub.remove();
-  }, [player, isSelected]);
+    player.muted = isMuted;
+  }, [isMuted, player]);
 
-  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" />;
+  useEventListener(player, 'timeUpdate', (payload) => {
+    if (!payload) return;
+    const current = typeof payload.currentTime === 'number' ? payload.currentTime : 0;
+    const duration = typeof player.duration === 'number' ? player.duration : 0;
+    onProgress(current, duration);
+  });
+
+  return (
+    <VideoView
+      style={StyleSheet.absoluteFill}
+      player={player}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
 }
 
 export default function HomeClipsPlayer({
@@ -77,177 +85,287 @@ export default function HomeClipsPlayer({
   clips,
   selectedClip,
   setSelectedClip,
-  isModalPaused,
-  setIsModalPaused,
-  isFullMuted,
-  setIsFullMuted,
-  playbackStatus,
-  setPlaybackStatus,
-  isLiked,
-  setIsLiked,
-  isSaved,
-  setIsSaved,
   onClose,
   colors,
-  insets,
   userAvatar,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const window = Dimensions.get('window');
   const FALLBACK_AVATAR = 'https://i.pravatar.cc/160?img=14';
 
+  const [isPaused, setIsPaused] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, duration: 0 });
+
+  const currentIndex = useMemo(() => {
+    if (!selectedClip) return 0;
+    const idx = clips.findIndex((c) => c.id === selectedClip.id);
+    return idx >= 0 ? idx : 0;
+  }, [clips, selectedClip]);
+
+  useEffect(() => {
+    if (!visible) return;
+    setIsPaused(false);
+    setProgress({ current: 0, duration: 0 });
+    setIsLiked(false);
+    setIsSaved(false);
+  }, [visible, selectedClip?.id]);
+
+  const panHandlers = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) =>
+          Math.abs(g.dy) > 24 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderRelease: (_, g) => {
+          if (g.dy < -48) {
+            if (currentIndex < clips.length - 1) setSelectedClip(clips[currentIndex + 1]);
+          } else if (g.dy > 48) {
+            if (currentIndex > 0) setSelectedClip(clips[currentIndex - 1]);
+          }
+        },
+      }).panHandlers,
+    [clips, currentIndex, setSelectedClip]
+  );
+
   if (!selectedClip) return null;
+
+  const progressPct =
+    progress.duration > 0 ? Math.min(100, (progress.current / progress.duration) * 100) : 0;
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <View style={styles.modalFull}>
-        <LinearGradient colors={[colors.brandBlue, colors.brandOrange]} style={StyleSheet.absoluteFill} />
-        <OnboardingBackground primary={colors.brandBlue} secondary={colors.brandOrange} soft={colors.brandBlueSoft} />
-        
-        <FlatList
-          data={clips}
-          keyExtractor={(item) => item.id}
-          pagingEnabled
-          showsVerticalScrollIndicator={false}
-          initialScrollIndex={clips.findIndex(c => c.id === selectedClip.id)}
-          getItemLayout={(_, index) => ({
-            length: window.height,
-            offset: window.height * index,
-            index,
-          })}
-          onMomentumScrollEnd={(e) => {
-            const index = Math.round(e.nativeEvent.contentOffset.y / window.height);
-            setSelectedClip(clips[index]);
-          }}
-          renderItem={({ item }) => (
-            <View style={{ height: window.height, width: window.width }}>
-              <ClipPlayer
-                item={item}
-                isSelected={selectedClip.id === item.id}
-                isPaused={isModalPaused}
-                isMuted={isFullMuted}
-                onPlaybackStatusUpdate={(status) => {
-                  if (selectedClip.id === item.id) setPlaybackStatus(status);
-                }}
-              />
-              
-              <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <View style={[styles.root, { width: window.width, height: window.height }]} {...panHandlers}>
+        {selectedClip.poster ? (
+          <Image source={{ uri: selectedClip.poster }} style={StyleSheet.absoluteFillObject} blurRadius={2} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0b1220' }]} />
+        )}
 
-              <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={() => setIsModalPaused(!isModalPaused)}>
-                {isModalPaused && selectedClip.id === item.id && (
-                  <View style={styles.modalCenterPlay}>
-                    <View style={styles.modalCenterPlayInner}>
-                      <Ionicons name="play" size={48} color="#fff" style={{ marginLeft: 6 }} />
-                    </View>
-                  </View>
-                )}
-              </TouchableOpacity>
+        {visible ? (
+          <ClipVideo
+            key={selectedClip.id}
+            uri={selectedClip.video}
+            isPaused={isPaused}
+            isMuted={isMuted}
+            onProgress={(current, duration) => setProgress({ current, duration })}
+          />
+        ) : null}
 
-              <View style={[styles.modalRightActions, { bottom: 80 + insets.bottom, right: 12 + insets.right }]}>
-                <TouchableOpacity style={[styles.modalActionItem, { marginBottom: 12 }]} activeOpacity={0.7} onPress={() => setIsLiked(!isLiked)}>
-                  <View style={[styles.modalActionIconBox, { width: 34, height: 34, borderRadius: 17 }]}>
-                    <Ionicons name={isLiked ? "thumbs-up" : "thumbs-up-outline"} size={18} color={isLiked ? "#ff3b30" : "#fff"} />
-                  </View>
-                  <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>Like</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalActionItem, { marginBottom: 12 }]} activeOpacity={0.7} onPress={() => setIsSaved(!isSaved)}>
-                  <View style={[styles.modalActionIconBox, { width: 34, height: 34, borderRadius: 17 }]}>
-                    <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={18} color={isSaved ? "#2F7CF6" : "#fff"} />
-                  </View>
-                  <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>Save</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalActionItem, { marginBottom: 12 }]} activeOpacity={0.7}
-                  onPress={async () => {
-                    try {
-                      await Share.share({
-                        message: `Check out this amazing property tour: ${item.title} in ${item.location}!`,
-                        url: item.video,
-                      });
-                    } catch (error) { console.log(error); }
-                  }}
-                >
-                  <View style={[styles.modalActionIconBox, { width: 34, height: 34, borderRadius: 17 }]}>
-                    <Ionicons name="share-social-outline" size={18} color="#fff" />
-                  </View>
-                  <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>Share</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalActionItem, { marginBottom: 12 }]} activeOpacity={0.7} onPress={() => setIsFullMuted(!isFullMuted)}>
-                  <View style={[styles.modalActionIconBox, { width: 34, height: 34, borderRadius: 17 }]}>
-                    <Ionicons name={isFullMuted ? "volume-mute-outline" : "volume-medium-outline"} size={18} color="#fff" />
-                  </View>
-                  <Text style={[styles.modalActionText, { fontSize: 9, marginTop: 2 }]}>{isFullMuted ? "Muted" : "Sound"}</Text>
-                </TouchableOpacity>
-                <Image source={{ uri: userAvatar || FALLBACK_AVATAR }} style={[styles.modalSmallAvatar, { width: 34, height: 34, borderRadius: 10 }]} />
-              </View>
+        <View style={styles.scrimTop} pointerEvents="none" />
+        <View style={styles.scrimBottom} pointerEvents="none" />
 
-              <View style={[styles.modalBottomContent, { paddingBottom: Math.max(insets.bottom, 20), left: 16 + insets.left, right: 70 + insets.right, bottom: 0 }]}>
-                <View style={[styles.modalProfileRow, { marginBottom: 8 }]}>
-                  <Image source={{ uri: 'https://i.pravatar.cc/160?img=32' }} style={[styles.modalAvatar, { width: 28, height: 28 }]} />
-                  <Text style={[styles.modalProfileName, { fontSize: 13 }]}>Kiro Haaye Real Estate</Text>
-                </View>
-                <Text style={[styles.modalClipTitle, { fontSize: 16, marginBottom: 2 }]}>{item.title}</Text>
-                <Text style={[styles.modalClipMeta, { fontSize: 12, marginBottom: 12 }]}>{item.location} • {item.price}</Text>
-                
-                <View style={styles.modalActionRow}>
-                  <TouchableOpacity style={[styles.modalViewBtn, { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 }]} activeOpacity={0.8}>
-                    <Ionicons name="home" size={14} color="#fff" />
-                    <Text style={[styles.modalViewBtnText, { fontSize: 12 }]}>View</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setIsModalPaused(!isModalPaused)} style={[styles.modalMiniPlay, { width: 30, height: 30 }]}>
-                    <Ionicons name={isModalPaused ? "play" : "pause"} size={16} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-
-                {selectedClip.id === item.id && (
-                  <View style={[styles.modalProgressWrap, { marginTop: 12 }]}>
-                    <View style={styles.modalProgressBar}>
-                      <View style={[styles.modalProgressFill, { width: playbackStatus.isLoaded && playbackStatus.durationMillis ? `${(playbackStatus.positionMillis / playbackStatus.durationMillis) * 100}%` : '0%' }]} />
-                    </View>
-                  </View>
-                )}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={StyleSheet.absoluteFill}
+          onPress={() => setIsPaused((p) => !p)}
+        >
+          {isPaused ? (
+            <View style={styles.centerPlay}>
+              <View style={styles.centerPlayInner}>
+                <Ionicons name="play" size={42} color="#fff" style={{ marginLeft: 4 }} />
               </View>
             </View>
-          )}
-        />
-        
-        <View style={[styles.modalTopNav, { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, paddingTop: Math.max(insets.top, 10) }]}>
-          <TouchableOpacity onPress={onClose} style={styles.modalBackBtn}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-            <Text style={styles.modalBackText}>Back</Text>
+          ) : null}
+        </TouchableOpacity>
+
+        <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 12) }]}>
+          <TouchableOpacity onPress={onClose} style={styles.backBtn} activeOpacity={0.8}>
+            <Ionicons name="chevron-back" size={22} color="#fff" />
+            <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <View style={styles.modalTopRight}>
-            <Ionicons name="search" size={22} color="#fff" style={{ marginRight: 20 }} />
-            <Ionicons name="ellipsis-vertical" size={22} color="#fff" />
+          <View style={styles.counter}>
+            <Text style={styles.counterText}>
+              {currentIndex + 1}/{clips.length}
+            </Text>
           </View>
+        </View>
+
+        <View style={[styles.sideActions, { bottom: 120 + insets.bottom }]}>
+          <Image source={{ uri: userAvatar || FALLBACK_AVATAR }} style={styles.sideAvatar} />
+          <Action
+            icon={isLiked ? 'heart' : 'heart-outline'}
+            label="Like"
+            color={isLiked ? '#ff3b30' : '#fff'}
+            onPress={() => setIsLiked((v) => !v)}
+          />
+          <Action
+            icon={isSaved ? 'bookmark' : 'bookmark-outline'}
+            label="Save"
+            color={isSaved ? colors.brandOrange : '#fff'}
+            onPress={() => setIsSaved((v) => !v)}
+          />
+          <Action
+            icon="share-social-outline"
+            label="Share"
+            onPress={async () => {
+              try {
+                await Share.share({
+                  message: `${selectedClip.title} · ${selectedClip.location} · ${selectedClip.price}`,
+                  url: selectedClip.video,
+                });
+              } catch {
+                // ignore
+              }
+            }}
+          />
+          <Action
+            icon={isMuted ? 'volume-mute' : 'volume-high'}
+            label={isMuted ? 'Muted' : 'Sound'}
+            onPress={() => setIsMuted((v) => !v)}
+          />
+        </View>
+
+        <View
+          style={[
+            styles.bottom,
+            {
+              paddingBottom: Math.max(insets.bottom, 20),
+              paddingLeft: 16 + insets.left,
+              paddingRight: 78 + insets.right,
+            },
+          ]}
+        >
+          <Text style={styles.broker}>Dalaal · Property Tour</Text>
+          <Text style={styles.title}>{selectedClip.title}</Text>
+          <Text style={styles.meta}>
+            {selectedClip.location} · {selectedClip.price}
+          </Text>
+
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progressPct}%`, backgroundColor: colors.brandOrange }]} />
+          </View>
+
+          <Text style={styles.hint}>Swipe up for next clip</Text>
         </View>
       </View>
     </Modal>
   );
 }
 
+function Action({
+  icon,
+  label,
+  onPress,
+  color = '#fff',
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  color?: string;
+}) {
+  return (
+    <TouchableOpacity style={styles.action} onPress={onPress} activeOpacity={0.75}>
+      <View style={styles.actionIcon}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  modalFull: { ...StyleSheet.absoluteFill, backgroundColor: '#000' },
-  modalTopNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10 },
-  modalBackBtn: { flexDirection: 'row', alignItems: 'center' },
-  modalBackText: { color: '#fff', fontSize: 18, fontWeight: '600', marginLeft: 10 },
-  modalTopRight: { flexDirection: 'row', alignItems: 'center' },
-  modalRightActions: { position: 'absolute', right: 15, bottom: 100, alignItems: 'center' },
-  modalActionItem: { alignItems: 'center', marginBottom: 20 },
-  modalActionIconBox: { backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
-  modalActionText: { color: '#fff', fontWeight: '600' },
-  modalSmallAvatar: { borderWidth: 1, borderColor: '#fff', marginTop: 10 },
-  modalBottomContent: { position: 'absolute' },
-  modalProfileRow: { flexDirection: 'row', alignItems: 'center' },
-  modalAvatar: { marginRight: 10, borderWidth: 1, borderColor: '#fff' },
-  modalProfileName: { color: '#fff', fontWeight: '700' },
-  modalClipTitle: { color: '#fff', fontWeight: '800' },
-  modalClipMeta: { color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
-  modalViewBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
-  modalViewBtnText: { color: '#fff', fontWeight: '700', marginLeft: 8 },
-  modalProgressWrap: { width: '100%' },
-  modalProgressBar: { height: 3, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, overflow: 'hidden' },
-  modalProgressFill: { height: '100%', backgroundColor: '#fff', borderRadius: 2 },
-  modalCenterPlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.1)' },
-  modalCenterPlayInner: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
-  modalActionRow: { flexDirection: 'row', alignItems: 'center' },
-  modalMiniPlay: { backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  root: { flex: 1, backgroundColor: '#000' },
+  scrimTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 140,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  scrimBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 220,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  counter: {
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  counterText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  sideActions: {
+    position: 'absolute',
+    right: 12,
+    alignItems: 'center',
+    zIndex: 20,
+    gap: 14,
+  },
+  sideAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#fff',
+    marginBottom: 4,
+  },
+  action: { alignItems: 'center' },
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: { color: '#fff', fontSize: 11, fontWeight: '600', marginTop: 4 },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20 },
+  broker: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  meta: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500', marginBottom: 14 },
+  progressTrack: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 2 },
+  hint: {
+    marginTop: 10,
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  centerPlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerPlayInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

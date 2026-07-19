@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from 'expo-router/react-navigation';
-import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, RecordingPresets } from 'expo-audio';
+import { useFocusEffect } from '@react-navigation/native';
+import { Audio } from 'expo-av';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '../../../constants/theme';
@@ -88,8 +88,7 @@ export default function Conversation() {
   loadingMoreRef.current = loadingMore;
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recordingRef = useRef<any | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingStartedAtRef = useRef<number | null>(null);
   const isStartingRecordingRef = useRef(false);
   const pendingVoiceLockRef = useRef(false);
@@ -182,7 +181,7 @@ useEffect(() => {
   useEffect(() => {
     return () => {
       if (recordingRef.current) {
-        recordingRef.current.stop().catch(() => null);
+        recordingRef.current.stopAndUnloadAsync().catch(() => null);
       }
     };
   }, []);
@@ -686,22 +685,23 @@ useEffect(() => {
         return;
       }
 
-      const permission = await requestRecordingPermissionsAsync();
+      const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
         Alert.alert('Microphone permission', 'Please allow microphone access to record voice messages.');
         isStartingRecordingRef.current = false;
         return;
       }
 
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
       });
 
-      await audioRecorder.prepareToRecordAsync();
-      audioRecorder.record();
-      recordingRef.current = audioRecorder;
-      setRecording(audioRecorder);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+      setRecording(recording);
       setIsVoiceLocked(pendingVoiceLockRef.current);
       setRecordingSeconds(0);
       recordingStartedAtRef.current = Date.now();
@@ -710,7 +710,7 @@ useEffect(() => {
       if (pendingStopAfterStartRef.current !== null) {
         const shouldCancel = pendingStopAfterStartRef.current;
         pendingStopAfterStartRef.current = null;
-        await finishVoiceRecording(shouldCancel, audioRecorder);
+        await finishVoiceRecording(shouldCancel, recording);
       }
     } catch {
       setRecording(null);
@@ -727,13 +727,14 @@ useEffect(() => {
     const activeRecorder = targetRecorder ?? recordingRef.current;
     if (!activeRecorder) return;
     try {
-      await activeRecorder.stop();
-      const uri = activeRecorder.uri;
-      const durationMs = activeRecorder.currentTime * 1000;
+      await activeRecorder.stopAndUnloadAsync();
+      const uri = activeRecorder.getURI();
+      const status = await activeRecorder.getStatusAsync();
+      const durationMs = (status.durationMillis || 0);
       const seconds = Math.max(1, Math.round(durationMs / 1000));
-      await setAudioModeAsync({
-        allowsRecording: false,
-        playsInSilentMode: true,
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
       });
 
       setRecording(null);
@@ -833,17 +834,17 @@ useEffect(() => {
         return;
       }
     }
-    const micPermission = await requestRecordingPermissionsAsync();
+    const micPermission = await Audio.requestPermissionsAsync();
     if (!micPermission.granted) {
       Alert.alert('Microphone permission', 'Please allow microphone access to accept calls.');
       return;
     }
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'duckOthers',
-      shouldRouteThroughEarpiece: false,
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      interruptionModeIOS: 1,
+      playThroughEarpieceAndroid: false,
     });
 
     if (webRTCService) {
@@ -886,17 +887,17 @@ useEffect(() => {
   }, [callSession, conversationId, user?.id]);
 
   const startAudioCall = React.useCallback(async () => {
-    const permission = await requestRecordingPermissionsAsync();
+    const permission = await Audio.requestPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Microphone permission', 'Please allow microphone access for calls.');
       return;
     }
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'duckOthers',
-      shouldRouteThroughEarpiece: false,
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      interruptionModeIOS: 1,
+      playThroughEarpieceAndroid: false,
     });
     await beginCall('audio');
   }, [beginCall]);
@@ -907,17 +908,17 @@ useEffect(() => {
       Alert.alert('Camera permission', 'Please allow camera access for video calls.');
       return;
     }
-    const micPermission = await requestRecordingPermissionsAsync();
+    const micPermission = await Audio.requestPermissionsAsync();
     if (!micPermission.granted) {
       Alert.alert('Microphone permission', 'Please allow microphone access for video calls.');
       return;
     }
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: 'duckOthers',
-      shouldRouteThroughEarpiece: false,
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      interruptionModeIOS: 1,
+      playThroughEarpieceAndroid: false,
     });
     await beginCall('video');
   }, [beginCall]);

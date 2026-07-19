@@ -1,6 +1,6 @@
 import React from 'react';
 import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
+import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -62,7 +62,7 @@ export default function ChatWindow({
   const [viewerIndex, setViewerIndex] = React.useState(0);
   const [reactionTargetId, setReactionTargetId] = React.useState<string | null>(null);
   const scrollViewRef = React.useRef<ScrollView | null>(null);
-  const soundRef = React.useRef<AudioPlayer | null>(null);
+  const soundRef = React.useRef<Audio.Sound | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = React.useState(false);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const shakeAnim = React.useRef(new Animated.Value(0)).current;
@@ -163,27 +163,26 @@ export default function ChatWindow({
     if (!message.audioUri) return;
     try {
       if (soundRef.current && playingMessageId === message.id) {
-        soundRef.current.pause();
-        soundRef.current.remove();
+        await soundRef.current.pauseAsync();
+        await soundRef.current.unloadAsync();
         soundRef.current = null;
         setPlayingMessageId(null);
         return;
       }
       if (soundRef.current) {
-        soundRef.current.pause();
-        soundRef.current.remove();
+        await soundRef.current.pauseAsync();
+        await soundRef.current.unloadAsync();
       }
-      const player = createAudioPlayer(message.audioUri);
-      player.play();
-      soundRef.current = player;
+      const { sound } = await Audio.Sound.createAsync({ uri: message.audioUri });
+      await sound.playAsync();
+      soundRef.current = sound;
       setPlayingMessageId(message.id);
-      const sub = (player as any).addListener('playbackStatusUpdate', (status: any) => {
+      sound.setOnPlaybackStatusUpdate((status: any) => {
         if (!status.isLoaded) return;
         if (status.didJustFinish) {
-          player.remove();
+          sound.unloadAsync();
           soundRef.current = null;
           setPlayingMessageId(null);
-          sub.remove();
         }
       });
     } catch { setPlayingMessageId(null); }

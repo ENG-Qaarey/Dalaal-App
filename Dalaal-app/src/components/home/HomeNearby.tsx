@@ -1,5 +1,9 @@
 import React from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ThemePalette } from '../../constants/theme';
+import { sectionStyles } from './sectionStyles';
+import { spacing, radius, fontSize } from '../../constants/tokens';
 
 type NearbyItem = {
   id: string;
@@ -19,51 +23,86 @@ type Props = {
   items: NearbyItem[];
   onPress: (item: NearbyItem) => void;
   onSeeAll: () => void;
-  colors: any;
+  colors: ThemePalette;
 };
 
 export default function HomeNearby({ items, onPress, onSeeAll, colors }: Props) {
   return (
     <>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.textMain }]}>Nearby Properties</Text>
-        <TouchableOpacity onPress={onSeeAll}>
-          <Text style={[styles.seeAll, { color: colors.brandBlue }]}>See all</Text>
+      <View style={sectionStyles.sectionHeader}>
+        <Text style={[sectionStyles.sectionTitle, { color: colors.textMain }]}>Nearby Properties</Text>
+        <TouchableOpacity onPress={onSeeAll} accessibilityRole="button">
+          <Text style={[sectionStyles.seeAll, { color: colors.brandBlue }]}>See all</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => onPress(item)}
-            style={[styles.nearbyItem, { borderBottomColor: colors.brandBorder }]}
-          >
-            <Image source={{ uri: item.image }} style={styles.thumb} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.nearbyTitle, { color: colors.textMain }]}>{item.title}</Text>
-              <Text style={[styles.nearbyMeta, { color: colors.textMuted }]}>
-                {item.location} • {item.beds}bd • {item.time}
-              </Text>
+      {items.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          activeOpacity={0.9}
+          onPress={() => onPress(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`View details for ${item.title}`}
+          style={[
+            styles.nearbyItem,
+            {
+              borderColor: colors.brandBorder,
+              backgroundColor: colors.cardBg,
+              ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as object) : null),
+            },
+          ]}
+        >
+          <Image source={{ uri: item.image }} style={styles.thumb} />
+          <View style={styles.body}>
+            <Text style={[styles.nearbyTitle, { color: colors.textMain }]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={[styles.nearbyMeta, { color: colors.textMuted }]}>
+              {item.location} • {item.beds}bd • {item.time}
+            </Text>
+            <View style={styles.bottomRow}>
               <Text style={[styles.nearbyPrice, { color: colors.textMain }]}>{item.price}</Text>
+              <View style={[styles.viewPill, { backgroundColor: colors.brandBlueSoft }]}>
+                <Text style={[styles.viewPillText, { color: colors.brandBlue }]}>View Details</Text>
+                <Ionicons name="arrow-forward" size={12} color={colors.brandBlue} />
+              </View>
             </View>
-          </TouchableOpacity>
-        )}
-        scrollEnabled={false}
-      />
+          </View>
+        </TouchableOpacity>
+      ))}
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionHeader: { marginTop: 6, paddingHorizontal: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 15, fontWeight: '800' },
-  seeAll: { fontWeight: '600' },
-  nearbyItem: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, alignItems: 'center' },
-  thumb: { width: 72, height: 56, borderRadius: 8, marginRight: 10 },
-  nearbyTitle: { fontWeight: '700', fontSize: 12 },
-  nearbyMeta: { fontSize: 10 },
-  nearbyPrice: { marginTop: 2, fontWeight: '800', fontSize: 11 },
+  nearbyItem: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  thumb: { width: 88, height: 72, borderRadius: radius.md, marginRight: spacing.sm },
+  body: { flex: 1 },
+  nearbyTitle: { fontWeight: '700', fontSize: fontSize.small },
+  nearbyMeta: { fontSize: fontSize.caption, marginTop: 2 },
+  bottomRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  nearbyPrice: { fontWeight: '800', fontSize: fontSize.small },
+  viewPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  viewPillText: { fontSize: 11, fontWeight: '800' },
 });

@@ -202,14 +202,28 @@ async function bootstrap() {
     'http://127.0.0.1:8081',
     'http://10.60.130.7:3005',
     'http://10.60.130.7:8081',
+    'http://192.168.15.103:3005',
+    'http://192.168.15.103:8081',
   ];
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) {
         callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+        return;
       }
+      // Allow exact matches
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      // Allow any local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+      const localNetworkPattern = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)\d+\.\d+(:\d+)?$/;
+      if (localNetworkPattern.test(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
   });

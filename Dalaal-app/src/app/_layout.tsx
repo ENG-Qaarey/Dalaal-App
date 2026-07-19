@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,6 +10,8 @@ import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { socketService } from '../services/socket';
 import { chatService } from '../services/chat';
+import WebErrorBoundary from '../components/ui/WebErrorBoundary';
+import { requestNotificationPermission, showBrowserNotification, isNotificationSupported } from '../utils/web-notifications';
 
 // Ensure cold-start lands on onboarding (incl. Android)
 export const unstable_settings = {
@@ -17,7 +19,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  return (
+  const content = (
     <SafeAreaProvider>
       <ThemeProvider>
         <FavoritesProvider>
@@ -26,6 +28,11 @@ export default function RootLayout() {
       </ThemeProvider>
     </SafeAreaProvider>
   );
+
+  if (Platform.OS === 'web') {
+    return <WebErrorBoundary>{content}</WebErrorBoundary>;
+  }
+  return content;
 }
 
 function RootStack() {
@@ -68,6 +75,10 @@ function RootStack() {
       return;
     }
 
+    if (isNotificationSupported()) {
+      requestNotificationPermission();
+    }
+
     const handleNewMessage = (message: any) => {
       useChatStore.getState().applyIncomingMessage(message);
 
@@ -82,6 +93,14 @@ function RootStack() {
       const chat = chats.find((c) => c.conversationId === message.conversationId);
       const senderName = chat?.name || message?.sender?.profile?.firstName || message?.sender?.username || 'New message';
       const preview = message?.content || (message?.mediaUrl ? 'Photo' : 'New message');
+
+      if (Platform.OS === 'web') {
+        const isHidden = typeof document !== 'undefined' && document.hidden;
+        if (isHidden) {
+          showBrowserNotification(senderName, preview);
+          return;
+        }
+      }
 
       Alert.alert(
         'New message',
@@ -164,6 +183,7 @@ function RootStack() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pages" />
+        <Stack.Screen name="listings" options={{ presentation: 'card', animation: 'slide_from_right' }} />
       </Stack>
     </>
   );

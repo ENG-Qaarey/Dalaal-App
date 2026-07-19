@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ThemePalette } from '../../constants/theme';
 import { spacing, radius, fontSize } from '../../constants/tokens';
@@ -35,6 +35,7 @@ const ClipThumb = memo(function ClipThumb({ poster, title }: { poster?: string; 
   );
 });
 
+/** Web strip — thumbnails only; playback is handled by HomeClipsPlayer.web */
 export default function HomeClips({ clips, playingClipId, onClipPress, colors }: Props) {
   return (
     <>
@@ -62,34 +63,21 @@ export default function HomeClips({ clips, playingClipId, onClipPress, colors }:
               key={clip.id}
               activeOpacity={0.9}
               onPress={() => onClipPress(clip)}
-              style={[
-                styles.card,
-                {
-                  borderColor: active ? colors.brandOrange : 'transparent',
-                  ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as object) : null),
-                },
-              ]}
+              style={[styles.card, { borderColor: active ? colors.brandOrange : 'transparent', cursor: 'pointer' } as object]}
               accessibilityRole="button"
               accessibilityLabel={`Play clip ${clip.title}`}
             >
               <ClipThumb poster={clip.poster} title={clip.title} />
               <View style={styles.overlay} />
-
               <View style={styles.tag}>
                 <Ionicons name="play" size={11} color="#fff" />
                 <Text style={styles.tagText}>{clip.tag || 'Tour'}</Text>
               </View>
-
               <View style={styles.info}>
                 <Text style={styles.price}>{clip.price}</Text>
-                <Text style={styles.name} numberOfLines={1}>
-                  {clip.title}
-                </Text>
-                <Text style={styles.loc} numberOfLines={1}>
-                  {clip.location}
-                </Text>
+                <Text style={styles.name} numberOfLines={1}>{clip.title}</Text>
+                <Text style={styles.loc} numberOfLines={1}>{clip.location}</Text>
               </View>
-
               <View style={styles.playCircle}>
                 <Ionicons name="play" size={18} color="#fff" style={{ marginLeft: 2 }} />
               </View>
@@ -146,10 +134,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-  },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
   tag: {
     position: 'absolute',
     top: spacing.sm,
@@ -163,20 +148,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   tagText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  info: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.sm,
-  },
+  info: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.sm },
   price: { color: '#fff', fontSize: fontSize.small, fontWeight: '900' },
   name: { color: '#fff', fontSize: fontSize.caption, fontWeight: '700', marginTop: 2 },
   loc: { color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '500', marginTop: 2 },
   playCircle: {
     position: 'absolute',
     top: '42%',
-    alignSelf: 'center',
     left: '50%',
     marginLeft: -20,
     width: 40,

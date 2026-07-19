@@ -11,12 +11,19 @@ type Props = {
   onIndexChange: (index: number) => void;
 };
 
-function ViewerVideo({ uri }: { uri: string }) {
-  const player = useVideoPlayer(uri, (p) => {
-    p.loop = false;
+function VideoItem({ uri }: { uri: string }) {
+  const player = useVideoPlayer({ uri }, (p) => {
     p.play();
   });
-  return     <VideoView player={player} style={styles.viewerImage} contentFit="contain" nativeControls />;
+
+  return (
+    <VideoView
+      style={styles.viewerImage}
+      player={player}
+      contentFit="contain"
+      nativeControls
+    />
+  );
 }
 
 export default function MediaViewer({
@@ -72,8 +79,10 @@ export default function MediaViewer({
                 >
                   <Image source={{ uri: item.uri }} style={styles.viewerImage} resizeMode="contain" />
                 </ScrollView>
+              ) : mediaItems[viewerIndex]?.id === item.id ? (
+                <VideoItem uri={item.uri} />
               ) : (
-                <ViewerVideo uri={item.uri} />
+                <View style={[styles.viewerImage, { backgroundColor: '#111' }]} />
               )}
             </View>
           ))}
