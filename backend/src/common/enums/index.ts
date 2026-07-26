@@ -1,5 +1,6 @@
 export * from './user-role.enum';
 export * from './user-status.enum';
+export * from './permission.enum';
 export * from './document-type.enum';
 export * from './verification-status.enum';
 export * from './listing-type.enum';

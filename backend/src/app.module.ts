@@ -30,6 +30,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { VerificationModule } from './verification/verification.module';
 import { AdminModule } from './admin/admin.module';
 import { AgentsModule } from './agents/agents.module';
+import { ReportsModule } from './reports/reports.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -79,6 +80,7 @@ import { AppService } from './app.service';
     VerificationModule,
     AdminModule,
     AgentsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,43 +1,119 @@
 "use client";
 
-import { useState } from "react";
-import { Search, CheckCircle, XCircle, Eye, Car } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, CheckCircle, XCircle, Eye, Car, Loader2, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
-const vehicles = [
-  { id: 1, make: "Toyota Land Cruiser", owner: "Mahad Ibrahim", city: "Mogadishu", type: "SUV", price: "$120/day", status: "Active", year: 2021, seats: 7 },
-  { id: 2, make: "Toyota Hiace (Minibus)", owner: "Axmed Cali", city: "Mogadishu", type: "Van", price: "$80/day", status: "Active", year: 2019, seats: 14 },
-  { id: 3, make: "Nissan Patrol", owner: "Nasteho Ahmed", city: "Hargeisa", type: "SUV", price: "$100/day", status: "Pending", year: 2020, seats: 5 },
-  { id: 4, make: "Kia Sportage", owner: "Faadumo Xasan", city: "Bosaso", type: "SUV", price: "$75/day", status: "Active", year: 2022, seats: 5 },
-  { id: 5, make: "Toyota Corolla", owner: "Hodan Nuur", city: "Mogadishu", type: "Sedan", price: "$45/day", status: "Pending", year: 2018, seats: 5 },
-  { id: 6, make: "Isuzu Truck", owner: "Cabdullahi Muuse", city: "Kismayo", type: "Truck", price: "$150/day", status: "Rejected", year: 2017, seats: 2 },
-  { id: 7, make: "Toyota Prado", owner: "Cali Dheere", city: "Mogadishu", type: "SUV", price: "$110/day", status: "Active", year: 2023, seats: 7 },
-  { id: 8, make: "Honda Accord", owner: "Sahra Warsame", city: "Hargeisa", type: "Sedan", price: "$55/day", status: "Active", year: 2020, seats: 5 },
-];
+interface Vehicle {
+  id: string;
+  listing?: { title?: string; city?: string; price?: number; currency?: string; status?: string; createdAt?: string };
+  make?: string;
+  model?: string;
+  year?: number;
+  vehicleType?: string;
+  seats?: number;
+  price?: number;
+  currency?: string;
+  status?: string;
+  createdAt?: string;
+  city?: string;
+  user?: { email?: string; username?: string; profile?: { firstName?: string; lastName?: string } };
+  owner?: string;
+}
+
+function getVehicleTitle(v: Vehicle) {
+  if (v.make) return `${v.make} ${v.model || ""}`.trim();
+  return v.listing?.title || "Untitled Vehicle";
+}
+
+function getVehicleCity(v: Vehicle) {
+  return v.city || v.listing?.city || "—";
+}
+
+function getVehiclePrice(v: Vehicle) {
+  const price = v.price || v.listing?.price;
+  const currency = v.currency || v.listing?.currency || "USD";
+  if (!price) return "—";
+  return `${currency} ${price.toLocaleString()}`;
+}
+
+function getVehicleStatus(v: Vehicle) {
+  return (v.status || v.listing?.status || "PENDING_REVIEW").toUpperCase();
+}
+
+function getOwnerName(v: Vehicle) {
+  if (v.owner) return v.owner;
+  if (v.user?.profile?.firstName) return `${v.user.profile.firstName} ${v.user.profile.lastName || ""}`.trim();
+  return v.user?.username || v.user?.email || "—";
+}
 
 const statusColor: Record<string, string> = {
-  Active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  Pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-  Rejected: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+  ACTIVE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  PENDING_REVIEW: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
 };
 
 const typeColor: Record<string, string> = {
   SUV: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  Van: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
-  Sedan: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
-  Truck: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
+  VAN: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400",
+  SEDAN: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400",
+  TRUCK: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
 };
 
 export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
+  useEffect(() => {
+    async function fetchVehicles() {
+      try {
+        const result = await api.get("/admin/vehicles");
+        const list = Array.isArray(result) ? result : result?.vehicles ?? result?.data ?? [];
+        setVehicles(list);
+      } catch (err: any) {
+        setError(err.message || "Failed to load vehicles");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchVehicles();
+  }, []);
+
   const filtered = vehicles.filter((v) => {
-    const match = v.make.toLowerCase().includes(search.toLowerCase()) ||
-      v.owner.toLowerCase().includes(search.toLowerCase()) ||
-      v.city.toLowerCase().includes(search.toLowerCase());
-    const filt = filter === "All" || v.status === filter || v.type === filter;
+    const title = getVehicleTitle(v).toLowerCase();
+    const city = getVehicleCity(v).toLowerCase();
+    const owner = getOwnerName(v).toLowerCase();
+    const match = title.includes(search.toLowerCase()) || city.includes(search.toLowerCase()) || owner.includes(search.toLowerCase());
+    const status = getVehicleStatus(v);
+    const vtype = (v.vehicleType || "").toUpperCase();
+    const filt = filter === "All" || status === filter || vtype === filter;
     return match && filt;
   });
+
+  const totalCount = vehicles.length;
+  const activeCount = vehicles.filter(v => getVehicleStatus(v) === "ACTIVE").length;
+  const pendingCount = vehicles.filter(v => getVehicleStatus(v) === "PENDING_REVIEW").length;
+  const rejectedCount = vehicles.filter(v => getVehicleStatus(v) === "REJECTED").length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-3">
+        <AlertCircle className="w-8 h-8 text-red-500" />
+        <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -51,10 +127,10 @@ export default function VehiclesPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
         {[
-          { label: "Total Vehicles", value: vehicles.length },
-          { label: "Active", value: vehicles.filter(v => v.status === "Active").length },
-          { label: "Pending Review", value: vehicles.filter(v => v.status === "Pending").length },
-          { label: "Rejected", value: vehicles.filter(v => v.status === "Rejected").length },
+          { label: "Total Vehicles", value: totalCount },
+          { label: "Active", value: activeCount },
+          { label: "Pending Review", value: pendingCount },
+          { label: "Rejected", value: rejectedCount },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border bg-card p-4 shadow-sm">
             <p className="text-sm text-muted-foreground">{s.label}</p>
@@ -75,7 +151,7 @@ export default function VehiclesPage() {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            {["All", "Active", "Pending", "Rejected", "SUV", "Sedan", "Van", "Truck"].map((f) => (
+            {["All", "ACTIVE", "PENDING_REVIEW", "REJECTED", "SUV", "SEDAN", "VAN", "TRUCK"].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -83,7 +159,7 @@ export default function VehiclesPage() {
                   filter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {f}
+                {f === "All" ? "All" : f.replace("_", " ")}
               </button>
             ))}
           </div>
@@ -102,43 +178,51 @@ export default function VehiclesPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((v) => (
-                <tr key={v.id} className="hover:bg-muted/20 transition">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <div>
-                        <p className="font-medium">{v.make}</p>
-                        <p className="text-xs text-muted-foreground">{v.city} · {v.seats} seats</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{v.owner}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor[v.type] ?? ""}`}>
-                      {v.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{v.year}</td>
-                  <td className="px-4 py-3 font-medium">{v.price}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[v.status]}`}>
-                      {v.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"><Eye className="w-3.5 h-3.5" /></button>
-                      {v.status === "Pending" && (
-                        <>
-                          <button className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-muted-foreground hover:text-emerald-600"><CheckCircle className="w-3.5 h-3.5" /></button>
-                          <button className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-muted-foreground hover:text-red-600"><XCircle className="w-3.5 h-3.5" /></button>
-                        </>
-                      )}
-                    </div>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No vehicles found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((v) => (
+                  <tr key={v.id} className="hover:bg-muted/20 transition">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <p className="font-medium">{getVehicleTitle(v)}</p>
+                          <p className="text-xs text-muted-foreground">{getVehicleCity(v)}{v.seats ? ` · ${v.seats} seats` : ""}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{getOwnerName(v)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeColor[(v.vehicleType || "").toUpperCase()] ?? "bg-zinc-100 text-zinc-600"}`}>
+                        {v.vehicleType || "—"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{v.year || "—"}</td>
+                    <td className="px-4 py-3 font-medium">{getVehiclePrice(v)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[getVehicleStatus(v)] ?? ""}`}>
+                        {getVehicleStatus(v).replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"><Eye className="w-3.5 h-3.5" /></button>
+                        {getVehicleStatus(v) === "PENDING_REVIEW" && (
+                          <>
+                            <button className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-muted-foreground hover:text-emerald-600"><CheckCircle className="w-3.5 h-3.5" /></button>
+                            <button className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-muted-foreground hover:text-red-600"><XCircle className="w-3.5 h-3.5" /></button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

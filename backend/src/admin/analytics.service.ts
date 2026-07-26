@@ -13,8 +13,7 @@ type DateRange = {
 };
 
 const BROKER_ROLES: UserRole[] = [
-  UserRole.VERIFIED_DALAAL,
-  UserRole.REGULAR_DALAAL,
+  UserRole.BROKER,
   UserRole.PROPERTY_OWNER,
   UserRole.VEHICLE_OWNER,
 ];
@@ -49,6 +48,165 @@ export class AnalyticsService {
       listingCount: overview.listings.active,
       activeEscrowCount: overview.escrow.activeCount,
       totalVolume: overview.payments.completedVolume,
+    };
+  }
+
+  async getFullDashboard() {
+    const range = this.getDateRange('30d');
+    const { from, to, previousFrom, previousTo } = range;
+
+    const [
+      totalUsers,
+      usersByRole,
+      totalListings,
+      activeListings,
+      pendingListings,
+      featuredListings,
+      verifiedListings,
+      listingsByType,
+      totalPayments,
+      totalRevenue,
+      escrowStats,
+      pendingVerifications,
+      contactMessages,
+      fraudReports,
+      latestListings,
+      latestPayments,
+      latestReviews,
+      latestReports,
+      latestLogins,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
+      this.prisma.listing.count(),
+      this.prisma.listing.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.listing.count({ where: { status: 'PENDING_REVIEW' } }),
+      this.prisma.listing.count({ where: { status: 'FEATURED' } }),
+      this.prisma.listing.count({ where: { isVerified: true } }),
+      this.prisma.listing.groupBy({ by: ['type'], _count: { _all: true } }),
+      this.prisma.payment.count(),
+      this.prisma.payment.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+      }),
+      this.prisma.escrow.aggregate({
+        _sum: { amount: true },
+        _count: { _all: true },
+        where: {},
+      }),
+      this.prisma.identityVerification.count({ where: { status: 'PENDING' } }),
+      this.prisma.contactMessage.count(),
+      this.prisma.report.count({ where: { status: { not: 'RESOLVED' } } }),
+      this.prisma.listing.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          status: true,
+          price: true,
+          currency: true,
+          city: true,
+          createdAt: true,
+          user: { select: { email: true, username: true } },
+        },
+      }),
+      this.prisma.payment.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          amount: true,
+          currency: true,
+          provider: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          user: { select: { email: true, username: true } },
+        },
+      }),
+      this.prisma.review.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          overallRating: true,
+          title: true,
+          comment: true,
+          createdAt: true,
+          reviewer: { select: { email: true, username: true } },
+          reviewee: { select: { email: true, username: true } },
+        },
+      }),
+      this.prisma.report.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          type: true,
+          description: true,
+          status: true,
+          createdAt: true,
+          reporter: { select: { email: true, username: true } },
+        },
+      }),
+      this.prisma.user.findMany({
+        take: 5,
+        orderBy: { lastLoginAt: 'desc' },
+        where: { lastLoginAt: { not: null } },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          status: true,
+          lastLoginAt: true,
+          lastSeenAt: true,
+          isOnline: true,
+        },
+      }),
+    ]);
+
+    const roleMap = new Map(usersByRole.map((r) => [r.role, r._count._all]));
+    const typeMap = new Map(listingsByType.map((t) => [t.type, t._count._all]));
+
+    return {
+      users: {
+        total: totalUsers,
+        brokers: roleMap.get('BROKER') ?? 0,
+        propertyOwners: roleMap.get('PROPERTY_OWNER') ?? 0,
+        vehicleOwners: roleMap.get('VEHICLE_OWNER') ?? 0,
+        customers: roleMap.get('CUSTOMER') ?? 0,
+        superAdmins: roleMap.get('SUPER_ADMIN') ?? 0,
+      },
+      listings: {
+        total: totalListings,
+        active: activeListings,
+        pending: pendingListings,
+        featured: featuredListings,
+        verified: verifiedListings,
+        property: typeMap.get('PROPERTY') ?? 0,
+        vehicle: typeMap.get('VEHICLE') ?? 0,
+      },
+      payments: {
+        total: totalPayments,
+        totalRevenue: this.toNumber(totalRevenue._sum.amount),
+      },
+      escrow: {
+        totalTransactions: escrowStats._count._all,
+        totalVolume: this.toNumber(escrowStats._sum.amount),
+      },
+      pendingVerifications,
+      contactMessages,
+      fraudReports,
+      recentActivities: {
+        latestListings,
+        latestPayments,
+        latestReviews,
+        latestReports,
+        latestLogins,
+      },
     };
   }
 
@@ -227,7 +385,7 @@ export class AnalyticsService {
         this.prisma.$queryRaw<{ date: Date; value: bigint }[]>`
           SELECT date_trunc(${trunc}, "createdAt") AS date, COUNT(*)::bigint AS value
           FROM users
-          WHERE role IN ('VERIFIED_DALAAL', 'REGULAR_DALAAL', 'PROPERTY_OWNER', 'VEHICLE_OWNER')
+          WHERE role IN ('BROKER', 'PROPERTY_OWNER', 'VEHICLE_OWNER')
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
           GROUP BY 1

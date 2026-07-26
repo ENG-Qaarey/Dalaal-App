@@ -24,8 +24,7 @@ export function formatChangePercent(value: number): string {
 }
 
 export const ANALYTICS_ROLES = [
-  'REGULAR_DALAAL',
-  'VERIFIED_DALAAL',
+  'BROKER',
   'PROPERTY_OWNER',
   'VEHICLE_OWNER',
 ] as const;

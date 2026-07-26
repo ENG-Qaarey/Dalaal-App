@@ -12,8 +12,8 @@ import {
   ArrowRight,
   Shield,
 } from "lucide-react";
-import ThemeToggle from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
+import { ROLE_HOME } from "@/lib/role-routes";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,16 +57,6 @@ export default function LoginPage() {
         method === "email" ? email.trim() : phone.trim().replace(/\s/g, "");
       await login(identifier, password);
 
-      const ROLE_HOME: Record<string, string> = {
-        SUPER_ADMIN: "/pages/super-admin",
-        MODERATOR: "/pages/moderator",
-        REGULAR_DALAAL: "/pages/broker",
-        VERIFIED_DALAAL: "/pages/broker",
-        PROPERTY_OWNER: "/pages/owner",
-        VEHICLE_OWNER: "/pages/owner",
-        CUSTOMER: "/pages/customer",
-      };
-
       const stored = localStorage.getItem("user");
       const user = stored ? JSON.parse(stored) : null;
       const redirect = ROLE_HOME[user?.role] || "/pages/customer";
@@ -77,9 +67,7 @@ export default function LoginPage() {
       if (msg.toLowerCase().includes("verify your email")) {
         const identifier =
           method === "email" ? email.trim() : phone.trim().replace(/\s/g, "");
-        router.push(
-          `/verify-email?email=${encodeURIComponent(identifier)}`
-        );
+        router.push(`/verify-email?email=${encodeURIComponent(identifier)}`);
         return;
       }
       setServerError(msg);
@@ -101,7 +89,6 @@ export default function LoginPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               href="/register"
               className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"

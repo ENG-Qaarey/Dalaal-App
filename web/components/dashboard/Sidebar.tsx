@@ -38,31 +38,71 @@ interface MenuItem {
 }
 
 const superAdminMenuItems: MenuItem[] = [
-  { label: "Dashboard", route: "/super-admin/dashboard", icon: LayoutDashboard },
+  {
+    label: "Dashboard",
+    route: "/super-admin/dashboard",
+    icon: LayoutDashboard,
+  },
   { label: "Companies", route: "/super-admin/companies", icon: Building2 },
   { label: "Users Management", route: "/super-admin/users", icon: Users },
   { label: "Permissions & Roles", route: "/super-admin/roles", icon: Lock },
   { label: "Customers (All)", route: "/super-admin/customers", icon: Users },
-  { label: "Transactions (All)", route: "/super-admin/transactions", icon: Receipt },
-  { label: "Reports & Analytics", route: "/super-admin/reports", icon: BarChart3 },
-  { label: "System Monitoring", route: "/super-admin/monitoring", icon: Activity },
-  { label: "Subscriptions & Plans", route: "/super-admin/subscriptions", icon: CreditCard },
-  { label: "Announcements", route: "/super-admin/announcements", icon: Megaphone },
-  { label: "Support & Tickets", route: "/super-admin/support", icon: MessageSquare },
+  {
+    label: "Transactions (All)",
+    route: "/super-admin/transactions",
+    icon: Receipt,
+  },
+  {
+    label: "Reports & Analytics",
+    route: "/super-admin/reports",
+    icon: BarChart3,
+  },
+  {
+    label: "System Monitoring",
+    route: "/super-admin/monitoring",
+    icon: Activity,
+  },
+  {
+    label: "Subscriptions & Plans",
+    route: "/super-admin/subscriptions",
+    icon: CreditCard,
+  },
+  {
+    label: "Announcements",
+    route: "/super-admin/announcements",
+    icon: Megaphone,
+  },
+  {
+    label: "Support & Tickets",
+    route: "/super-admin/support",
+    icon: MessageSquare,
+  },
   { label: "System Settings", route: "/super-admin/settings", icon: Settings },
 ];
 
 const superAdminAccountItems: MenuItem[] = [
-  { label: "Profile Settings", route: "/super-admin/profile", icon: UserCircle },
+  {
+    label: "Profile Settings",
+    route: "/super-admin/profile",
+    icon: UserCircle,
+  },
 ];
 
 const companyOwnerMenuItems: MenuItem[] = [
-  { label: "Dashboard", route: "/company-owner/dashboard", icon: LayoutDashboard },
+  {
+    label: "Dashboard",
+    route: "/company-owner/dashboard",
+    icon: LayoutDashboard,
+  },
   { label: "My Listings", route: "/company-owner/listings", icon: Home },
   { label: "Properties", route: "/company-owner/properties", icon: Building2 },
   { label: "Vehicles", route: "/company-owner/vehicles", icon: Car },
   { label: "Customers", route: "/company-owner/customers", icon: Users },
-  { label: "Transactions", route: "/company-owner/transactions", icon: Receipt },
+  {
+    label: "Transactions",
+    route: "/company-owner/transactions",
+    icon: Receipt,
+  },
   { label: "Analytics", route: "/company-owner/analytics", icon: BarChart3 },
   { label: "Messages", route: "/company-owner/messages", icon: MessageSquare },
   { label: "Payments", route: "/company-owner/payments", icon: Wallet },
@@ -70,7 +110,11 @@ const companyOwnerMenuItems: MenuItem[] = [
 ];
 
 const companyOwnerAccountItems: MenuItem[] = [
-  { label: "Profile Settings", route: "/company-owner/profile", icon: UserCircle },
+  {
+    label: "Profile Settings",
+    route: "/company-owner/profile",
+    icon: UserCircle,
+  },
 ];
 
 const customerMenuItems: MenuItem[] = [
@@ -95,9 +139,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggleCollapse } = useSidebarStore();
   const { user, logout } = useAuth();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   const isSuperAdmin = pathname.startsWith("/super-admin");
   const isCompanyOwner = pathname.startsWith("/company-owner");
@@ -105,16 +146,20 @@ export default function Sidebar() {
   const menuItems = isSuperAdmin
     ? superAdminMenuItems
     : isCompanyOwner
-    ? companyOwnerMenuItems
-    : customerMenuItems;
+      ? companyOwnerMenuItems
+      : customerMenuItems;
 
   const accountItems = isSuperAdmin
     ? superAdminAccountItems
     : isCompanyOwner
-    ? companyOwnerAccountItems
-    : customerAccountItems;
+      ? companyOwnerAccountItems
+      : customerAccountItems;
 
-  const roleLabel = isSuperAdmin ? "SUPER ADMIN" : isCompanyOwner ? "COMPANY OWNER" : "CUSTOMER";
+  const roleLabel = isSuperAdmin
+    ? "SUPER ADMIN"
+    : isCompanyOwner
+      ? "COMPANY OWNER"
+      : "CUSTOMER";
 
   const userName = user?.profile?.firstName
     ? `${user.profile.firstName} ${user.profile.lastName || ""}`.trim()
@@ -127,24 +172,26 @@ export default function Sidebar() {
     .toUpperCase()
     .slice(0, 2);
 
-  const isActive = (route: string) => pathname === route || pathname.startsWith(route + "/");
+  const isActive = (route: string) =>
+    pathname === route || pathname.startsWith(route + "/");
 
   return (
     <>
       {/* Mobile toggle */}
-      {mounted && (
-        <button
-          onClick={toggleCollapse}
-          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-slate-100 lg:hidden"
-          aria-label="Toggle sidebar"
-        >
-          <LayoutDashboard className="w-5 h-5 text-slate-600" />
-        </button>
-      )}
+      <button
+        onClick={toggleCollapse}
+        className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-slate-100 lg:hidden"
+        aria-label="Toggle sidebar"
+      >
+        <LayoutDashboard className="w-5 h-5 text-slate-600" />
+      </button>
 
       {/* Mobile backdrop */}
-      {mounted && !isCollapsed && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={toggleCollapse} />
+      {!isCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          onClick={toggleCollapse}
+        />
       )}
 
       {/* Sidebar */}
@@ -160,7 +207,9 @@ export default function Sidebar() {
         `}
       >
         {/* Header */}
-        <div className={`px-4 py-4 border-b border-blue-500/30 ${isCollapsed ? "flex flex-col items-center gap-3" : ""}`}>
+        <div
+          className={`px-4 py-4 border-b border-blue-500/30 ${isCollapsed ? "flex flex-col items-center gap-3" : ""}`}
+        >
           {!isCollapsed ? (
             <>
               <div className="flex items-center gap-2 mb-3">
@@ -168,8 +217,12 @@ export default function Sidebar() {
                   <span className="text-blue-600 font-black text-sm">D</span>
                 </div>
                 <div>
-                  <h1 className="text-sm font-bold text-white leading-none">Dalaal</h1>
-                  <span className="text-[8px] font-semibold uppercase tracking-wider text-blue-200">{roleLabel}</span>
+                  <h1 className="text-sm font-bold text-white leading-none">
+                    Dalaal
+                  </h1>
+                  <span className="text-[8px] font-semibold uppercase tracking-wider text-blue-200">
+                    {roleLabel}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 p-2 rounded-lg bg-blue-700/40">
@@ -177,10 +230,14 @@ export default function Sidebar() {
                   {userInitials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-white truncate">{userName}</p>
+                  <p className="text-[11px] font-semibold text-white truncate">
+                    {userName}
+                  </p>
                   <div className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    <span className="text-[9px] text-green-300 font-medium">Online</span>
+                    <span className="text-[9px] text-green-300 font-medium">
+                      Online
+                    </span>
                   </div>
                 </div>
               </div>
@@ -199,9 +256,13 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 overflow-y-auto custom-scrollbar py-3 ${isCollapsed ? "px-2" : "px-3"}`}>
+        <nav
+          className={`flex-1 overflow-y-auto custom-scrollbar py-3 ${isCollapsed ? "px-2" : "px-3"}`}
+        >
           {!isCollapsed && (
-            <p className="px-1 mb-2 text-[9px] font-bold uppercase tracking-widest text-blue-200">Navigation</p>
+            <p className="px-1 mb-2 text-[9px] font-bold uppercase tracking-widest text-blue-200">
+              Navigation
+            </p>
           )}
 
           <ul className="space-y-0.5">
@@ -219,8 +280,15 @@ export default function Sidebar() {
                       ${active ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}
                     `}
                   >
-                    <Icon size={18} className={`shrink-0 ${active ? "text-white" : "text-blue-200"}`} />
-                    {!isCollapsed && <span className="text-[13px] font-medium truncate">{item.label}</span>}
+                    <Icon
+                      size={18}
+                      className={`shrink-0 ${active ? "text-white" : "text-blue-200"}`}
+                    />
+                    {!isCollapsed && (
+                      <span className="text-[13px] font-medium truncate">
+                        {item.label}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
@@ -230,7 +298,9 @@ export default function Sidebar() {
           {/* Account */}
           {!isCollapsed && (
             <>
-              <p className="px-1 mt-5 mb-2 text-[9px] font-bold uppercase tracking-widest text-blue-200">Account</p>
+              <p className="px-1 mt-5 mb-2 text-[9px] font-bold uppercase tracking-widest text-blue-200">
+                Account
+              </p>
               <ul className="space-y-0.5">
                 {accountItems.map((item) => {
                   const Icon = item.icon;
@@ -244,8 +314,13 @@ export default function Sidebar() {
                           ${active ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}
                         `}
                       >
-                        <Icon size={18} className={`shrink-0 ${active ? "text-white" : "text-blue-200"}`} />
-                        <span className="text-[13px] font-medium truncate">{item.label}</span>
+                        <Icon
+                          size={18}
+                          className={`shrink-0 ${active ? "text-white" : "text-blue-200"}`}
+                        />
+                        <span className="text-[13px] font-medium truncate">
+                          {item.label}
+                        </span>
                       </Link>
                     </li>
                   );
@@ -256,7 +331,9 @@ export default function Sidebar() {
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg w-full text-blue-100 hover:bg-white/10 hover:text-white transition-all duration-150"
                   >
                     <LogOut size={18} className="shrink-0 text-blue-200" />
-                    <span className="text-[13px] font-medium truncate">Log out</span>
+                    <span className="text-[13px] font-medium truncate">
+                      Log out
+                    </span>
                   </button>
                 </li>
               </ul>
@@ -292,12 +369,16 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className={`px-4 py-3 border-t border-blue-500/30 ${isCollapsed ? "flex justify-center" : ""}`}>
+        <div
+          className={`px-4 py-3 border-t border-blue-500/30 ${isCollapsed ? "flex justify-center" : ""}`}
+        >
           {!isCollapsed ? (
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-green-300 shrink-0" />
               <div>
-                <p className="text-[10px] font-semibold text-blue-100">Dalaal Platform</p>
+                <p className="text-[10px] font-semibold text-blue-100">
+                  Dalaal Platform
+                </p>
                 <p className="text-[8px] text-blue-200">Secure Marketplace</p>
               </div>
             </div>

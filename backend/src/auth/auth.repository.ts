@@ -4,7 +4,7 @@ import { User, Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(public readonly prisma: PrismaService) {}
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({

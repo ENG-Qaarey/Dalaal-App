@@ -26,4 +26,9 @@ export class NotificationsService {
   async getUnreadCount(userId: string) {
     return this.notificationsRepository.countUnread(userId);
   }
+
+  async getActiveAnnouncements() {
+    return this.notificationsRepository.getActiveAnnouncements();
+  }
+
 }

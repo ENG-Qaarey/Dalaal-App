@@ -1,12 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +11,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   ChevronsUpDown,
   BadgeCheck,
@@ -33,48 +29,71 @@ import {
   Moon,
   Sun,
   HelpCircle,
-} from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
-import { useState, useEffect } from "react"
+} from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useState, useEffect } from "react";
 
 export function NavUser({
   user,
 }: {
   user: {
-    name: string
-    email: string
-    avatar?: string
-  } | null
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null;
 }) {
-  const { isMobile } = useSidebar()
-  const { logout } = useAuth()
-  const [mounted, setMounted] = useState(false)
-  const [isDark, setIsDark] = useState(false)
+  const { isMobile } = useSidebar();
+  const { user: fullUser, logout } = useAuth();
+  const role = fullUser?.role || "CUSTOMER";
+  const settingsLink =
+    role === "SUPER_ADMIN" || role === "MODERATOR"
+      ? "/pages/admin/settings"
+      : role === "BROKER" ||
+          role === "PROPERTY_OWNER" ||
+          role === "VEHICLE_OWNER"
+        ? "/pages/broker/settings"
+        : "/pages/customer/settings";
+  const dashboardLink =
+    role === "SUPER_ADMIN" || role === "MODERATOR"
+      ? "/pages/admin"
+      : role === "BROKER" ||
+          role === "PROPERTY_OWNER" ||
+          role === "VEHICLE_OWNER"
+        ? "/pages/broker"
+        : "/pages/customer";
 
-  useEffect(() => {
-    setMounted(true)
-    const stored = localStorage.getItem("dalaal-theme")
-    setIsDark(stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches))
-  }, [])
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("dalaal-theme");
+    return (
+      stored === "dark" ||
+      (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
 
   const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
+    const next = !isDark;
+    setIsDark(next);
     if (next) {
-      document.documentElement.classList.add("dark")
-      localStorage.setItem("dalaal-theme", "dark")
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("dalaal-theme", "dark");
     } else {
-      document.documentElement.classList.remove("dark")
-      localStorage.setItem("dalaal-theme", "light")
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("dalaal-theme", "light");
     }
-  }
+  };
 
-  if (!user) return null
+  if (!user) return null;
 
-  const name = user.name || "User"
-  const email = user.email || ""
-  const avatar = user.avatar || ""
-  const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+  const name = user.name || "User";
+  const email = user.email || "";
+  const avatar = user.avatar || "";
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <SidebarMenu>
@@ -95,8 +114,12 @@ export function NavUser({
 
               {/* User Info — hidden when collapsed */}
               <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-[13px] font-semibold text-sidebar-foreground block">{name}</span>
-                <span className="truncate text-[11px] text-sidebar-foreground/50 block mt-0.5">{email}</span>
+                <span className="truncate text-[13px] font-semibold text-sidebar-foreground block">
+                  {name}
+                </span>
+                <span className="truncate text-[11px] text-sidebar-foreground/50 block mt-0.5">
+                  {email}
+                </span>
               </div>
 
               {/* Chevron — hidden when collapsed */}
@@ -114,14 +137,22 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-3 px-3 py-3 border-b border-sidebar-border">
                 <Avatar className="h-9 w-9 rounded-lg">
-                  <AvatarImage src={avatar} alt={name} className="object-cover" />
+                  <AvatarImage
+                    src={avatar}
+                    alt={name}
+                    className="object-cover"
+                  />
                   <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-foreground/60 font-semibold text-xs">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <span className="truncate font-semibold text-sm text-sidebar-foreground block">{name}</span>
-                  <span className="truncate text-[11px] text-sidebar-foreground/50 block mt-0.5">{email}</span>
+                  <span className="truncate font-semibold text-sm text-sidebar-foreground block">
+                    {name}
+                  </span>
+                  <span className="truncate text-[11px] text-sidebar-foreground/50 block mt-0.5">
+                    {email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -130,32 +161,42 @@ export function NavUser({
 
             {/* Menu Items */}
             <DropdownMenuGroup className="px-1.5 py-1">
-              <DropdownMenuItem asChild className="rounded-lg h-9 cursor-pointer">
-                <Link href="/pages/super-admin/settings" className="flex items-center gap-2.5 text-[13px] font-medium">
+              <DropdownMenuItem
+                asChild
+                className="rounded-lg h-9 cursor-pointer"
+              >
+                <Link
+                  href={settingsLink}
+                  className="flex items-center gap-2.5 text-[13px] font-medium"
+                >
                   <div className="flex items-center justify-center w-7 h-7 rounded-md bg-sidebar-accent">
                     <User className="w-3.5 h-3.5 text-sidebar-foreground/50" />
                   </div>
                   My Account
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-lg h-9 cursor-pointer">
-                <Link href="/pages/super-admin/payments" className="flex items-center gap-2.5 text-[13px] font-medium">
+              <DropdownMenuItem
+                asChild
+                className="rounded-lg h-9 cursor-pointer"
+              >
+                <Link
+                  href={dashboardLink}
+                  className="flex items-center gap-2.5 text-[13px] font-medium"
+                >
                   <div className="flex items-center justify-center w-7 h-7 rounded-md bg-sidebar-accent">
                     <CreditCard className="w-3.5 h-3.5 text-sidebar-foreground/50" />
                   </div>
-                  Billing
+                  Dashboard
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-lg h-9 cursor-pointer">
-                <Link href="/pages/super-admin" className="flex items-center gap-2.5 text-[13px] font-medium">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-md bg-sidebar-accent">
-                    <Bell className="w-3.5 h-3.5 text-sidebar-foreground/50" />
-                  </div>
-                  Notifications
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-lg h-9 cursor-pointer">
-                <Link href="/pages/super-admin/settings" className="flex items-center gap-2.5 text-[13px] font-medium">
+              <DropdownMenuItem
+                asChild
+                className="rounded-lg h-9 cursor-pointer"
+              >
+                <Link
+                  href={settingsLink}
+                  className="flex items-center gap-2.5 text-[13px] font-medium"
+                >
                   <div className="flex items-center justify-center w-7 h-7 rounded-md bg-sidebar-accent">
                     <Settings className="w-3.5 h-3.5 text-sidebar-foreground/50" />
                   </div>
@@ -207,5 +248,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

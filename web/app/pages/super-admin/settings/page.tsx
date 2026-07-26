@@ -1,122 +1,95 @@
 "use client";
 
-import { useState } from "react";
-import { User, Lock, Bell, Shield, Save, Upload } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Lock, Bell, Shield, Save, Upload, Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("account");
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const result = await api.get("/users/profile");
+        setProfile(result);
+      } catch {
+        // Use localStorage fallback
+        try {
+          const stored = localStorage.getItem("user");
+          if (stored) setProfile(JSON.parse(stored));
+        } catch {}
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  const displayName = profile?.profile?.firstName
+    ? `${profile.profile.firstName} ${profile.profile.lastName || ""}`.trim()
+    : profile?.username || profile?.email || "Admin";
+  const email = profile?.email || "";
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
+      <div className="rounded-2xl border border-border bg-gradient-to-br from-slate-800 to-slate-950 p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your account settings and platform preferences
+        <p className="mt-1 text-sm text-slate-200">
+          Manage your account settings and platform preferences from a single admin control center.
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar Navigation */}
         <div className="w-full md:w-64 flex flex-col gap-1">
-          <button
-            onClick={() => setActiveTab("account")}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "account"
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <User className="w-4 h-4" />
-            Account
-          </button>
-          <button
-            onClick={() => setActiveTab("security")}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "security"
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <Lock className="w-4 h-4" />
-            Security
-          </button>
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "notifications"
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <Bell className="w-4 h-4" />
-            Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab("platform")}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "platform"
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            Platform
-          </button>
+          {[
+            { key: "account", label: "Account", icon: User },
+            { key: "security", label: "Security", icon: Lock },
+            { key: "notifications", label: "Notifications", icon: Bell },
+            { key: "platform", label: "Platform", icon: Shield },
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900"}`}>
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Content Area */}
         <div className="flex-1">
           {activeTab === "account" && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium">Profile</h3>
-                <p className="text-sm text-muted-foreground">
-                  This is how others will see you on the site.
-                </p>
+                <p className="text-sm text-muted-foreground">This is how others will see you on the site.</p>
               </div>
               <div className="border-t border-border pt-6">
                 <div className="flex items-center gap-6 mb-8">
-                  <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-800 border flex items-center justify-center text-xl font-bold">
-                    MQ
-                  </div>
+                  <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-800 border flex items-center justify-center text-xl font-bold">{initials}</div>
                   <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-                    <Upload className="w-4 h-4" />
-                    Change Avatar
+                    <Upload className="w-4 h-4" /> Change Avatar
                   </button>
                 </div>
-
                 <div className="space-y-4 max-w-md">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Full Name</label>
-                    <input
-                      type="text"
-                      defaultValue="Muscab Qaareey"
-                      className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
+                    <input type="text" defaultValue={displayName} className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Email</label>
-                    <input
-                      type="email"
-                      defaultValue="muscabqaareey@gmail.com"
-                      className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
+                    <input type="email" defaultValue={email} className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Role</label>
-                    <input
-                      type="text"
-                      disabled
-                      defaultValue="Super Admin"
-                      className="w-full px-3 py-2 border rounded-md text-sm bg-muted text-muted-foreground cursor-not-allowed"
-                    />
+                    <input type="text" disabled defaultValue={profile?.role?.replace("_", " ") || "Super Admin"} className="w-full px-3 py-2 border rounded-md text-sm bg-muted text-muted-foreground cursor-not-allowed" />
                   </div>
                 </div>
               </div>
               <div className="flex justify-end pt-4">
                 <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">
-                  <Save className="w-4 h-4" />
-                  Save Changes
+                  <Save className="w-4 h-4" /> Save Changes
                 </button>
               </div>
             </div>
@@ -126,40 +99,25 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium">Security</h3>
-                <p className="text-sm text-muted-foreground">
-                  Update your password and secure your account.
-                </p>
+                <p className="text-sm text-muted-foreground">Update your password and secure your account.</p>
               </div>
               <div className="border-t border-border pt-6 space-y-4 max-w-md">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Current Password</label>
-                  <input
-                    type="password"
-                    placeholder="Enter current password"
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  <input type="password" placeholder="Enter current password" className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">New Password</label>
-                  <input
-                    type="password"
-                    placeholder="Enter new password"
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  <input type="password" placeholder="Enter new password" className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Confirm Password</label>
-                  <input
-                    type="password"
-                    placeholder="Confirm new password"
-                    className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  <input type="password" placeholder="Confirm new password" className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
               </div>
               <div className="flex justify-end pt-4">
                 <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">
-                  <Save className="w-4 h-4" />
-                  Update Password
+                  <Save className="w-4 h-4" /> Update Password
                 </button>
               </div>
             </div>
@@ -169,9 +127,7 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium">Notifications</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose what you want to be notified about.
-                </p>
+                <p className="text-sm text-muted-foreground">Choose what you want to be notified about.</p>
               </div>
               <div className="border-t border-border pt-6 space-y-4">
                 {[
@@ -199,9 +155,7 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium">Platform Preferences</h3>
-                <p className="text-sm text-muted-foreground">
-                  Global settings for the admin dashboard.
-                </p>
+                <p className="text-sm text-muted-foreground">Global settings for the admin dashboard.</p>
               </div>
               <div className="border-t border-border pt-6 space-y-4 max-w-md">
                 <div className="space-y-2">

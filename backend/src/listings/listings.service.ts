@@ -20,7 +20,7 @@ export class ListingsService {
         description: createListingDto.description,
         price: createListingDto.price,
         priceNegotiable: createListingDto.priceNegotiable || false,
-        currency: 'USD',
+        currency: createListingDto.currency || 'USD',
         city: createListingDto.city,
         district: createListingDto.district,
         address: createListingDto.address,

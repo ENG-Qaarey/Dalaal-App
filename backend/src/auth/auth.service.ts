@@ -71,7 +71,7 @@ export class AuthService {
         username: registerDto.username,
         password: hashedPassword,
         phone: registerDto.phone,
-        role: UserRole.CUSTOMER,
+        role: (registerDto.role as any) || UserRole.CUSTOMER,
         status: UserStatus.PENDING_VERIFICATION,
         sessionToken,
         profile: {
@@ -394,7 +394,22 @@ export class AuthService {
   }
 
   private async generateTokens(user: any, sessionToken: string) {
-    const payload = { sub: user.id, email: user.email, role: user.role, sessionToken };
+    const rolePermissions = await (
+      this.authRepository as any
+    ).prisma.rolePermission.findMany({
+      where: { role: user.role },
+      include: { permission: true },
+    });
+
+    const permissions = rolePermissions.map((rp: any) => rp.permission.name);
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      permissions,
+      sessionToken,
+    };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.secret'),

@@ -26,6 +26,11 @@ export class CreateVehicleDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  condition?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsEnum(FuelType)
   fuelType?: FuelType;
 

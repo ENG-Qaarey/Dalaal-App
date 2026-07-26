@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -12,12 +12,12 @@ import {
   Search,
   Car,
   Truck,
-  Bus,
-  Bike,
   X,
 } from "lucide-react";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageToggle from "@/components/language-toggle";
+import ListingDetailModal from "@/components/listing-detail-modal";
+import { searchService } from "@/lib/api";
 
 interface Vehicle {
   id: string;
@@ -41,197 +41,44 @@ interface Vehicle {
   featured: boolean;
 }
 
-const vehicles: Vehicle[] = [
-  {
-    id: "veh-1",
-    title: "Toyota Land Cruiser Prado TXL",
-    category: "SUV",
-    status: "FOR_SALE",
-    price: "$48,500",
-    location: "Garowe, Puntland",
-    city: "Garowe",
-    isVerified: true,
+function mapListing(listing: any): Vehicle {
+  const veh = listing.vehicle || {};
+  const img = listing.featuredImage || listing.images?.[0]?.url || "/placeholder-vehicle.jpg";
+  const brokerName = listing.user?.profile?.fullName || "Dalaal Agent";
+  const brokerAvatar = listing.user?.profile?.avatarUrl || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80";
+
+  const categoryMap: Record<string, string> = {
+    SUV: "SUV",
+    SEDAN: "Sedan",
+    PICKUP: "Pickup",
+    TRUCK: "Truck",
+    COMPACT: "Compact",
+    MOTORCYCLE: "Motorcycle",
+    VAN: "Van",
+  };
+
+  return {
+    id: listing.id,
+    title: listing.title,
+    category: categoryMap[veh.vehicleType] || veh.vehicleType || "Other",
+    status: listing.listingType === "RENT" ? "FOR_RENT" : "FOR_SALE",
+    price: `$${Number(listing.price).toLocaleString()}${listing.listingType === "RENT" ? "/day" : ""}`,
+    location: `${veh.make || ""} ${veh.model || ""}`.trim() || listing.city,
+    city: listing.city,
+    isVerified: listing.status === "ACTIVE",
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Mustafa Ali",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80",
-    make: "Toyota",
-    model: "Prado TXL",
-    year: 2022,
-    fuel: "Diesel",
-    transmission: "Automatic",
-    mileage: "32,000 km",
-    featured: true,
-  },
-  {
-    id: "veh-2",
-    title: "Hyundai Elantra Limited",
-    category: "Sedan",
-    status: "FOR_RENT",
-    price: "$45/day",
-    location: "Hodan, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
-    isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Khadra Ahmed",
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80",
-    make: "Hyundai",
-    model: "Elantra",
-    year: 2021,
-    fuel: "Petrol",
-    transmission: "Automatic",
-    mileage: "28,500 km",
-    featured: false,
-  },
-  {
-    id: "veh-3",
-    title: "Suzuki Alto (Fuel Saver)",
-    category: "Compact",
-    status: "FOR_RENT",
-    price: "$25/day",
-    location: "Kismayo, Jubaland",
-    city: "Kismayo",
-    isVerified: false,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Faisal Yusuf",
-    image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&w=800&q=80",
-    make: "Suzuki",
-    model: "Alto",
-    year: 2019,
-    fuel: "Petrol",
-    transmission: "Manual",
-    mileage: "45,000 km",
-    featured: false,
-  },
-  {
-    id: "veh-4",
-    title: "Toyota Hilux 4x4 Double Cabin",
-    category: "Pickup",
-    status: "FOR_SALE",
-    price: "$35,000",
-    location: "Hargeisa, Woqooyi",
-    city: "Hargeisa",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Hargeisa Motors",
-    image: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=800&q=80",
-    make: "Toyota",
-    model: "Hilux",
-    year: 2020,
-    fuel: "Diesel",
-    transmission: "Manual",
-    mileage: "68,000 km",
-    featured: true,
-  },
-  {
-    id: "veh-5",
-    title: "Nissan Patrol Super Safari",
-    category: "SUV",
-    status: "FOR_SALE",
-    price: "$52,000",
-    location: "KM4, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Amina Dalaal",
-    image: "https://images.unsplash.com/photo-1606611013016-969c19ba27c5?auto=format&fit=crop&w=800&q=80",
-    make: "Nissan",
-    model: "Patrol",
-    year: 2021,
-    fuel: "Diesel",
-    transmission: "Automatic",
-    mileage: "22,000 km",
-    featured: true,
-  },
-  {
-    id: "veh-6",
-    title: "Honda CR-V EX-L",
-    category: "SUV",
-    status: "FOR_RENT",
-    price: "$60/day",
-    location: "Waberi, Mogadishu",
-    city: "Mogadishu",
-    isVerified: false,
-    isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Sahal Rentals",
-    image: "https://images.unsplash.com/photo-1568844293986-8d0400f4745b?auto=format&fit=crop&w=800&q=80",
-    make: "Honda",
-    model: "CR-V",
-    year: 2023,
-    fuel: "Petrol",
-    transmission: "Automatic",
-    mileage: "8,200 km",
-    featured: false,
-  },
-  {
-    id: "veh-7",
-    title: "Mitsubishi L200 Triton",
-    category: "Pickup",
-    status: "FOR_SALE",
-    price: "$29,500",
-    location: "Bosaso, Puntland",
-    city: "Garowe",
-    isVerified: true,
-    isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Puntland Trucks",
-    image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=800&q=80",
-    make: "Mitsubishi",
-    model: "L200",
-    year: 2019,
-    fuel: "Diesel",
-    transmission: "Manual",
-    mileage: "92,000 km",
-    featured: false,
-  },
-  {
-    id: "veh-8",
-    title: "Kia Sportage GT-Line",
-    category: "SUV",
-    status: "FOR_RENT",
-    price: "$55/day",
-    location: "Jigjiga Yar, Hargeisa",
-    city: "Hargeisa",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Faisal Yusuf",
-    image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=800&q=80",
-    make: "Kia",
-    model: "Sportage",
-    year: 2024,
-    fuel: "Petrol",
-    transmission: "Automatic",
-    mileage: "3,100 km",
-    featured: true,
-  },
-  {
-    id: "veh-9",
-    title: "Isuzu NPR Box Truck",
-    category: "Truck",
-    status: "FOR_SALE",
-    price: "$42,000",
-    location: "Industrial Zone, Garowe",
-    city: "Garowe",
-    isVerified: false,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Commercial Motors",
-    image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80",
-    make: "Isuzu",
-    model: "NPR",
-    year: 2020,
-    fuel: "Diesel",
-    transmission: "Manual",
-    mileage: "115,000 km",
-    featured: false,
-  },
-];
+    avatar: brokerAvatar,
+    brokerName,
+    image: img,
+    make: veh.make || "",
+    model: veh.model || "",
+    year: veh.year || 0,
+    fuel: veh.fuelType || "N/A",
+    transmission: veh.transmission || "N/A",
+    mileage: veh.mileage ? `${Number(veh.mileage).toLocaleString()} km` : "N/A",
+    featured: listing.isFeatured || false,
+  };
+}
 
 const categories = [
   { label: "All", value: "all", icon: Car },
@@ -242,14 +89,36 @@ const categories = [
   { label: "Truck", value: "Truck", icon: Truck },
 ];
 
-const cities = ["All Cities", "Mogadishu", "Hargeisa", "Garowe", "Kismayo"];
+const cities = ["All Cities", "Mogadishu", "Hargeisa", "Garowe", "Kismayo", "Bosaso"];
 
 export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | "FOR_SALE" | "FOR_RENT">("ALL");
   const [selectedCity, setSelectedCity] = useState("All Cities");
   const [sortBy, setSortBy] = useState<"default" | "price-low" | "price-high" | "newest">("default");
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  async function fetchVehicles() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await searchService.search({ type: "VEHICLE" });
+      const listings = Array.isArray(result) ? result : result?.data ?? [];
+      setVehicles(listings.map(mapListing));
+    } catch (err: any) {
+      setError(err?.message || "Failed to load vehicles");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     let result = vehicles.filter((v) => {
@@ -281,7 +150,7 @@ export default function VehiclesPage() {
     }
 
     return result;
-  }, [searchQuery, selectedCategory, selectedStatus, selectedCity, sortBy]);
+  }, [vehicles, searchQuery, selectedCategory, selectedStatus, selectedCity, sortBy]);
 
   const activeFilterCount =
     (selectedCategory !== "all" ? 1 : 0) +
@@ -434,12 +303,42 @@ export default function VehiclesPage() {
           )}
 
           <span className="ml-auto text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-            {filtered.length} {filtered.length === 1 ? "vehicle" : "vehicles"} found
+            {loading ? "Loading..." : `${filtered.length} ${filtered.length === 1 ? "vehicle" : "vehicles"} found`}
           </span>
         </div>
 
-        {/* Cards Grid */}
-        {filtered.length === 0 ? (
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white dark:bg-zinc-900 rounded-[5px] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden animate-pulse">
+                <div className="aspect-video w-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="p-5 space-y-3">
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                  <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {!loading && error && (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
+              <X className="w-8 h-8 text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Something went wrong</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{error}</p>
+            <button onClick={fetchVehicles} className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-20">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
               <Car className="w-8 h-8 text-zinc-300 dark:text-zinc-600" />
@@ -450,7 +349,10 @@ export default function VehiclesPage() {
               Clear all filters
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* Cards Grid */}
+        {!loading && !error && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((item) => (
               <div
@@ -493,7 +395,7 @@ export default function VehiclesPage() {
                 <div className="p-5">
                   <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400 text-xs mb-2.5">
                     <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>{item.location}</span>
+                    <span>{item.city}</span>
                   </div>
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <h3 className="font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
@@ -504,15 +406,21 @@ export default function VehiclesPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 py-3 border-t border-b border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs mb-4">
-                    <span className="flex items-center gap-1.5">
-                      <Fuel className="w-4 h-4 text-zinc-400" />
-                      <span>{item.fuel}</span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Settings2 className="w-4 h-4 text-zinc-400" />
-                      <span>{item.transmission}</span>
-                    </span>
-                    <span className="text-zinc-500 font-semibold">{item.year}</span>
+                    {item.fuel !== "N/A" && (
+                      <span className="flex items-center gap-1.5">
+                        <Fuel className="w-4 h-4 text-zinc-400" />
+                        <span>{item.fuel}</span>
+                      </span>
+                    )}
+                    {item.transmission !== "N/A" && (
+                      <span className="flex items-center gap-1.5">
+                        <Settings2 className="w-4 h-4 text-zinc-400" />
+                        <span>{item.transmission}</span>
+                      </span>
+                    )}
+                    {item.year > 0 && (
+                      <span className="text-zinc-500 font-semibold">{item.year}</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -526,7 +434,10 @@ export default function VehiclesPage() {
                         {item.brokerName}
                       </span>
                     </div>
-                    <button className="flex items-center gap-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+                    <button
+                      onClick={(e) => { e.preventDefault(); setSelectedListingId(item.id); }}
+                      className="flex items-center gap-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                    >
                       <span>View Details</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
@@ -582,6 +493,15 @@ export default function VehiclesPage() {
           © {new Date().getFullYear()} Dalaal Inc. All rights reserved.
         </div>
       </footer>
+
+      {/* Listing Detail Modal */}
+      {selectedListingId && (
+        <ListingDetailModal
+          open={!!selectedListingId}
+          onClose={() => setSelectedListingId(null)}
+          listingId={selectedListingId}
+        />
+      )}
     </div>
   );
 }

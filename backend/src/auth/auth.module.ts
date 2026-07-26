@@ -8,6 +8,7 @@ import { AuthRepository } from './auth.repository';
 import { JwtStrategy, LocalStrategy } from './strategies';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -33,7 +34,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     LocalStrategy,
     JwtAuthGuard,
     RolesGuard,
+    PermissionsGuard,
   ],
-  exports: [AuthService, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtAuthGuard, RolesGuard, PermissionsGuard],
 })
 export class AuthModule {}

@@ -53,7 +53,17 @@ export class CreateListingDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  currency?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   featuredImage?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
 }
 
 export class UpdateListingDto {
@@ -80,6 +90,11 @@ export class UpdateListingDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  currency?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   city?: string;
 
   @ApiProperty({ required: false })
@@ -101,6 +116,16 @@ export class UpdateListingDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  featuredImage?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

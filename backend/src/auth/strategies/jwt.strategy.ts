@@ -36,10 +36,26 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Your account has been banned');
     }
 
-    if (!payload.sessionToken || !user.sessionToken || payload.sessionToken !== user.sessionToken) {
-      throw new UnauthorizedException('Session expired. Logged in on another device.');
+    if (
+      !payload.sessionToken ||
+      !user.sessionToken ||
+      payload.sessionToken !== user.sessionToken
+    ) {
+      throw new UnauthorizedException(
+        'Session expired. Logged in on another device.',
+      );
     }
 
-    return user;
+    const rolePermissions = await this.prisma.rolePermission.findMany({
+      where: { role: user.role as any },
+      include: { permission: true },
+    });
+
+    const permissions = rolePermissions.map((rp) => rp.permission.name);
+
+    return {
+      ...user,
+      permissions,
+    };
   }
 }

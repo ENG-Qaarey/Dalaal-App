@@ -22,7 +22,10 @@ export class ModerationService {
   async rejectListing(id: string, reason: string) {
     return this.prisma.listing.update({
       where: { id },
-      data: { status: 'REJECTED' },
+      data: {
+        status: 'REJECTED',
+        rejectionReason: reason || null,
+      },
     });
   }
 }

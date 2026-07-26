@@ -42,4 +42,17 @@ export class NotificationsRepository {
       where: { userId, isRead: false },
     });
   }
+
+  async getActiveAnnouncements() {
+    const now = new Date();
+    return this.prisma.announcement.findMany({
+      where: {
+        isActive: true,
+        startsAt: { lte: now },
+        expiresAt: { gte: now },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
 }
