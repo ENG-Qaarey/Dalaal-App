@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -11,7 +11,6 @@ import {
   Maximize2,
   ArrowUpRight,
   Search,
-  SlidersHorizontal,
   Home,
   Building2,
   LandPlot,
@@ -20,6 +19,8 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageToggle from "@/components/language-toggle";
+import ListingDetailModal from "@/components/listing-detail-modal";
+import { searchService } from "@/lib/api";
 
 interface Property {
   id: string;
@@ -40,170 +41,39 @@ interface Property {
   featured: boolean;
 }
 
-const properties: Property[] = [
-  {
-    id: "prop-1",
-    title: "Luxury Diaspora Villa",
-    category: "Villa",
-    status: "FOR_SALE",
-    price: "$245,000",
-    location: "Hodan, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
+function mapListing(listing: any): Property {
+  const prop = listing.property || {};
+  const img = listing.featuredImage || listing.images?.[0]?.url || "/placeholder-property.jpg";
+  const brokerName = listing.user?.profile?.fullName || "Dalaal Agent";
+  const brokerAvatar = listing.user?.profile?.avatarUrl || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80";
+
+  const categoryMap: Record<string, string> = {
+    HOUSE: "Villa",
+    APARTMENT: "Apartment",
+    LAND: "Land",
+    COMMERCIAL: "Commercial",
+    VILLA: "Villa",
+  };
+
+  return {
+    id: listing.id,
+    title: listing.title,
+    category: categoryMap[prop.propertyType] || prop.propertyType || "Other",
+    status: listing.listingType === "RENT" ? "FOR_RENT" : "FOR_SALE",
+    price: `$${Number(listing.price).toLocaleString()}${listing.listingType === "RENT" ? "/month" : ""}`,
+    location: prop.address || listing.city,
+    city: listing.city,
+    isVerified: listing.status === "ACTIVE",
     isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Abdi Rahman",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-    beds: 5,
-    baths: 4,
-    size: "380 m²",
-    featured: true,
-  },
-  {
-    id: "prop-2",
-    title: "Modern 3-Bedroom Apartment",
-    category: "Apartment",
-    status: "FOR_RENT",
-    price: "$750/month",
-    location: "Jigjiga Yar, Hargeisa",
-    city: "Hargeisa",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Faisal Yusuf",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
-    beds: 3,
-    baths: 2,
-    size: "150 m²",
-    featured: false,
-  },
-  {
-    id: "prop-3",
-    title: "Commercial Building Space",
-    category: "Commercial",
-    status: "FOR_SALE",
-    price: "$450,000",
-    location: "Waberi, Mogadishu",
-    city: "Mogadishu",
-    isVerified: false,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Khadra Ahmed",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-    beds: 0,
-    baths: 6,
-    size: "750 m²",
-    featured: false,
-  },
-  {
-    id: "prop-4",
-    title: "Beachfront Family Villa",
-    category: "Villa",
-    status: "FOR_SALE",
-    price: "$320,000",
-    location: "Lido Beach, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Sahal Properties",
-    image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80",
-    beds: 4,
-    baths: 3,
-    size: "320 m²",
-    featured: true,
-  },
-  {
-    id: "prop-5",
-    title: "Furnished Studio Apartment",
-    category: "Apartment",
-    status: "FOR_RENT",
-    price: "$400/month",
-    location: "Hodan, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
-    isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Mustafa Ali",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80",
-    beds: 1,
-    baths: 1,
-    size: "55 m²",
-    featured: false,
-  },
-  {
-    id: "prop-6",
-    title: "Large Plot Near Airport Road",
-    category: "Land",
-    status: "FOR_SALE",
-    price: "$180,000",
-    location: "Waberi, Mogadishu",
-    city: "Mogadishu",
-    isVerified: false,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Sahal Lands",
-    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80",
-    beds: 0,
-    baths: 0,
-    size: "1200 m²",
-    featured: false,
-  },
-  {
-    id: "prop-7",
-    title: "Executive Penthouse Suite",
-    category: "Apartment",
-    status: "FOR_RENT",
-    price: "$1,200/month",
-    location: "KM4, Mogadishu",
-    city: "Mogadishu",
-    isVerified: true,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Amina Dalaal",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
-    beds: 3,
-    baths: 2,
-    size: "200 m²",
-    featured: true,
-  },
-  {
-    id: "prop-8",
-    title: "Residential Plot in Township",
-    category: "Land",
-    status: "FOR_SALE",
-    price: "$95,000",
-    location: "Arta, Djibouti",
-    city: "Djibouti",
-    isVerified: true,
-    isEscrowSecured: false,
-    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Djibouti Estates",
-    image: "https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=800&q=80",
-    beds: 0,
-    baths: 0,
-    size: "800 m²",
-    featured: false,
-  },
-  {
-    id: "prop-9",
-    title: "Warehouse & Storage Facility",
-    category: "Commercial",
-    status: "FOR_RENT",
-    price: "$2,500/month",
-    location: "Industrial Zone, Garowe",
-    city: "Garowe",
-    isVerified: false,
-    isEscrowSecured: true,
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-    brokerName: "Puntland Holdings",
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-    beds: 0,
-    baths: 2,
-    size: "1500 m²",
-    featured: false,
-  },
-];
+    avatar: brokerAvatar,
+    brokerName,
+    image: img,
+    beds: prop.bedrooms || 0,
+    baths: prop.bathrooms || 0,
+    size: prop.areaSqft ? `${Number(prop.areaSqft).toLocaleString()} m²` : "N/A",
+    featured: listing.isFeatured || false,
+  };
+}
 
 const categories = [
   { label: "All", value: "all", icon: Home },
@@ -213,15 +83,36 @@ const categories = [
   { label: "Commercial", value: "Commercial", icon: Warehouse },
 ];
 
-const cities = ["All Cities", "Mogadishu", "Hargeisa", "Garowe", "Djibouti"];
+const cities = ["All Cities", "Mogadishu", "Hargeisa", "Garowe", "Djibouti", "Kismayo", "Bosaso"];
 
 export default function PropertiesPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | "FOR_SALE" | "FOR_RENT">("ALL");
   const [selectedCity, setSelectedCity] = useState("All Cities");
   const [sortBy, setSortBy] = useState<"default" | "price-low" | "price-high" | "newest">("default");
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  async function fetchProperties() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await searchService.search({ type: "PROPERTY" });
+      const listings = Array.isArray(result) ? result : result?.data ?? [];
+      setProperties(listings.map(mapListing));
+    } catch (err: any) {
+      setError(err?.message || "Failed to load properties");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     let result = properties.filter((p) => {
@@ -252,7 +143,7 @@ export default function PropertiesPage() {
     }
 
     return result;
-  }, [searchQuery, selectedCategory, selectedStatus, selectedCity, sortBy]);
+  }, [properties, searchQuery, selectedCategory, selectedStatus, selectedCity, sortBy]);
 
   const activeFilterCount =
     (selectedCategory !== "all" ? 1 : 0) +
@@ -408,12 +299,42 @@ export default function PropertiesPage() {
           )}
 
           <span className="ml-auto text-xs font-semibold text-zinc-400 dark:text-zinc-500">
-            {filtered.length} {filtered.length === 1 ? "property" : "properties"} found
+            {loading ? "Loading..." : `${filtered.length} ${filtered.length === 1 ? "property" : "properties"} found`}
           </span>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white dark:bg-zinc-900 rounded-[5px] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden animate-pulse">
+                <div className="aspect-video w-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="p-5 space-y-3">
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                  <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {!loading && error && (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
+              <X className="w-8 h-8 text-red-400" />
+            </div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Something went wrong</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">{error}</p>
+            <button onClick={fetchProperties} className="text-sm font-bold text-sky-600 hover:text-sky-700 transition-colors">
+              Try again
+            </button>
+          </div>
+        )}
+
         {/* Cards Grid */}
-        {filtered.length === 0 ? (
+        {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-20">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
               <Search className="w-8 h-8 text-zinc-300 dark:text-zinc-600" />
@@ -424,7 +345,9 @@ export default function PropertiesPage() {
               Clear all filters
             </button>
           </div>
-        ) : (
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((item) => (
               <div
@@ -507,7 +430,10 @@ export default function PropertiesPage() {
                         {item.brokerName}
                       </span>
                     </div>
-                    <button className="flex items-center gap-0.5 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors">
+                    <button
+                      onClick={(e) => { e.preventDefault(); setSelectedListingId(item.id); }}
+                      className="flex items-center gap-0.5 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
+                    >
                       <span>View Details</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
@@ -563,6 +489,15 @@ export default function PropertiesPage() {
           © {new Date().getFullYear()} Dalaal Inc. All rights reserved.
         </div>
       </footer>
+
+      {/* Listing Detail Modal */}
+      {selectedListingId && (
+        <ListingDetailModal
+          open={!!selectedListingId}
+          onClose={() => setSelectedListingId(null)}
+          listingId={selectedListingId}
+        />
+      )}
     </div>
   );
 }

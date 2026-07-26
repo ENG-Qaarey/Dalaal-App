@@ -15,13 +15,11 @@ import {
   CheckCircle2,
   Briefcase,
   Home as HomeIcon,
-  Car,
   UserCircle,
 } from "lucide-react";
-import ThemeToggle from "@/components/theme-toggle";
 import { authService } from "@/lib/api";
 
-type UserRole = "CUSTOMER" | "PROPERTY_OWNER" | "VEHICLE_OWNER" | "REGULAR_DALAAL";
+type UserRole = "CUSTOMER" | "BROKER" | "PROPERTY_OWNER";
 
 interface RoleOption {
   value: UserRole;
@@ -31,10 +29,9 @@ interface RoleOption {
 }
 
 const roleOptions: RoleOption[] = [
-  { value: "CUSTOMER", label: "Customer", desc: "", icon: <UserCircle className="w-3.5 h-3.5" /> },
-  { value: "PROPERTY_OWNER", label: "Property Owner", desc: "", icon: <HomeIcon className="w-3.5 h-3.5" /> },
-  { value: "VEHICLE_OWNER", label: "Vehicle Owner", desc: "", icon: <Car className="w-3.5 h-3.5" /> },
-  { value: "REGULAR_DALAAL", label: "Dalaal / Broker", desc: "", icon: <Briefcase className="w-3.5 h-3.5" /> },
+  { value: "CUSTOMER", label: "Customer", desc: "Browse and save properties, message brokers", icon: <UserCircle className="w-3.5 h-3.5" /> },
+  { value: "BROKER", label: "Broker / Dalaal", desc: "List and manage properties for clients", icon: <Briefcase className="w-3.5 h-3.5" /> },
+  { value: "PROPERTY_OWNER", label: "Property Owner", desc: "List your own properties directly", icon: <HomeIcon className="w-3.5 h-3.5" /> },
 ];
 
 export default function RegisterPage() {
@@ -82,6 +79,7 @@ export default function RegisterPage() {
         email: email.trim(),
         phone: phone.trim() || undefined,
         password,
+        role,
       });
 
       router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
@@ -114,7 +112,6 @@ export default function RegisterPage() {
             <span className="text-lg font-black tracking-tight text-zinc-900 dark:text-white">Dalaal<span className="text-sky-600">.</span></span>
           </Link>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link href="/login" className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors">Sign In</Link>
           </div>
         </div>

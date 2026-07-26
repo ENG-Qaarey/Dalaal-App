@@ -1,14 +1,28 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Delete, ParseEnumPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Delete,
+  ParseEnumPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
 import { CreateConversationDto, CreateMessageDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Permissions } from '../common/decorators';
+import { Permission } from '../common/enums';
 
 @ApiTags('Chat')
 @Controller('chat')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.CHAT_USE)
 @ApiBearerAuth()
 export class ChatController {
   constructor(
@@ -22,8 +36,12 @@ export class ChatController {
   } as const;
 
   @Post('conversations')
+  @Permissions(Permission.MESSAGE_SEND)
   @ApiOperation({ summary: 'Create a new conversation' })
-  async createConversation(@CurrentUser() user: any, @Body() dto: CreateConversationDto) {
+  async createConversation(
+    @CurrentUser() user: any,
+    @Body() dto: CreateConversationDto,
+  ) {
     return this.chatService.createConversation(user.id, dto);
   }
 
@@ -45,6 +63,7 @@ export class ChatController {
   }
 
   @Post('conversations/:id/messages')
+  @Permissions(Permission.MESSAGE_SEND)
   @ApiOperation({ summary: 'Send a message' })
   async sendMessage(
     @Param('id') id: string,
@@ -52,34 +71,57 @@ export class ChatController {
     @Body() dto: CreateMessageDto,
   ) {
     const message = await this.chatService.sendMessage(id, user.id, dto);
-    await this.chatGateway.emitMessageToParticipants(message, id, user.id, dto.tempId);
+    await this.chatGateway.emitMessageToParticipants(
+      message,
+      id,
+      user.id,
+      dto.tempId,
+    );
     return message;
   }
 
   @Delete('messages/:id')
+  @Permissions(Permission.MESSAGE_DELETE_OWN)
   @ApiOperation({ summary: 'Delete a message' })
   async deleteMessage(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Query('scope', new ParseEnumPipe(ChatController.deleteScopeEnum, { optional: true })) scope: 'self' | 'all' = 'self',
+    @Query(
+      'scope',
+      new ParseEnumPipe(ChatController.deleteScopeEnum, { optional: true }),
+    )
+    scope: 'self' | 'all' = 'self',
   ) {
     const result = await this.chatService.deleteMessage(id, user.id, scope);
     if (scope === 'all') {
-      await this.chatGateway.emitMessageDeleted(result.conversationId, id, user.id);
+      await this.chatGateway.emitMessageDeleted(
+        result.conversationId,
+        id,
+        user.id,
+      );
     }
     return result;
   }
 
   @Post('messages/:id/delete')
+  @Permissions(Permission.MESSAGE_DELETE_OWN)
   @ApiOperation({ summary: 'Delete a message (POST alias)' })
   async deleteMessagePost(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Query('scope', new ParseEnumPipe(ChatController.deleteScopeEnum, { optional: true })) scope: 'self' | 'all' = 'self',
+    @Query(
+      'scope',
+      new ParseEnumPipe(ChatController.deleteScopeEnum, { optional: true }),
+    )
+    scope: 'self' | 'all' = 'self',
   ) {
     const result = await this.chatService.deleteMessage(id, user.id, scope);
     if (scope === 'all') {
-      await this.chatGateway.emitMessageDeleted(result.conversationId, id, user.id);
+      await this.chatGateway.emitMessageDeleted(
+        result.conversationId,
+        id,
+        user.id,
+      );
     }
     return result;
   }

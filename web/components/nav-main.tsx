@@ -86,6 +86,8 @@ export function NavMain({
   accentColor?: AccentColor;
 }) {
   const pathname = usePathname();
+  const normalizePath = (path: string) => path.replace(/\/$/, ''); // Remove trailing slashes
+  const normalizedPathname = normalizePath(pathname);
   const accent = accentMap[accentColor];
 
   const navSections: NavSection[] = sections || [
@@ -106,12 +108,12 @@ export function NavMain({
           {/* Nav Items */}
           {section.items.map((item) => {
             const isOpen =
-              pathname === item.url ||
-              (item.items?.some((sub) => sub.url === pathname) ?? false);
+              normalizedPathname === normalizePath(item.url) ||
+              (item.items?.some((sub) => normalizedPathname === normalizePath(sub.url)) ?? false);
 
             const isActive =
-              pathname === item.url ||
-              item.items?.some((sub) => sub.url === pathname);
+              normalizedPathname === normalizePath(item.url) ||
+              item.items?.some((sub) => normalizedPathname === normalizePath(sub.url));
 
             const Icon = item.icon;
 
@@ -177,7 +179,7 @@ export function NavMain({
                     <CollapsibleContent>
                       <SidebarMenuSub>
                         {item.items.map((subItem) => {
-                          const isSubActive = pathname === subItem.url;
+                          const isSubActive = normalizedPathname === normalizePath(subItem.url);
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton

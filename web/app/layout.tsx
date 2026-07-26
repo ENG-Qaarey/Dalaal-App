@@ -38,7 +38,7 @@ export default function RootLayout({
       <head>
 <ThemeInitializer />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AuthProvider>
           <TooltipProvider>
             <LanguageProvider>{children}</LanguageProvider>

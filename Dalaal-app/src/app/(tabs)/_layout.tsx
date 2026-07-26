@@ -5,7 +5,7 @@ import { useAppTheme } from '../../context/theme-context';
 import { useAuthStore } from '../../store/authStore';
 import PremiumTabBar from '../../components/ui/PremiumTabBar';
 
-const CREATOR_ROLES = new Set(['PROPERTY_OWNER', 'VEHICLE_OWNER', 'REGULAR_DALAAL', 'VERIFIED_DALAAL', 'SUPER_ADMIN']);
+const CREATOR_ROLES = new Set(['PROPERTY_OWNER', 'VEHICLE_OWNER', 'BROKER', 'SUPER_ADMIN']);
 
 export default function TabsLayout() {
   const { scheme } = useAppTheme();

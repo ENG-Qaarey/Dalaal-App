@@ -46,6 +46,31 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsBoolean()
   security?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  water?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  electricity?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  propertyStatus?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  depositMonths?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  minLeaseMonths?: number;
 }
 
 export class UpdatePropertyDto extends CreatePropertyDto {}

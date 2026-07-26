@@ -110,7 +110,7 @@ export class UsersService {
       throw new ForbiddenException('Cannot update your own account');
     }
 
-    if (requestingUser.role !== UserRole.SUPER_ADMIN && requestingUser.role !== UserRole.MODERATOR) {
+    if (requestingUser.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException('Only admins can update user roles and statuses');
     }
 

@@ -10,7 +10,11 @@ export class VerificationService {
     return this.prisma.identityVerification.create({
       data: {
         userId,
-        ...dto,
+        documentType: dto.documentType,
+        documentNumber: dto.documentNumber,
+        documentImage: dto.frontImageUrl || dto.documentImage,
+        selfieImage: dto.selfieImageUrl || dto.selfieImage,
+        businessLicense: dto.businessLicense,
         status: VerificationStatus.PENDING,
       },
     });

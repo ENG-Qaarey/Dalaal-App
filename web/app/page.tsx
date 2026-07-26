@@ -7,27 +7,26 @@ import {
   Smartphone,
   ArrowRight,
 } from "lucide-react";
-import HomeHero from "@/components/home-hero";
+import EtherealBeamsHero from "@/components/ui/ethereal-beams-hero";
 import ListingsGrid from "@/components/listings-grid";
 import EscrowExplainer from "@/components/escrow-explainer";
 import ClipsPreview from "@/components/clips-preview";
 import MortgageCalculator from "@/components/mortgage-calculator";
 import FAQAccordion from "@/components/faq-accordion";
-import ThemeToggle from "@/components/theme-toggle";
 import LanguageToggle from "@/components/language-toggle";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans text-zinc-950 dark:text-zinc-50 transition-colors duration-200">
+    <div className="dark min-h-screen bg-zinc-950 font-sans text-zinc-50 transition-colors duration-200">
       {/* Premium Sticky Glass Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 bg-white/75 backdrop-blur-md dark:border-zinc-850/50 dark:bg-zinc-950/75">
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/50 bg-zinc-950/75 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <span className="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-sky-600/20">
                 D
               </span>
-              <span className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
+              <span className="text-xl font-black tracking-tight text-white">
                 Dalaal<span className="text-sky-600">.</span>
               </span>
             </Link>
@@ -35,25 +34,25 @@ export default function Home() {
             <nav className="hidden md:flex items-center gap-6">
               <Link
                 href="/properties"
-                className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+                className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
               >
                 Properties
               </Link>
               <Link
                 href="/vehicles"
-                className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+                className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
               >
                 Vehicles
               </Link>
               <Link
                 href="/escrow"
-                className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+                className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
               >
                 Escrow Guarantee
               </Link>
               <Link
                 href="/clips"
-                className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+                className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
               >
                 Clips
               </Link>
@@ -64,13 +63,10 @@ export default function Home() {
             {/* Quick Lang Indicator */}
             <LanguageToggle />
 
-            {/* Theme Toggle */}
-            <ThemeToggle />
-
             {/* Auth Links */}
             <Link
               href="/login"
-              className="text-xs font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+              className="text-xs font-bold text-zinc-400 hover:text-white transition-colors"
             >
               Sign In
             </Link>
@@ -86,46 +82,46 @@ export default function Home() {
 
       {/* Main Page Layout */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* 1. Hero Section */}
-        <HomeHero />
+        {/* 1. Hero Section — 3D Beams */}
+        <EtherealBeamsHero />
 
         {/* Brand Highlights Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-10 border-t border-b border-zinc-200/60 dark:border-zinc-900/60 my-10 bg-white/30 dark:bg-zinc-950/20 backdrop-blur rounded-2xl px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-10 border-t border-b border-zinc-800/60 my-10 bg-zinc-950/20 backdrop-blur rounded-2xl px-6">
           <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-xl border border-sky-100 dark:border-sky-900/40">
+            <div className="p-2.5 bg-sky-950/40 text-sky-400 rounded-xl border border-sky-900/40">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+              <h4 className="text-sm font-bold text-white">
                 Escrow Protection
               </h4>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <p className="text-[11px] text-zinc-400 mt-0.5">
                 Deposits held safely in transit.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+            <div className="p-2.5 bg-emerald-950/40 text-emerald-400 rounded-xl border border-emerald-900/40">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+              <h4 className="text-sm font-bold text-white">
                 Mobile Payments
               </h4>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <p className="text-[11px] text-zinc-400 mt-0.5">
                 Integrations for EVC, ZAAD, SAHAL.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+            <div className="p-2.5 bg-indigo-950/40 text-indigo-400 rounded-xl border border-indigo-900/40">
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-white">
+              <h4 className="text-sm font-bold text-white">
                 Clips Walkthroughs
               </h4>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <p className="text-[11px] text-zinc-400 mt-0.5">
                 Reels style vertical videos.
               </p>
             </div>
@@ -183,22 +179,22 @@ export default function Home() {
       </main>
 
       {/* Premium Footer */}
-      <footer className="border-t border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 py-16">
+      <footer className="border-t border-zinc-800/50 bg-zinc-950 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <span className="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-sky-600/20">
                 D
               </span>
-              <span className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
+              <span className="text-xl font-black tracking-tight text-white">
                 Dalaal
               </span>
             </Link>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <p className="text-xs text-zinc-400 leading-relaxed">
               Somalia's premier real estate and vehicle rental/sales platform.
               Secure transactions, verified agents, and live video tours.
             </p>
-            <div className="flex gap-4 pt-2 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200">
+            <div className="flex gap-4 pt-2 text-zinc-400 hover:text-zinc-200">
               <Link
                 href="https://github.com/ENG-Qaarey"
                 target="_blank"
@@ -224,36 +220,24 @@ export default function Home() {
             <h4 className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest mb-4">
               Properties
             </h4>
-            <ul className="space-y-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+            <ul className="space-y-2.5 text-xs font-semibold text-zinc-400">
               <li>
-                <Link
-                  href="/search?type=villa"
-                  className="hover:text-sky-600 transition-colors"
-                >
+                <Link href="/search?type=villa" className="hover:text-sky-400 transition-colors">
                   Villas & Houses
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=apartment"
-                  className="hover:text-sky-600 transition-colors"
-                >
+                <Link href="/search?type=apartment" className="hover:text-sky-400 transition-colors">
                   Apartments for Rent
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=land"
-                  className="hover:text-sky-600 transition-colors"
-                >
+                <Link href="/search?type=land" className="hover:text-sky-400 transition-colors">
                   Commercial Lands
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=office"
-                  className="hover:text-sky-600 transition-colors"
-                >
+                <Link href="/search?type=office" className="hover:text-sky-400 transition-colors">
                   Offices
                 </Link>
               </li>
@@ -264,36 +248,24 @@ export default function Home() {
             <h4 className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest mb-4">
               Vehicles
             </h4>
-            <ul className="space-y-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+            <ul className="space-y-2.5 text-xs font-semibold text-zinc-400">
               <li>
-                <Link
-                  href="/search?type=suv"
-                  className="hover:text-emerald-600 transition-colors"
-                >
+                <Link href="/search?type=suv" className="hover:text-emerald-400 transition-colors">
                   SUVs & Pickups
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=sedan"
-                  className="hover:text-emerald-600 transition-colors"
-                >
+                <Link href="/search?type=sedan" className="hover:text-emerald-400 transition-colors">
                   Sedans
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=truck"
-                  className="hover:text-emerald-600 transition-colors"
-                >
+                <Link href="/search?type=truck" className="hover:text-emerald-400 transition-colors">
                   Commercial Trucks
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/search?type=rentals"
-                  className="hover:text-emerald-600 transition-colors"
-                >
+                <Link href="/search?type=rentals" className="hover:text-emerald-400 transition-colors">
                   Daily Car Rentals
                 </Link>
               </li>
@@ -304,36 +276,24 @@ export default function Home() {
             <h4 className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest mb-4">
               Trust & Operations
             </h4>
-            <ul className="space-y-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+            <ul className="space-y-2.5 text-xs font-semibold text-zinc-400">
               <li>
-                <Link
-                  href="/escrow"
-                  className="hover:text-indigo-600 transition-colors"
-                >
+                <Link href="/escrow" className="hover:text-indigo-400 transition-colors">
                   Escrow Guarantee
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/verification"
-                  className="hover:text-indigo-600 transition-colors"
-                >
+                <Link href="/verification" className="hover:text-indigo-400 transition-colors">
                   AI Identity Verification
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/security"
-                  className="hover:text-indigo-600 transition-colors"
-                >
+                <Link href="/security" className="hover:text-indigo-400 transition-colors">
                   Transaction Audits
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/terms"
-                  className="hover:text-indigo-600 transition-colors"
-                >
+                <Link href="/terms" className="hover:text-indigo-400 transition-colors">
                   Terms of Service
                 </Link>
               </li>
@@ -341,8 +301,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 mt-12 border-t border-zinc-200/50 dark:border-zinc-900 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-          © {new Date().getFullYear()} Dalaal Inc. All rights reserved. Locally
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 mt-12 border-t border-zinc-800/50 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+          &copy; {new Date().getFullYear()} Dalaal Inc. All rights reserved. Locally
           optimized for Mogadishu, Hargeisa, Garowe, and Kismayo.
         </div>
       </footer>

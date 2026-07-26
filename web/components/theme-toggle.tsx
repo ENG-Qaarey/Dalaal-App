@@ -5,12 +5,13 @@ import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const stored = localStorage.getItem("dalaal-theme");
-    if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    if (
+      stored === "dark" ||
+      (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
       setIsDark(true);
       document.documentElement.classList.add("dark");
     } else {
@@ -30,18 +31,6 @@ export default function ThemeToggle() {
       localStorage.setItem("dalaal-theme", "light");
     }
   };
-
-  // Prevent mismatched SSR render – show placeholder until mounted
-  if (!mounted) {
-    return (
-      <button
-        aria-label="Toggle theme"
-        className="relative w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/40 dark:border-zinc-800/40 flex items-center justify-center"
-      >
-        <span className="w-4 h-4 rounded-full bg-zinc-300 dark:bg-zinc-700 animate-pulse" />
-      </button>
-    );
-  }
 
   return (
     <button

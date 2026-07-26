@@ -1,22 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { Search, UserPlus, MoreHorizontal, ShieldCheck, Ban, Mail, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, UserPlus, ShieldCheck, Ban, Mail, Eye, Loader2, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
-const brokers = [
-  { id: 1, name: "Axmed Cali", email: "axmed@dalaal.so", phone: "+252 61 234 5678", city: "Mogadishu", listings: 24, status: "Verified", joined: "Jan 12, 2026" },
-  { id: 2, name: "Faadumo Xasan", email: "faadumo@dalaal.so", phone: "+252 63 876 5432", city: "Hargeisa", listings: 18, status: "Verified", joined: "Feb 3, 2026" },
-  { id: 3, name: "Mahad Ibrahim", email: "mahad@dalaal.so", phone: "+252 65 321 0987", city: "Bosaso", listings: 9, status: "Pending", joined: "Mar 19, 2026" },
-  { id: 4, name: "Sahra Yuusuf", email: "sahra@dalaal.so", phone: "+252 61 555 4321", city: "Kismayo", listings: 5, status: "Suspended", joined: "Apr 5, 2026" },
-  { id: 5, name: "Cabdi Warsame", email: "cabdi@dalaal.so", phone: "+252 68 111 2233", city: "Mogadishu", listings: 31, status: "Verified", joined: "Jan 28, 2026" },
-  { id: 6, name: "Lul Maxamed", email: "lul@dalaal.so", phone: "+252 63 998 7766", city: "Hargeisa", listings: 12, status: "Pending", joined: "May 11, 2026" },
-];
+interface Broker {
+  id: string;
+  email: string;
+  username?: string;
+  status: string;
+  createdAt: string;
+  profile?: { firstName?: string; lastName?: string; city?: string; phone?: string };
+  _count?: { listings?: number };
+}
+
+function getBrokerName(b: Broker) {
+  if (b.profile?.firstName) return `${b.profile.firstName} ${b.profile.lastName || ""}`.trim();
+  return b.username || b.email;
+}
 
 const StatusBadge = ({ status }: { status: string }) => {
   const colors: Record<string, string> = {
-    Verified: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
-    Pending: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
-    Suspended: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
+    ACTIVE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400",
+    PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+    SUSPENDED: "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400",
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? "bg-zinc-100 text-zinc-700"}`}>
@@ -26,12 +33,53 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function BrokersPage() {
+  const [brokers, setBrokers] = useState<Broker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    async function fetchBrokers() {
+      try {
+        const result = await api.get("/admin/users?role=BROKER");
+        const list = Array.isArray(result) ? result : result?.users ?? result?.data ?? [];
+        setBrokers(list);
+      } catch (err: any) {
+        setError(err.message || "Failed to load brokers");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBrokers();
+  }, []);
+
   const filtered = brokers.filter(
     (b) =>
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.city.toLowerCase().includes(search.toLowerCase())
+      getBrokerName(b).toLowerCase().includes(search.toLowerCase()) ||
+      (b.profile?.city ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      b.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const verifiedCount = brokers.filter((b) => b.status === "ACTIVE").length;
+  const pendingCount = brokers.filter((b) => b.status === "PENDING").length;
+  const suspendedCount = brokers.filter((b) => b.status === "SUSPENDED").length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-3">
+        <AlertCircle className="w-8 h-8 text-red-500" />
+        <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -40,19 +88,15 @@ export default function BrokersPage() {
           <h1 className="text-2xl font-bold tracking-tight">Brokers</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage all registered brokers on the platform.</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
-          <UserPlus className="w-4 h-4" />
-          Add Broker
-        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Total Brokers", value: brokers.length },
-          { label: "Verified", value: brokers.filter(b => b.status === "Verified").length },
-          { label: "Pending", value: brokers.filter(b => b.status === "Pending").length },
-          { label: "Suspended", value: brokers.filter(b => b.status === "Suspended").length },
+          { label: "Verified", value: verifiedCount },
+          { label: "Pending", value: pendingCount },
+          { label: "Suspended", value: suspendedCount },
         ].map(stat => (
           <div key={stat.label} className="rounded-xl border bg-white dark:bg-zinc-950 p-4 shadow-sm">
             <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -87,25 +131,33 @@ export default function BrokersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {filtered.map(b => (
-              <tr key={b.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                <td className="px-5 py-3.5">
-                  <div className="font-medium text-zinc-900 dark:text-zinc-100">{b.name}</div>
-                  <div className="text-xs text-muted-foreground">{b.email}</div>
-                </td>
-                <td className="px-5 py-3.5 text-zinc-600 dark:text-zinc-400">{b.city}</td>
-                <td className="px-5 py-3.5 font-semibold text-sky-600">{b.listings}</td>
-                <td className="px-5 py-3.5"><StatusBadge status={b.status} /></td>
-                <td className="px-5 py-3.5 text-xs text-zinc-500">{b.joined}</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2">
-                    <button title="View" className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Eye className="w-4 h-4 text-zinc-500" /></button>
-                    <button title="Email" className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Mail className="w-4 h-4 text-zinc-500" /></button>
-                    <button title={b.status === "Suspended" ? "Unsuspend" : "Suspend"} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"><Ban className="w-4 h-4 text-red-500" /></button>
-                  </div>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-5 py-8 text-center text-sm text-muted-foreground">
+                  No brokers found
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map(b => (
+                <tr key={b.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                  <td className="px-5 py-3.5">
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100">{getBrokerName(b)}</div>
+                    <div className="text-xs text-muted-foreground">{b.email}</div>
+                  </td>
+                  <td className="px-5 py-3.5 text-zinc-600 dark:text-zinc-400">{b.profile?.city ?? "—"}</td>
+                  <td className="px-5 py-3.5 font-semibold text-sky-600">{b._count?.listings ?? 0}</td>
+                  <td className="px-5 py-3.5"><StatusBadge status={b.status} /></td>
+                  <td className="px-5 py-3.5 text-xs text-zinc-500">{new Date(b.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <button title="View" className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Eye className="w-4 h-4 text-zinc-500" /></button>
+                      <button title="Email" className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Mail className="w-4 h-4 text-zinc-500" /></button>
+                      <button title={b.status === "SUSPENDED" ? "Unsuspend" : "Suspend"} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"><Ban className="w-4 h-4 text-red-500" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

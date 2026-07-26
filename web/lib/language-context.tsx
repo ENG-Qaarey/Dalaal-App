@@ -10,16 +10,20 @@ interface LanguageContextType {
   toggleLang: () => void;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined,
+);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Language>("en");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("dalaal-lang") as Language;
+    const stored = localStorage.getItem("dalaal-lang");
     if (stored === "en" || stored === "so") {
       setLangState(stored);
     }
+    setMounted(true);
   }, []);
 
   const setLang = (newLang: Language) => {

@@ -1,34 +1,66 @@
 "use client";
 
-import { useState } from "react";
-import { Search, CheckCircle, XCircle, Eye, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, CheckCircle, XCircle, Eye, Clock, Loader2, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
-const pending = [
-  { id: 1, make: "Toyota Land Cruiser", owner: "Axmed Cali", city: "Mogadishu", type: "SUV", price: "$120/day", submitted: "Jun 1, 2026" },
-  { id: 2, make: "Toyota Hiace Van", owner: "Faadumo Xasan", city: "Hargeisa", type: "Van", price: "$85/day", submitted: "Jun 1, 2026" },
-  { id: 3, make: "Nissan Patrol", owner: "Mahad Ibrahim", city: "Bosaso", type: "SUV", price: "$140/day", submitted: "May 31, 2026" },
-  { id: 4, make: "Toyota Corolla", owner: "Sahra Yuusuf", city: "Kismayo", type: "Sedan", price: "$55/day", submitted: "May 31, 2026" },
-  { id: 5, make: "Isuzu Truck", owner: "Cabdi Warsame", city: "Mogadishu", type: "Truck", price: "$200/day", submitted: "May 30, 2026" },
-];
+interface PendingVehicle {
+  id: string;
+  make?: string;
+  model?: string;
+  vehicleType?: string;
+  price?: number;
+  currency?: string;
+  createdAt?: string;
+  listing?: { title?: string; city?: string; status?: string };
+  city?: string;
+  user?: { email?: string; username?: string; profile?: { firstName?: string; lastName?: string } };
+  localStatus?: string;
+}
+
+function getVehicleName(v: PendingVehicle) { if (v.make) return `${v.make} ${v.model || ""}`.trim(); return v.listing?.title || "Untitled"; }
+function getCity(v: PendingVehicle) { return v.city || v.listing?.city || "—"; }
+function getPrice(v: PendingVehicle) { const p = v.price; const c = v.currency || "USD"; return p ? `${c} ${p.toLocaleString()}` : "—"; }
+function getOwner(v: PendingVehicle) { if (v.user?.profile?.firstName) return `${v.user.profile.firstName} ${v.user.profile.lastName || ""}`.trim(); return v.user?.username || v.user?.email || "—"; }
 
 const typeColors: Record<string, string> = {
   SUV: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
-  Van: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
-  Sedan: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
-  Truck: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+  VAN: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
+  SEDAN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+  TRUCK: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
 };
 
 export default function VehiclePendingPage() {
-  const [items, setItems] = useState(pending.map(p => ({ ...p, status: "Pending" as string })));
+  const [items, setItems] = useState<PendingVehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  const approve = (id: number) => setItems(prev => prev.map(p => p.id === id ? { ...p, status: "Approved" } : p));
-  const reject = (id: number) => setItems(prev => prev.map(p => p.id === id ? { ...p, status: "Rejected" } : p));
+  useEffect(() => {
+    async function fetchPending() {
+      try {
+        const result = await api.get("/admin/vehicles?status=PENDING_REVIEW");
+        const list = Array.isArray(result) ? result : result?.vehicles ?? result?.data ?? [];
+        setItems(list);
+      } catch (err: any) {
+        setError(err.message || "Failed to load pending vehicles");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPending();
+  }, []);
+
+  const approve = (id: string) => setItems(prev => prev.map(p => p.id === id ? { ...p, localStatus: "Approved" } : p));
+  const reject = (id: string) => setItems(prev => prev.map(p => p.id === id ? { ...p, localStatus: "Rejected" } : p));
 
   const filtered = items.filter(p =>
-    p.make.toLowerCase().includes(search.toLowerCase()) ||
-    p.city.toLowerCase().includes(search.toLowerCase())
+    getVehicleName(p).toLowerCase().includes(search.toLowerCase()) ||
+    getCity(p).toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) return <div className="flex items-center justify-center py-32"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
+  if (error) return <div className="flex flex-col items-center justify-center py-32 gap-3"><AlertCircle className="w-8 h-8 text-red-500" /><p className="text-sm text-muted-foreground">{error}</p></div>;
 
   return (
     <div className="space-y-6">
@@ -39,20 +71,15 @@ export default function VehiclePendingPage() {
 
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Pending", value: items.filter(i => i.status === "Pending").length, icon: Clock, color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40" },
-          { label: "Approved", value: items.filter(i => i.status === "Approved").length, icon: CheckCircle, color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40" },
-          { label: "Rejected", value: items.filter(i => i.status === "Rejected").length, icon: XCircle, color: "text-red-500 bg-red-50 dark:bg-red-950/40" },
+          { label: "Pending", value: items.filter(i => !i.localStatus).length, icon: Clock, color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40" },
+          { label: "Approved", value: items.filter(i => i.localStatus === "Approved").length, icon: CheckCircle, color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40" },
+          { label: "Rejected", value: items.filter(i => i.localStatus === "Rejected").length, icon: XCircle, color: "text-red-500 bg-red-50 dark:bg-red-950/40" },
         ].map(s => {
           const Icon = s.icon;
           return (
             <div key={s.label} className="rounded-xl border bg-white dark:bg-zinc-950 p-4 shadow-sm flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-bold">{s.value}</p>
-              </div>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}><Icon className="w-4 h-4" /></div>
+              <div><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-xl font-bold">{s.value}</p></div>
             </div>
           );
         })}
@@ -77,33 +104,38 @@ export default function VehiclePendingPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {filtered.map(p => (
-              <tr key={p.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                <td className="px-5 py-3.5">
-                  <div className="font-medium text-zinc-900 dark:text-zinc-100">{p.make}</div>
-                  <div className="text-xs text-muted-foreground">{p.owner} · {p.city}</div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColors[p.type]}`}>{p.type}</span>
-                </td>
-                <td className="px-5 py-3.5 font-semibold text-sky-600">{p.price}</td>
-                <td className="px-5 py-3.5 text-xs text-muted-foreground">{p.submitted}</td>
-                <td className="px-5 py-3.5">
-                  <span className={`text-xs font-medium ${p.status === "Approved" ? "text-emerald-600" : p.status === "Rejected" ? "text-red-500" : "text-amber-600"}`}>
-                    {p.status}
-                  </span>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Eye className="w-4 h-4 text-zinc-500" /></button>
-                    {p.status === "Pending" && (<>
-                      <button onClick={() => approve(p.id)} className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-md transition-colors"><CheckCircle className="w-4 h-4 text-emerald-600" /></button>
-                      <button onClick={() => reject(p.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"><XCircle className="w-4 h-4 text-red-500" /></button>
-                    </>)}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-muted-foreground">No pending vehicles</td></tr>
+            ) : (
+              filtered.map(p => {
+                const status = p.localStatus || "Pending";
+                return (
+                  <tr key={p.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium text-zinc-900 dark:text-zinc-100">{getVehicleName(p)}</div>
+                      <div className="text-xs text-muted-foreground">{getOwner(p)} · {getCity(p)}</div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColors[(p.vehicleType || "").toUpperCase()] ?? "bg-zinc-100 text-zinc-600"}`}>{p.vehicleType || "—"}</span>
+                    </td>
+                    <td className="px-5 py-3.5 font-semibold text-sky-600">{getPrice(p)}</td>
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`text-xs font-medium ${status === "Approved" ? "text-emerald-600" : status === "Rejected" ? "text-red-500" : "text-amber-600"}`}>{status}</span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <button className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"><Eye className="w-4 h-4 text-zinc-500" /></button>
+                        {status === "Pending" && (<>
+                          <button onClick={() => approve(p.id)} className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-md transition-colors"><CheckCircle className="w-4 h-4 text-emerald-600" /></button>
+                          <button onClick={() => reject(p.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"><XCircle className="w-4 h-4 text-red-500" /></button>
+                        </>)}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

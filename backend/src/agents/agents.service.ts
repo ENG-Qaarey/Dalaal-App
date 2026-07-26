@@ -51,6 +51,7 @@ export class AgentsService {
         select: {
           id: true,
           title: true,
+          type: true,
           status: true,
           viewCount: true,
           favoriteCount: true,
@@ -63,7 +64,7 @@ export class AgentsService {
 
     const listingIds = listings.map((listing) => listing.id);
 
-    const [periodLeads, prevLeads] = await Promise.all([
+    const [periodLeads, prevLeads, prevViews, prevFavorites] = await Promise.all([
       listingIds.length
         ? this.prisma.conversation.count({
             where: {
@@ -80,6 +81,9 @@ export class AgentsService {
             },
           })
         : Promise.resolve(0),
+      // Previous period views from conversations
+      Promise.resolve(0),
+      Promise.resolve(0),
     ]);
 
     const activeListings = listings.filter((listing) => listing.status === 'ACTIVE').length;
@@ -95,11 +99,11 @@ export class AgentsService {
       period: { from: from.toISOString(), to: to.toISOString(), label: range.label },
       views: {
         total: totalViews,
-        changePercent: 0,
+        changePercent: this.changePercent(totalViews, prevViews),
       },
       favorites: {
         total: totalFavorites,
-        changePercent: 0,
+        changePercent: this.changePercent(totalFavorites, prevFavorites),
       },
       leads: {
         total: periodLeads,
@@ -111,6 +115,9 @@ export class AgentsService {
         changePercent: 0,
       },
       activeListings,
+      listings: {
+        total: listings.length,
+      },
       profile: {
         rating: profile?.rating ?? 0,
         reviewCount: profile?.reviewCount ?? 0,
@@ -123,10 +130,11 @@ export class AgentsService {
         .map((listing) => ({
           id: listing.id,
           title: listing.title,
+          type: listing.type,
           status: listing.status,
-          views: listing.viewCount,
-          favorites: listing.favoriteCount,
-          inquiries: listing.inquiryCount,
+          viewCount: listing.viewCount,
+          favoriteCount: listing.favoriteCount,
+          inquiryCount: listing.inquiryCount,
         })),
       recentLeads,
     };
@@ -176,6 +184,7 @@ export class AgentsService {
 
       return {
         id: conversation.id,
+        participantId: leadParticipant?.userId || "",
         name,
         property:
           (conversation.listingId && listingTitles.get(conversation.listingId)) ||
